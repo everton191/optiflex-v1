@@ -1,6 +1,6 @@
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, Navigate, RouterProvider } from "react-router-dom";
 import { RequirePermission } from "./permissions";
-import { AttendancePage, CashPage, ClinicalQueuePage, ClinicalWorkspacePage, CustomerNewPage, CustomerProfilePage, CustomersPage, DashboardPage, ForbiddenPage, InventoryPage, PaymentsPage, ProfilesPage, SalesPage, SettingsPage, UsersPage } from "./pages";
+import { AttendancePage, CashDeskPage, ClinicalQueuePage, ClinicalWorkspacePage, CustomerNewPage, CustomerProfilePage, CustomersPage, DashboardPage, ForbiddenPage, InventoryPage, ProfilesPage, SettingsPage, UsersPage } from "./pages";
 import { AppShell } from "../shell/AppShell";
 
 const router = createBrowserRouter([{ path: "/", element: <AppShell />, children: [
@@ -11,10 +11,10 @@ const router = createBrowserRouter([{ path: "/", element: <AppShell />, children
   { path: "atendimentos", element: <RequirePermission permission="attendance.read"><AttendancePage /></RequirePermission> },
   { path: "clinico", element: <RequirePermission permission="clinical.workspace.access"><ClinicalQueuePage /></RequirePermission> },
   { path: "clinico/atendimento/:attendanceId", element: <RequirePermission permission="clinical.workspace.access"><ClinicalWorkspacePage /></RequirePermission> },
-  { path: "vendas", element: <RequirePermission permission="attendance.read"><SalesPage /></RequirePermission> },
-  { path: "pagamentos", element: <RequirePermission permission="attendance.read"><PaymentsPage /></RequirePermission> },
-  { path: "caixa", element: <RequirePermission permission="attendance.read"><CashPage /></RequirePermission> },
-  { path: "estoque", element: <RequirePermission permission="attendance.read"><InventoryPage /></RequirePermission> },
+  { path: "vendas", element: <Navigate to="/caixa" replace /> },
+  { path: "pagamentos", element: <Navigate to="/caixa" replace /> },
+  { path: "caixa", element: <RequirePermission permission="cash.read"><CashDeskPage /></RequirePermission> },
+  { path: "estoque", element: <RequirePermission permission="inventory.read"><InventoryPage /></RequirePermission> },
   { path: "admin/usuarios", element: <RequirePermission permission="users.read"><UsersPage /></RequirePermission> },
   { path: "admin/perfis", element: <RequirePermission permission="roles.read"><ProfilesPage /></RequirePermission> },
   { path: "admin/configuracoes", element: <RequirePermission permission="settings.manage"><SettingsPage /></RequirePermission> },
