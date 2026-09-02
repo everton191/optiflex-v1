@@ -2,7 +2,8 @@ import type { CurrentStoreContext, LocalSession, OrganizationSettings, Store, Us
 import type { Attendance, Customer } from "../../domain/customer";
 import type { ClinicalRecord } from "../../domain/clinical";
 import type { Sale } from "../../domain/sales";
-import type { AdministrationRepository, AttendanceRepository, ClinicalRepository, CustomerRepository, SaleRepository, SessionRepository, SettingsRepository } from "../../domain/repositories";
+import type { WorkOrder } from "../../domain/work-order";
+import type { AdministrationRepository, AttendanceRepository, ClinicalRepository, CustomerRepository, SaleRepository, SessionRepository, SettingsRepository, WorkOrderRepository } from "../../domain/repositories";
 import { database } from "./database";
 
 const defaultSettings: OrganizationSettings = {
@@ -76,4 +77,10 @@ export class LocalClinicalRepository implements ClinicalRepository {
 export class LocalSaleRepository implements SaleRepository {
   async listByStore(storeId: string): Promise<Sale[]> { return database.sales.where("storeId").equals(storeId).reverse().sortBy("createdAt"); }
   async save(sale: Sale): Promise<void> { await database.sales.put(sale); }
+}
+
+export class LocalWorkOrderRepository implements WorkOrderRepository {
+  async listByStore(storeId: string): Promise<WorkOrder[]> { return database.workOrders.where("storeId").equals(storeId).reverse().sortBy("createdAt"); }
+  async getBySale(saleId: string): Promise<WorkOrder | undefined> { return database.workOrders.where("saleId").equals(saleId).first(); }
+  async save(order: WorkOrder): Promise<void> { await database.workOrders.put(order); }
 }

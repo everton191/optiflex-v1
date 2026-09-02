@@ -8,12 +8,15 @@ import { ReceptionService } from "../domain/reception-service";
 import { ClinicalService } from "../domain/clinical-service";
 import { SalesService } from "../domain/sales-service";
 import type { Sale } from "../domain/sales";
+import { WorkOrderService } from "../domain/work-order-service";
+import type { WorkOrder } from "../domain/work-order";
 import type { ClinicalRecord } from "../domain/clinical";
-import { LocalAttendanceRepository, LocalClinicalRepository, LocalCustomerRepository, LocalSaleRepository } from "../infrastructure/storage/local-repositories";
+import { LocalAttendanceRepository, LocalClinicalRepository, LocalCustomerRepository, LocalSaleRepository, LocalWorkOrderRepository } from "../infrastructure/storage/local-repositories";
 
 const receptionService = new ReceptionService(new LocalCustomerRepository(), new LocalAttendanceRepository());
 const clinicalService = new ClinicalService(new LocalClinicalRepository());
 const salesService = new SalesService(new LocalSaleRepository());
+const workOrderService = new WorkOrderService(new LocalWorkOrderRepository());
 
 export function DashboardPage() {
   const { settings, session } = useAppContext();
@@ -81,12 +84,13 @@ export function ClinicalWorkspacePage() {
 }
 
 export function SalesPage() {
-  const { currentStoreId } = useAppContext(); const [sales, setSales] = useState<Sale[]>([]); const [customers, setCustomers] = useState<Customer[]>([]); const [customerId, setCustomerId] = useState(""); const [description, setDescription] = useState(""); const [total, setTotal] = useState("");
-  async function refresh() { setSales(await salesService.list(currentStoreId)); setCustomers(await receptionService.listCustomers()); }
+  const { currentStoreId } = useAppContext(); const [sales, setSales] = useState<Sale[]>([]); const [orders, setOrders] = useState<WorkOrder[]>([]); const [customers, setCustomers] = useState<Customer[]>([]); const [customerId, setCustomerId] = useState(""); const [description, setDescription] = useState(""); const [total, setTotal] = useState("");
+  async function refresh() { const [loadedSales, loadedOrders, loadedCustomers] = await Promise.all([salesService.list(currentStoreId), workOrderService.list(currentStoreId), receptionService.listCustomers()]); setSales(loadedSales); setOrders(loadedOrders); setCustomers(loadedCustomers); }
   useEffect(() => { void refresh(); }, [currentStoreId]);
   async function submit(event: React.FormEvent) { event.preventDefault(); if (!customerId) return; await salesService.createQuote(customerId, currentStoreId, description, Number(total)); setDescription(""); setTotal(""); await refresh(); }
   async function confirm(sale: Sale) { await salesService.confirm(sale); await refresh(); }
-  return <div className="page"><p className="eyebrow">Comercial</p><h1>Orçamentos e vendas</h1><form className="attendance-start" onSubmit={submit}><select value={customerId} onChange={(event) => setCustomerId(event.target.value)}><option value="">Cliente</option>{customers.map((customer) => <option value={customer.id} key={customer.id}>{customer.name}</option>)}</select><Input placeholder="Descrição" value={description} onChange={(event) => setDescription(event.target.value)} /><Input type="number" min="0.01" step="0.01" placeholder="Valor" value={total} onChange={(event) => setTotal(event.target.value)} /><Button type="submit">Salvar orçamento</Button></form><div className="list-card">{sales.length ? sales.map((sale) => <article className="list-row" key={sale.id}><div><strong>{sale.description}</strong><span>{customers.find((customer) => customer.id === sale.customerId)?.name ?? "Cliente"}</span></div><div><span className="badge">R$ {sale.total.toFixed(2)} · {sale.status}</span>{sale.status === "QUOTE" && <Button type="button" onClick={() => void confirm(sale)}>Confirmar venda</Button>}</div></article>) : <p className="empty-state">Nenhum orçamento nesta loja.</p>}</div></div>;
+  async function createOrder(sale: Sale) { await workOrderService.createFromConfirmedSale(sale); await refresh(); }
+  return <div className="page"><p className="eyebrow">Comercial</p><h1>Orçamentos e vendas</h1><form className="attendance-start" onSubmit={submit}><select value={customerId} onChange={(event) => setCustomerId(event.target.value)}><option value="">Cliente</option>{customers.map((customer) => <option value={customer.id} key={customer.id}>{customer.name}</option>)}</select><Input placeholder="Descrição" value={description} onChange={(event) => setDescription(event.target.value)} /><Input type="number" min="0.01" step="0.01" placeholder="Valor" value={total} onChange={(event) => setTotal(event.target.value)} /><Button type="submit">Salvar orçamento</Button></form><div className="list-card">{sales.length ? sales.map((sale) => <article className="list-row" key={sale.id}><div><strong>{sale.description}</strong><span>{customers.find((customer) => customer.id === sale.customerId)?.name ?? "Cliente"}</span></div><div><span className="badge">R$ {sale.total.toFixed(2)} · {sale.status}</span>{sale.status === "QUOTE" && <Button type="button" onClick={() => void confirm(sale)}>Confirmar venda</Button>}{sale.status === "CONFIRMED" && (orders.some((order) => order.saleId === sale.id) ? <span className="success">OS criada</span> : <Button type="button" onClick={() => void createOrder(sale)}>Criar OS</Button>)}</div></article>) : <p className="empty-state">Nenhum orçamento nesta loja.</p>}</div></div>;
 }
 
 export function ForbiddenPage() { return <div className="page"><h1>Acesso não permitido</h1><p>Seu perfil atual não possui esta permissão.</p></div>; }
