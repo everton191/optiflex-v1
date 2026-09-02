@@ -9,4 +9,9 @@ export class SalesService {
     const sale: Sale = { id: `sale-${crypto.randomUUID()}`, customerId, storeId, status: "QUOTE", description, total, createdAt: new Date().toISOString() };
     await this.repository.save(sale); return sale;
   }
+  async confirm(sale: Sale): Promise<Sale> {
+    if (sale.status !== "QUOTE") throw new Error("Somente orçamentos pendentes podem ser confirmados.");
+    const confirmed: Sale = { ...sale, status: "CONFIRMED" };
+    await this.repository.save(confirmed); return confirmed;
+  }
 }
