@@ -8,3 +8,4 @@
 .page-title, .attendance-start { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-6); }.attendance-start select { min-height: 2.75rem; flex: 1; padding: 0 var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: white; }.section-title { margin-top: var(--space-8); font-size: 1.15rem; }.empty-state { padding: var(--space-6); color: var(--color-muted); }
 .list-link { color: inherit; text-decoration: none; }.list-link:hover { background: #f4f9fa; }
 textarea { min-height: 7rem; resize: vertical; border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: var(--space-3); color: var(--color-text); }
+.error-text { color: #a12525; font-size: .875rem; }
