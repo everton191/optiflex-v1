@@ -22,6 +22,11 @@ export type Permission =
   | "users.manage"
   | "roles.read"
   | "roles.manage"
+  | "customers.read"
+  | "customers.manage"
+  | "attendance.read"
+  | "attendance.create"
+  | "attendance.queue.read"
   | "clinical.workspace.access";
 
 export interface OrganizationSettings {
@@ -65,12 +70,12 @@ export interface RoleDefinition {
 }
 
 export const rolePermissions: Readonly<Record<RoleKey, readonly Permission[]>> = {
-  OWNER: ["dashboard.view", "stores.read", "stores.manage", "stores.select", "users.read", "users.manage", "settings.manage", "roles.read", "roles.manage", "clinical.workspace.access"],
-  NETWORK_ADMINISTRATOR: ["dashboard.view", "stores.read", "stores.manage", "stores.select", "users.read", "users.manage", "settings.manage", "roles.read", "roles.manage"],
-  STORE_MANAGER: ["dashboard.view", "stores.read", "stores.select", "users.read"],
-  RECEPTIONIST: ["dashboard.view", "stores.read", "stores.select"],
-  CLINICAL_PROFESSIONAL: ["dashboard.view", "stores.read", "stores.select", "clinical.workspace.access"],
-  SELLER: ["dashboard.view", "stores.read", "stores.select"],
+  OWNER: ["dashboard.view", "stores.read", "stores.manage", "stores.select", "users.read", "users.manage", "settings.manage", "roles.read", "roles.manage", "customers.read", "customers.manage", "attendance.read", "attendance.create", "attendance.queue.read", "clinical.workspace.access"],
+  NETWORK_ADMINISTRATOR: ["dashboard.view", "stores.read", "stores.manage", "stores.select", "users.read", "users.manage", "settings.manage", "roles.read", "roles.manage", "customers.read", "customers.manage", "attendance.read", "attendance.create", "attendance.queue.read"],
+  STORE_MANAGER: ["dashboard.view", "stores.read", "stores.select", "users.read", "customers.read", "customers.manage", "attendance.read", "attendance.create", "attendance.queue.read"],
+  RECEPTIONIST: ["dashboard.view", "stores.read", "stores.select", "customers.read", "customers.manage", "attendance.read", "attendance.create", "attendance.queue.read"],
+  CLINICAL_PROFESSIONAL: ["dashboard.view", "stores.read", "stores.select", "customers.read", "attendance.read", "attendance.queue.read", "clinical.workspace.access"],
+  SELLER: ["dashboard.view", "stores.read", "stores.select", "customers.read"],
   CASHIER: ["dashboard.view", "stores.read", "stores.select"],
   STOCK_MANAGER: ["dashboard.view", "stores.read", "stores.select"],
   FINANCE: ["dashboard.view", "stores.read", "stores.select"],

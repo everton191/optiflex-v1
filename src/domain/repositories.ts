@@ -1,4 +1,5 @@
 import type { CurrentStoreContext, LocalSession, OrganizationSettings, Store, User } from "./access";
+import type { Attendance, Customer } from "./customer";
 
 export interface SettingsRepository {
   get(): Promise<OrganizationSettings>;
@@ -18,4 +19,15 @@ export interface AdministrationRepository {
   saveUser(user: User): Promise<void>;
   getCurrentStore(): Promise<CurrentStoreContext>;
   saveCurrentStore(context: CurrentStoreContext): Promise<void>;
+}
+
+export interface CustomerRepository {
+  list(query?: string): Promise<Customer[]>;
+  get(id: string): Promise<Customer | undefined>;
+  save(customer: Customer): Promise<void>;
+}
+
+export interface AttendanceRepository {
+  listByStore(storeId: string): Promise<Attendance[]>;
+  save(attendance: Attendance): Promise<void>;
 }

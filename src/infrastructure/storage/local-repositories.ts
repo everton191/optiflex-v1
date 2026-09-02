@@ -1,5 +1,6 @@
 import type { CurrentStoreContext, LocalSession, OrganizationSettings, Store, User } from "../../domain/access";
-import type { AdministrationRepository, SessionRepository, SettingsRepository } from "../../domain/repositories";
+import type { Attendance, Customer } from "../../domain/customer";
+import type { AdministrationRepository, AttendanceRepository, CustomerRepository, SessionRepository, SettingsRepository } from "../../domain/repositories";
 import { database } from "./database";
 
 const defaultSettings: OrganizationSettings = {
@@ -47,4 +48,19 @@ export class LocalAdministrationRepository implements AdministrationRepository {
   async saveUser(user: User): Promise<void> { await database.users.put(user); }
   async getCurrentStore(): Promise<CurrentStoreContext> { return (await database.currentStore.get("current"))!; }
   async saveCurrentStore(context: CurrentStoreContext): Promise<void> { await database.currentStore.put(context); }
+}
+
+export class LocalCustomerRepository implements CustomerRepository {
+  async list(query = ""): Promise<Customer[]> {
+    const normalized = query.trim().toLocaleLowerCase("pt-BR");
+    const customers = await database.customers.orderBy("name").toArray();
+    return normalized ? customers.filter((customer) => [customer.name, customer.cpf, customer.phone].filter(Boolean).some((value) => value!.toLocaleLowerCase("pt-BR").includes(normalized))) : customers;
+  }
+  async get(id: string): Promise<Customer | undefined> { return database.customers.get(id); }
+  async save(customer: Customer): Promise<void> { await database.customers.put(customer); }
+}
+
+export class LocalAttendanceRepository implements AttendanceRepository {
+  async listByStore(storeId: string): Promise<Attendance[]> { return database.attendances.where("storeId").equals(storeId).reverse().sortBy("createdAt"); }
+  async save(attendance: Attendance): Promise<void> { await database.attendances.put(attendance); }
 }

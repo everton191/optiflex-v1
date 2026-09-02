@@ -1,7 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useAppContext } from "./providers";
 import { Button, Card, Input } from "../design-system/components";
 import { roleDefinitions } from "../domain/access";
+import type { Attendance, Customer } from "../domain/customer";
+import { ReceptionService } from "../domain/reception-service";
+import { LocalAttendanceRepository, LocalCustomerRepository } from "../infrastructure/storage/local-repositories";
+
+const receptionService = new ReceptionService(new LocalCustomerRepository(), new LocalAttendanceRepository());
 
 export function DashboardPage() {
   const { settings, session } = useAppContext();
@@ -29,6 +35,27 @@ export function UsersPage() {
 
 export function ProfilesPage() {
   return <div className="page"><p className="eyebrow">Administração</p><h1>Perfis e permissões</h1><p className="page-intro">Perfis são técnicos; as verificações de acesso nunca dependem do nome de uma profissão.</p><div className="list-card">{roleDefinitions.map((role) => <article className="list-row role-row" key={role.key}><div><strong>{role.label}</strong><span><code>{role.key}</code> · escopo {role.scope}</span></div><small>{role.permissions.join(" · ")}</small></article>)}</div></div>;
+}
+
+export function CustomersPage() {
+  const [customers, setCustomers] = useState<Customer[]>([]); const [query, setQuery] = useState("");
+  useEffect(() => { void receptionService.listCustomers(query).then(setCustomers); }, [query]);
+  return <div className="page"><p className="eyebrow">Recepção</p><div className="page-title"><div><h1>Clientes</h1><p className="page-intro">Cadastros disponíveis na rede conforme permissão.</p></div><Link className="button" to="/clientes/novo">Novo cliente</Link></div><Input aria-label="Buscar cliente" placeholder="Buscar por nome, CPF ou telefone" value={query} onChange={(event) => setQuery(event.target.value)} /><div className="list-card">{customers.length ? customers.map((customer) => <article className="list-row" key={customer.id}><div><strong>{customer.name}</strong><span>{customer.cpf || customer.phone || "Sem documento ou telefone"}</span></div></article>) : <p className="empty-state">Nenhum cliente encontrado.</p>}</div></div>;
+}
+
+export function CustomerNewPage() {
+  const navigate = useNavigate(); const [name, setName] = useState(""); const [phone, setPhone] = useState(""); const [cpf, setCpf] = useState("");
+  async function submit(event: React.FormEvent) { event.preventDefault(); const customer = await receptionService.createCustomer({ name, phone: phone || undefined, cpf: cpf || undefined }); navigate(`/atendimentos?customer=${customer.id}`); }
+  return <div className="page"><p className="eyebrow">Recepção</p><h1>Novo cliente</h1><form className="settings-form" onSubmit={submit}><label>Nome completo<Input value={name} onChange={(event) => setName(event.target.value)} required /></label><label>Telefone<Input value={phone} onChange={(event) => setPhone(event.target.value)} /></label><label>CPF<Input value={cpf} onChange={(event) => setCpf(event.target.value)} /></label><Button type="submit">Salvar e iniciar atendimento</Button></form></div>;
+}
+
+export function AttendancePage() {
+  const { currentStoreId } = useAppContext(); const [queue, setQueue] = useState<Attendance[]>([]); const [customers, setCustomers] = useState<Customer[]>([]); const [customerId, setCustomerId] = useState("");
+  async function refresh() { setQueue(await receptionService.listQueue(currentStoreId)); setCustomers(await receptionService.listCustomers()); }
+  useEffect(() => { void refresh(); }, [currentStoreId]);
+  async function start() { if (!customerId) return; await receptionService.startAttendance(customerId, currentStoreId, "CONSULTATION"); setCustomerId(""); await refresh(); }
+  const customerName = (id: string) => customers.find((customer) => customer.id === id)?.name ?? "Cliente";
+  return <div className="page"><p className="eyebrow">Recepção</p><h1>Atendimentos</h1><div className="attendance-start"><select aria-label="Selecionar cliente" value={customerId} onChange={(event) => setCustomerId(event.target.value)}><option value="">Selecionar cliente</option>{customers.map((customer) => <option key={customer.id} value={customer.id}>{customer.name}</option>)}</select><Button type="button" disabled={!customerId} onClick={() => void start()}>Enviar para fila</Button></div><h2 className="section-title">Fila atual</h2><div className="list-card">{queue.length ? queue.filter((item) => item.status === "WAITING").map((item) => <article className="list-row" key={item.id}><div><strong>{customerName(item.customerId)}</strong><span>{item.type} · aguardando atendimento</span></div></article>) : <p className="empty-state">Nenhum atendimento aguardando.</p>}</div></div>;
 }
 
 export function ForbiddenPage() { return <div className="page"><h1>Acesso não permitido</h1><p>Seu perfil atual não possui esta permissão.</p></div>; }
