@@ -1,0 +1,25 @@
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  color: #17242a;
+  background: #f7fafb;
+  --color-brand: #123145;
+  --color-brand-strong: #0c2434;
+  --color-surface: #ffffff;
+  --color-text: #17242a;
+  --color-muted: #627078;
+  --color-border: #dbe4e7;
+  --color-focus: #187990;
+  --space-1: .25rem;
+  --space-2: .5rem;
+  --space-3: .75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --radius-sm: .5rem;
+  --radius-md: .75rem;
+  --radius-lg: 1rem;
+  --shadow-card: 0 1px 2px rgba(16, 43, 57, .06);
+}
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; }
+button, input { font: inherit; }
