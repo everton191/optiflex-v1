@@ -6,11 +6,14 @@ import { roleDefinitions } from "../domain/access";
 import type { Attendance, Customer } from "../domain/customer";
 import { ReceptionService } from "../domain/reception-service";
 import { ClinicalService } from "../domain/clinical-service";
+import { SalesService } from "../domain/sales-service";
+import type { Sale } from "../domain/sales";
 import type { ClinicalRecord } from "../domain/clinical";
-import { LocalAttendanceRepository, LocalClinicalRepository, LocalCustomerRepository } from "../infrastructure/storage/local-repositories";
+import { LocalAttendanceRepository, LocalClinicalRepository, LocalCustomerRepository, LocalSaleRepository } from "../infrastructure/storage/local-repositories";
 
 const receptionService = new ReceptionService(new LocalCustomerRepository(), new LocalAttendanceRepository());
 const clinicalService = new ClinicalService(new LocalClinicalRepository());
+const salesService = new SalesService(new LocalSaleRepository());
 
 export function DashboardPage() {
   const { settings, session } = useAppContext();
@@ -75,6 +78,14 @@ export function ClinicalWorkspacePage() {
   async function save(event: React.FormEvent) { event.preventDefault(); await clinicalService.save(record!); setSaved(true); }
   async function finalize() { try { await clinicalService.finalize(record!); setRecord({ ...record!, finalizedAt: new Date().toISOString() }); setError(""); } catch (reason) { setError(reason instanceof Error ? reason.message : "Não foi possível finalizar."); } }
   return <div className="page"><p className="eyebrow">Workspace clínico</p><h1>Atendimento clínico</h1><form className="settings-form" onSubmit={save}><label>Anamnese<textarea value={record.anamnesis} onChange={(event) => setRecord({ ...record, anamnesis: event.target.value })} /></label><label>Exame<textarea value={record.examination} onChange={(event) => setRecord({ ...record, examination: event.target.value })} /></label><label>Solicitações<textarea value={record.requests} onChange={(event) => setRecord({ ...record, requests: event.target.value })} /></label><label>Prescrição<textarea value={record.prescription} onChange={(event) => setRecord({ ...record, prescription: event.target.value })} /></label><p className="help-text">Anexos clínicos: {record.attachments.length}. O armazenamento de arquivos será ligado ao backup local na etapa de documentos.</p><Button type="submit">Salvar rascunho clínico</Button><Button type="button" disabled={Boolean(record.finalizedAt)} onClick={() => void finalize()}>{record.finalizedAt ? "Atendimento finalizado" : "Finalizar atendimento"}</Button>{saved && <span className="success">Rascunho salvo localmente.</span>}{error && <span className="error-text">{error}</span>}</form></div>;
+}
+
+export function SalesPage() {
+  const { currentStoreId } = useAppContext(); const [sales, setSales] = useState<Sale[]>([]); const [customers, setCustomers] = useState<Customer[]>([]); const [customerId, setCustomerId] = useState(""); const [description, setDescription] = useState(""); const [total, setTotal] = useState("");
+  async function refresh() { setSales(await salesService.list(currentStoreId)); setCustomers(await receptionService.listCustomers()); }
+  useEffect(() => { void refresh(); }, [currentStoreId]);
+  async function submit(event: React.FormEvent) { event.preventDefault(); if (!customerId) return; await salesService.createQuote(customerId, currentStoreId, description, Number(total)); setDescription(""); setTotal(""); await refresh(); }
+  return <div className="page"><p className="eyebrow">Comercial</p><h1>Orçamentos e vendas</h1><form className="attendance-start" onSubmit={submit}><select value={customerId} onChange={(event) => setCustomerId(event.target.value)}><option value="">Cliente</option>{customers.map((customer) => <option value={customer.id} key={customer.id}>{customer.name}</option>)}</select><Input placeholder="Descrição" value={description} onChange={(event) => setDescription(event.target.value)} /><Input type="number" min="0.01" step="0.01" placeholder="Valor" value={total} onChange={(event) => setTotal(event.target.value)} /><Button type="submit">Salvar orçamento</Button></form><div className="list-card">{sales.length ? sales.map((sale) => <article className="list-row" key={sale.id}><div><strong>{sale.description}</strong><span>{customers.find((customer) => customer.id === sale.customerId)?.name ?? "Cliente"}</span></div><span className="badge">R$ {sale.total.toFixed(2)} · {sale.status}</span></article>) : <p className="empty-state">Nenhum orçamento nesta loja.</p>}</div></div>;
 }
 
 export function ForbiddenPage() { return <div className="page"><h1>Acesso não permitido</h1><p>Seu perfil atual não possui esta permissão.</p></div>; }

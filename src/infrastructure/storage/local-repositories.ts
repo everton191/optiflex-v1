@@ -1,7 +1,8 @@
 import type { CurrentStoreContext, LocalSession, OrganizationSettings, Store, User } from "../../domain/access";
 import type { Attendance, Customer } from "../../domain/customer";
 import type { ClinicalRecord } from "../../domain/clinical";
-import type { AdministrationRepository, AttendanceRepository, ClinicalRepository, CustomerRepository, SessionRepository, SettingsRepository } from "../../domain/repositories";
+import type { Sale } from "../../domain/sales";
+import type { AdministrationRepository, AttendanceRepository, ClinicalRepository, CustomerRepository, SaleRepository, SessionRepository, SettingsRepository } from "../../domain/repositories";
 import { database } from "./database";
 
 const defaultSettings: OrganizationSettings = {
@@ -70,4 +71,9 @@ export class LocalAttendanceRepository implements AttendanceRepository {
 export class LocalClinicalRepository implements ClinicalRepository {
   async get(attendanceId: string): Promise<ClinicalRecord | undefined> { return database.clinicalRecords.get(attendanceId); }
   async save(record: ClinicalRecord): Promise<void> { await database.clinicalRecords.put(record); }
+}
+
+export class LocalSaleRepository implements SaleRepository {
+  async listByStore(storeId: string): Promise<Sale[]> { return database.sales.where("storeId").equals(storeId).reverse().sortBy("createdAt"); }
+  async save(sale: Sale): Promise<void> { await database.sales.put(sale); }
 }
