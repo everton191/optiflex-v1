@@ -72,7 +72,7 @@ export function ClinicalWorkspacePage() {
   const { attendanceId = "" } = useParams(); const [record, setRecord] = useState<ClinicalRecord>(); const [saved, setSaved] = useState(false);
   useEffect(() => { void clinicalService.load(attendanceId).then(setRecord); }, [attendanceId]);
   if (!record) return <div className="app-loading">Abrindo prontuário local…</div>;
-  async function save(event: React.FormEvent) { event.preventDefault(); await clinicalService.save(record); setSaved(true); }
+  async function save(event: React.FormEvent) { event.preventDefault(); await clinicalService.save(record!); setSaved(true); }
   return <div className="page"><p className="eyebrow">Workspace clínico</p><h1>Atendimento clínico</h1><form className="settings-form" onSubmit={save}><label>Anamnese<textarea value={record.anamnesis} onChange={(event) => setRecord({ ...record, anamnesis: event.target.value })} /></label><label>Exame<textarea value={record.examination} onChange={(event) => setRecord({ ...record, examination: event.target.value })} /></label><label>Prescrição<textarea value={record.prescription} onChange={(event) => setRecord({ ...record, prescription: event.target.value })} /></label><Button type="submit">Salvar rascunho clínico</Button>{saved && <span className="success">Rascunho salvo localmente.</span>}</form></div>;
 }
 
