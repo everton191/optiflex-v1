@@ -3,6 +3,7 @@ import type { Attendance, Customer } from "./customer";
 import type { ClinicalRecord } from "./clinical";
 import type { Sale } from "./sales";
 import type { WorkOrder } from "./work-order";
+import type { InventoryItem, InventoryMovement } from "./inventory";
 
 export interface SettingsRepository {
   get(): Promise<OrganizationSettings>;
@@ -50,4 +51,10 @@ export interface WorkOrderRepository {
   listByStore(storeId: string): Promise<WorkOrder[]>;
   getBySale(saleId: string): Promise<WorkOrder | undefined>;
   save(order: WorkOrder): Promise<void>;
+}
+
+export interface InventoryRepository {
+  listByStore(storeId: string): Promise<InventoryItem[]>;
+  saveItem(item: InventoryItem): Promise<void>;
+  addMovement(movement: InventoryMovement): Promise<void>;
 }

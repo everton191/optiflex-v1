@@ -3,7 +3,8 @@ import type { Attendance, Customer } from "../../domain/customer";
 import type { ClinicalRecord } from "../../domain/clinical";
 import type { Sale } from "../../domain/sales";
 import type { WorkOrder } from "../../domain/work-order";
-import type { AdministrationRepository, AttendanceRepository, ClinicalRepository, CustomerRepository, SaleRepository, SessionRepository, SettingsRepository, WorkOrderRepository } from "../../domain/repositories";
+import type { InventoryItem, InventoryMovement } from "../../domain/inventory";
+import type { AdministrationRepository, AttendanceRepository, ClinicalRepository, CustomerRepository, InventoryRepository, SaleRepository, SessionRepository, SettingsRepository, WorkOrderRepository } from "../../domain/repositories";
 import { database } from "./database";
 
 const defaultSettings: OrganizationSettings = {
@@ -83,4 +84,10 @@ export class LocalWorkOrderRepository implements WorkOrderRepository {
   async listByStore(storeId: string): Promise<WorkOrder[]> { return database.workOrders.where("storeId").equals(storeId).reverse().sortBy("createdAt"); }
   async getBySale(saleId: string): Promise<WorkOrder | undefined> { return database.workOrders.where("saleId").equals(saleId).first(); }
   async save(order: WorkOrder): Promise<void> { await database.workOrders.put(order); }
+}
+
+export class LocalInventoryRepository implements InventoryRepository {
+  async listByStore(storeId: string): Promise<InventoryItem[]> { return database.inventoryItems.where("storeId").equals(storeId).sortBy("name"); }
+  async saveItem(item: InventoryItem): Promise<void> { await database.inventoryItems.put(item); }
+  async addMovement(movement: InventoryMovement): Promise<void> { await database.inventoryMovements.put(movement); }
 }
