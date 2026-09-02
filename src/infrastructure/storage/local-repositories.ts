@@ -1,6 +1,7 @@
 import type { CurrentStoreContext, LocalSession, OrganizationSettings, Store, User } from "../../domain/access";
 import type { Attendance, Customer } from "../../domain/customer";
-import type { AdministrationRepository, AttendanceRepository, CustomerRepository, SessionRepository, SettingsRepository } from "../../domain/repositories";
+import type { ClinicalRecord } from "../../domain/clinical";
+import type { AdministrationRepository, AttendanceRepository, ClinicalRepository, CustomerRepository, SessionRepository, SettingsRepository } from "../../domain/repositories";
 import { database } from "./database";
 
 const defaultSettings: OrganizationSettings = {
@@ -64,4 +65,9 @@ export class LocalAttendanceRepository implements AttendanceRepository {
   async listByStore(storeId: string): Promise<Attendance[]> { return database.attendances.where("storeId").equals(storeId).reverse().sortBy("createdAt"); }
   async listByCustomer(customerId: string): Promise<Attendance[]> { return database.attendances.where("customerId").equals(customerId).reverse().sortBy("createdAt"); }
   async save(attendance: Attendance): Promise<void> { await database.attendances.put(attendance); }
+}
+
+export class LocalClinicalRepository implements ClinicalRepository {
+  async get(attendanceId: string): Promise<ClinicalRecord | undefined> { return database.clinicalRecords.get(attendanceId); }
+  async save(record: ClinicalRecord): Promise<void> { await database.clinicalRecords.put(record); }
 }

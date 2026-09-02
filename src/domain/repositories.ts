@@ -1,5 +1,6 @@
 import type { CurrentStoreContext, LocalSession, OrganizationSettings, Store, User } from "./access";
 import type { Attendance, Customer } from "./customer";
+import type { ClinicalRecord } from "./clinical";
 
 export interface SettingsRepository {
   get(): Promise<OrganizationSettings>;
@@ -31,4 +32,9 @@ export interface AttendanceRepository {
   listByStore(storeId: string): Promise<Attendance[]>;
   listByCustomer(customerId: string): Promise<Attendance[]>;
   save(attendance: Attendance): Promise<void>;
+}
+
+export interface ClinicalRepository {
+  get(attendanceId: string): Promise<ClinicalRecord | undefined>;
+  save(record: ClinicalRecord): Promise<void>;
 }

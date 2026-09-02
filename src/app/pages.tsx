@@ -5,9 +5,12 @@ import { Button, Card, Input } from "../design-system/components";
 import { roleDefinitions } from "../domain/access";
 import type { Attendance, Customer } from "../domain/customer";
 import { ReceptionService } from "../domain/reception-service";
-import { LocalAttendanceRepository, LocalCustomerRepository } from "../infrastructure/storage/local-repositories";
+import { ClinicalService } from "../domain/clinical-service";
+import type { ClinicalRecord } from "../domain/clinical";
+import { LocalAttendanceRepository, LocalClinicalRepository, LocalCustomerRepository } from "../infrastructure/storage/local-repositories";
 
 const receptionService = new ReceptionService(new LocalCustomerRepository(), new LocalAttendanceRepository());
+const clinicalService = new ClinicalService(new LocalClinicalRepository());
 
 export function DashboardPage() {
   const { settings, session } = useAppContext();
@@ -62,7 +65,15 @@ export function AttendancePage() {
   useEffect(() => { void refresh(); }, [currentStoreId]);
   async function start() { if (!customerId) return; await receptionService.startAttendance(customerId, currentStoreId, "CONSULTATION"); setCustomerId(""); await refresh(); }
   const customerName = (id: string) => customers.find((customer) => customer.id === id)?.name ?? "Cliente";
-  return <div className="page"><p className="eyebrow">Recepção</p><h1>Atendimentos</h1><div className="attendance-start"><select aria-label="Selecionar cliente" value={customerId} onChange={(event) => setCustomerId(event.target.value)}><option value="">Selecionar cliente</option>{customers.map((customer) => <option key={customer.id} value={customer.id}>{customer.name}</option>)}</select><Button type="button" disabled={!customerId} onClick={() => void start()}>Enviar para fila</Button></div><h2 className="section-title">Fila atual</h2><div className="list-card">{queue.length ? queue.filter((item) => item.status === "WAITING").map((item) => <article className="list-row" key={item.id}><div><strong>{customerName(item.customerId)}</strong><span>{item.type} · aguardando atendimento</span></div></article>) : <p className="empty-state">Nenhum atendimento aguardando.</p>}</div></div>;
+  return <div className="page"><p className="eyebrow">Recepção</p><h1>Atendimentos</h1><div className="attendance-start"><select aria-label="Selecionar cliente" value={customerId} onChange={(event) => setCustomerId(event.target.value)}><option value="">Selecionar cliente</option>{customers.map((customer) => <option key={customer.id} value={customer.id}>{customer.name}</option>)}</select><Button type="button" disabled={!customerId} onClick={() => void start()}>Enviar para fila</Button></div><h2 className="section-title">Fila atual</h2><div className="list-card">{queue.length ? queue.filter((item) => item.status === "WAITING").map((item) => <Link className="list-row list-link" key={item.id} to={`/clinico/atendimento/${item.id}`}><div><strong>{customerName(item.customerId)}</strong><span>{item.type} · aguardando atendimento</span></div></Link>) : <p className="empty-state">Nenhum atendimento aguardando.</p>}</div></div>;
+}
+
+export function ClinicalWorkspacePage() {
+  const { attendanceId = "" } = useParams(); const [record, setRecord] = useState<ClinicalRecord>(); const [saved, setSaved] = useState(false);
+  useEffect(() => { void clinicalService.load(attendanceId).then(setRecord); }, [attendanceId]);
+  if (!record) return <div className="app-loading">Abrindo prontuário local…</div>;
+  async function save(event: React.FormEvent) { event.preventDefault(); await clinicalService.save(record); setSaved(true); }
+  return <div className="page"><p className="eyebrow">Workspace clínico</p><h1>Atendimento clínico</h1><form className="settings-form" onSubmit={save}><label>Anamnese<textarea value={record.anamnesis} onChange={(event) => setRecord({ ...record, anamnesis: event.target.value })} /></label><label>Exame<textarea value={record.examination} onChange={(event) => setRecord({ ...record, examination: event.target.value })} /></label><label>Prescrição<textarea value={record.prescription} onChange={(event) => setRecord({ ...record, prescription: event.target.value })} /></label><Button type="submit">Salvar rascunho clínico</Button>{saved && <span className="success">Rascunho salvo localmente.</span>}</form></div>;
 }
 
 export function ForbiddenPage() { return <div className="page"><h1>Acesso não permitido</h1><p>Seu perfil atual não possui esta permissão.</p></div>; }
