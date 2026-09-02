@@ -16,4 +16,5 @@ export class ReceptionService {
     await this.attendances.save(attendance); return attendance;
   }
   listQueue(storeId: string): Promise<Attendance[]> { return this.attendances.listByStore(storeId); }
+  listCustomerAttendances(customerId: string): Promise<Attendance[]> { return this.attendances.listByCustomer(customerId); }
 }

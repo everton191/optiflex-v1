@@ -62,5 +62,6 @@ export class LocalCustomerRepository implements CustomerRepository {
 
 export class LocalAttendanceRepository implements AttendanceRepository {
   async listByStore(storeId: string): Promise<Attendance[]> { return database.attendances.where("storeId").equals(storeId).reverse().sortBy("createdAt"); }
+  async listByCustomer(customerId: string): Promise<Attendance[]> { return database.attendances.where("customerId").equals(customerId).reverse().sortBy("createdAt"); }
   async save(attendance: Attendance): Promise<void> { await database.attendances.put(attendance); }
 }

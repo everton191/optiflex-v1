@@ -29,5 +29,6 @@ export interface CustomerRepository {
 
 export interface AttendanceRepository {
   listByStore(storeId: string): Promise<Attendance[]>;
+  listByCustomer(customerId: string): Promise<Attendance[]>;
   save(attendance: Attendance): Promise<void>;
 }
