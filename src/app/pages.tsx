@@ -9,19 +9,25 @@ import { ClinicalService } from "../domain/clinical-service";
 import { SalesService } from "../domain/sales-service";
 import type { Sale } from "../domain/sales";
 import { WorkOrderService } from "../domain/work-order-service";
+import { InventoryService } from "../domain/inventory-service";
+import { CashService } from "../domain/cash-service";
 import type { WorkOrder } from "../domain/work-order";
 import type { ClinicalRecord } from "../domain/clinical";
-import { LocalAttendanceRepository, LocalClinicalRepository, LocalCustomerRepository, LocalSaleRepository, LocalWorkOrderRepository } from "../infrastructure/storage/local-repositories";
+import type { InventoryItem } from "../domain/inventory";
+import type { CashSession } from "../domain/cash";
+import { LocalAttendanceRepository, LocalCashRepository, LocalClinicalRepository, LocalCustomerRepository, LocalInventoryRepository, LocalSaleRepository, LocalWorkOrderRepository } from "../infrastructure/storage/local-repositories";
 
 const receptionService = new ReceptionService(new LocalCustomerRepository(), new LocalAttendanceRepository());
 const clinicalService = new ClinicalService(new LocalClinicalRepository());
 const salesService = new SalesService(new LocalSaleRepository());
 const workOrderService = new WorkOrderService(new LocalWorkOrderRepository());
+const inventoryService = new InventoryService(new LocalInventoryRepository());
+const cashService = new CashService(new LocalCashRepository());
 
 export function DashboardPage() {
   const { settings, session } = useAppContext();
-  const flow = ["Cliente", "Atendimento", "Prescrição", "Exames", "Finalizar", "Venda", "Pagamento"];
-  return <div className="page dashboard"><section className="flow-card"><p className="eyebrow">Fluxo principal do atendimento</p><div className="flow-steps">{flow.map((label, index) => <div className="flow-step" key={label}><span>{index + 1}</span><strong>{label}</strong></div>)}</div></section><section className="page-title"><div><p className="eyebrow">Visão geral</p><h1>Olá, {session.userName}</h1><p className="page-intro">Acompanhe a operação de {settings.organizationName}.</p></div></section><div className="metric-grid"><Card><small>Vendas hoje</small><strong>R$ 3.250,00</strong><span className="success">+12% vs. ontem</span></Card><Card><small>Recebimentos</small><strong>R$ 2.150,00</strong><span className="success">+8% vs. ontem</span></Card><Card><small>Atendimentos</small><strong>12</strong><span className="success">+25% vs. ontem</span></Card><Card><small>Clientes</small><strong>156</strong><span className="success">+5 novos</span></Card></div><div className="dashboard-grid"><Card><h2>Vendas dos últimos 7 dias</h2><div className="chart-placeholder" aria-label="Gráfico de vendas"><span /><span /><span /><span /><span /><span /><span /></div></Card><Card><h2>Pendências</h2><ul className="pending-list"><li>3 carnês vencidos</li><li>2 orçamentos para aprovar</li><li>1 pedido no laboratório</li></ul></Card></div></div>;
+  const flow = [{ label: "Cliente", to: "/clientes" }, { label: "Atendimento", to: "/atendimentos" }, { label: "Prescrição", to: "/clinico" }, { label: "Exames", to: "/clinico" }, { label: "Finalizar", to: "/clinico" }, { label: "Venda", to: "/vendas" }, { label: "Pagamento", to: "/pagamentos" }];
+  return <div className="page dashboard"><section className="flow-card"><p className="eyebrow">Fluxo principal do atendimento</p><div className="flow-steps">{flow.map((step, index) => <Link className="flow-step" key={step.label} to={step.to}><span>{index + 1}</span><strong>{step.label}</strong></Link>)}</div></section><section className="page-title"><div><p className="eyebrow">Visão geral</p><h1>Olá, {session.userName}</h1><p className="page-intro">Acompanhe a operação de {settings.organizationName}.</p></div><Link className="button" to="/clientes/novo">Iniciar atendimento</Link></section><div className="metric-grid"><Card><small>Vendas hoje</small><strong>R$ 3.250,00</strong><span className="success">+12% vs. ontem</span></Card><Card><small>Recebimentos</small><strong>R$ 2.150,00</strong><span className="success">+8% vs. ontem</span></Card><Card><small>Atendimentos</small><strong>12</strong><span className="success">+25% vs. ontem</span></Card><Card><small>Clientes</small><strong>156</strong><span className="success">+5 novos</span></Card></div><div className="dashboard-grid"><Card><h2>Vendas dos últimos 7 dias</h2><div className="chart-placeholder" aria-label="Gráfico de vendas"><span /><span /><span /><span /><span /><span /><span /></div></Card><Card><h2>Pendências</h2><ul className="pending-list"><li>3 carnês vencidos</li><li>2 orçamentos para aprovar</li><li>1 pedido no laboratório</li></ul></Card></div></div>;
 }
 
 export function SettingsPage() {
@@ -73,6 +79,34 @@ export function AttendancePage() {
   async function start() { if (!customerId) return; await receptionService.startAttendance(customerId, currentStoreId, "CONSULTATION"); setCustomerId(""); await refresh(); }
   const customerName = (id: string) => customers.find((customer) => customer.id === id)?.name ?? "Cliente";
   return <div className="page"><p className="eyebrow">Recepção</p><h1>Atendimentos</h1><div className="attendance-start"><select aria-label="Selecionar cliente" value={customerId} onChange={(event) => setCustomerId(event.target.value)}><option value="">Selecionar cliente</option>{customers.map((customer) => <option key={customer.id} value={customer.id}>{customer.name}</option>)}</select><Button type="button" disabled={!customerId} onClick={() => void start()}>Enviar para fila</Button></div><h2 className="section-title">Fila atual</h2><div className="list-card">{queue.length ? queue.filter((item) => item.status === "WAITING").map((item) => <Link className="list-row list-link" key={item.id} to={`/clinico/atendimento/${item.id}`}><div><strong>{customerName(item.customerId)}</strong><span>{item.type} · aguardando atendimento</span></div></Link>) : <p className="empty-state">Nenhum atendimento aguardando.</p>}</div></div>;
+}
+
+export function ClinicalQueuePage() {
+  const { currentStoreId } = useAppContext(); const [queue, setQueue] = useState<Attendance[]>([]);
+  useEffect(() => { void receptionService.listQueue(currentStoreId).then((items) => setQueue(items.filter((item) => item.status === "WAITING"))); }, [currentStoreId]);
+  return <div className="page"><p className="eyebrow">Workspace clínico</p><div className="page-title"><div><h1>Prontuários em atendimento</h1><p className="page-intro">Selecione um atendimento da fila para registrar anamnese, prescrição e exames.</p></div><Link className="button" to="/atendimentos">Ver fila de atendimento</Link></div><div className="list-card">{queue.length ? queue.map((attendance) => <Link className="list-row list-link" key={attendance.id} to={`/clinico/atendimento/${attendance.id}`}><div><strong>Atendimento {attendance.id.slice(-6)}</strong><span>Aguardando preenchimento clínico</span></div><span className="badge">Abrir prontuário</span></Link>) : <p className="empty-state">Não há atendimentos aguardando nesta loja.</p>}</div></div>;
+}
+
+export function InventoryPage() {
+  const { currentStoreId } = useAppContext(); const [items, setItems] = useState<InventoryItem[]>([]);
+  useEffect(() => { void inventoryService.list(currentStoreId).then(setItems); }, [currentStoreId]);
+  return <div className="page"><p className="eyebrow">Operação</p><h1>Estoque</h1><p className="page-intro">Saldo local por loja. As movimentações são registradas no armazenamento offline.</p><div className="list-card">{items.length ? items.map((item) => <article className="list-row" key={item.id}><div><strong>{item.name}</strong><span>Mínimo: {item.minimumQuantity}</span></div><span className="badge">{item.quantity} em estoque</span></article>) : <p className="empty-state">Nenhum item cadastrado nesta loja.</p>}</div></div>;
+}
+
+export function CashPage() {
+  const { currentStoreId } = useAppContext(); const [session, setSession] = useState<CashSession>(); const [openingBalance, setOpeningBalance] = useState(""); const [error, setError] = useState("");
+  async function refresh() { setSession(await new LocalCashRepository().current(currentStoreId)); }
+  useEffect(() => { void refresh(); }, [currentStoreId]);
+  async function open(event: React.FormEvent) { event.preventDefault(); try { await cashService.open(currentStoreId, Number(openingBalance || 0)); setError(""); await refresh(); } catch (reason) { setError(reason instanceof Error ? reason.message : "Não foi possível abrir o caixa."); } }
+  return <div className="page"><p className="eyebrow">Financeiro</p><h1>Caixa</h1>{session ? <Card><h2>Caixa aberto</h2><p>Saldo inicial: R$ {session.openingBalance.toFixed(2)}</p><p className="help-text">Aberto em {new Date(session.openedAt).toLocaleString("pt-BR")}.</p></Card> : <form className="settings-form" onSubmit={open}><label>Saldo inicial<Input type="number" min="0" step="0.01" value={openingBalance} onChange={(event) => setOpeningBalance(event.target.value)} /></label><Button type="submit">Abrir caixa</Button>{error && <span className="error-text">{error}</span>}</form>}</div>;
+}
+
+export function PaymentsPage() {
+  const { currentStoreId } = useAppContext(); const [sales, setSales] = useState<Sale[]>([]); const [error, setError] = useState("");
+  async function refresh() { setSales((await salesService.list(currentStoreId)).filter((sale) => sale.status === "CONFIRMED")); }
+  useEffect(() => { void refresh(); }, [currentStoreId]);
+  async function receive(sale: Sale) { try { await cashService.receive(currentStoreId, sale.id, sale.total); setError(""); } catch (reason) { setError(reason instanceof Error ? reason.message : "Não foi possível registrar o recebimento."); } }
+  return <div className="page"><p className="eyebrow">Financeiro</p><div className="page-title"><div><h1>Pagamentos</h1><p className="page-intro">Registre o recebimento de vendas confirmadas no caixa aberto.</p></div><Link className="button" to="/caixa">Abrir caixa</Link></div>{error && <p className="error-text">{error}</p>}<div className="list-card">{sales.length ? sales.map((sale) => <article className="list-row" key={sale.id}><div><strong>{sale.description}</strong><span>Venda confirmada</span></div><div><span className="badge">R$ {sale.total.toFixed(2)}</span><Button type="button" onClick={() => void receive(sale)}>Receber</Button></div></article>) : <p className="empty-state">Nenhuma venda confirmada aguardando pagamento.</p>}</div></div>;
 }
 
 export function ClinicalWorkspacePage() {

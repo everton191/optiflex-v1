@@ -2,7 +2,7 @@ import { NavLink, Outlet } from "react-router-dom";
 import { useAppContext } from "../app/providers";
 import { Can } from "../app/permissions";
 
-const mainLinks = [{ to: "/", label: "Visão geral" }, { to: "/clientes", label: "Clientes" }, { to: "/atendimentos", label: "Atendimentos" }, { to: "/vendas", label: "Vendas" }];
+const mainLinks = [{ to: "/", label: "Visão geral" }, { to: "/clientes", label: "Clientes" }, { to: "/atendimentos", label: "Atendimentos" }, { to: "/clinico", label: "Prontuário clínico" }, { to: "/vendas", label: "Vendas" }, { to: "/pagamentos", label: "Pagamentos" }, { to: "/caixa", label: "Caixa" }, { to: "/estoque", label: "Estoque" }];
 
 export function AppShell() {
   const { settings, session, stores, currentStoreId, selectStore } = useAppContext();

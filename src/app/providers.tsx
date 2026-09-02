@@ -29,11 +29,22 @@ export function AppProviders({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     async function load() {
-      await administrationService.initialize();
-      const [loadedSettings, loadedSession, loadedStores, loadedUsers, currentStore] = await Promise.all([
-        settingsRepository.get(), sessionRepository.get(), administrationService.listStores(), administrationService.listUsers(), administrationService.currentStore()
-      ]);
-      setSettings(loadedSettings); setSession(loadedSession); setStores(loadedStores); setUsers(loadedUsers); setCurrentStoreId(currentStore.storeId); setIsReady(true);
+      try {
+        await administrationService.initialize();
+        const [loadedSettings, loadedSession, loadedStores, loadedUsers, currentStore] = await Promise.all([
+          settingsRepository.get(), sessionRepository.get(), administrationService.listStores(), administrationService.listUsers(), administrationService.currentStore()
+        ]);
+        setSettings(loadedSettings); setSession(loadedSession); setStores(loadedStores); setUsers(loadedUsers); setCurrentStoreId(currentStore.storeId);
+      } catch (reason) {
+        console.error("Não foi possível inicializar o armazenamento local.", reason);
+        setSettings({ id: "current", organizationName: "Opticore", clinicalProfessionalLabel: "Profissional clínico" });
+        setSession({ id: "current", userName: "Administrador local", role: "OWNER" });
+        setStores([{ id: "store-local", name: "Loja local", active: true }]);
+        setUsers([]);
+        setCurrentStoreId("store-local");
+      } finally {
+        setIsReady(true);
+      }
     }
     void load();
   }, []);
