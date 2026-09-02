@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAppContext } from "./providers";
 import { Button, Card, Input } from "../design-system/components";
+import { roleDefinitions } from "../domain/access";
 
 export function DashboardPage() {
   const { settings, session } = useAppContext();
@@ -18,6 +19,16 @@ export function SettingsPage() {
     <p className="help-text">Este rótulo não altera permissões. O perfil interno permanece <code>CLINICAL_PROFESSIONAL</code>.</p>
     <Button type="submit">Salvar localmente</Button>{saved && <span className="success">Configuração salva neste dispositivo.</span>}
   </form></div>;
+}
+
+export function UsersPage() {
+  const { users, stores } = useAppContext();
+  const storeName = (storeId: string) => stores.find((store) => store.id === storeId)?.name ?? "Sem loja";
+  return <div className="page"><p className="eyebrow">Administração</p><h1>Usuários</h1><p className="page-intro">Acesso é definido por perfil e escopo; cargos exibidos não concedem permissões.</p><div className="list-card">{users.map((user) => <article className="list-row" key={user.id}><div><strong>{user.name}</strong><span>{user.email}</span></div><div><span className="badge">{roleDefinitions.find((role) => role.key === user.role)?.label}</span><small>{user.scope} · {user.storeIds.map(storeName).join(", ")}</small></div></article>)}</div></div>;
+}
+
+export function ProfilesPage() {
+  return <div className="page"><p className="eyebrow">Administração</p><h1>Perfis e permissões</h1><p className="page-intro">Perfis são técnicos; as verificações de acesso nunca dependem do nome de uma profissão.</p><div className="list-card">{roleDefinitions.map((role) => <article className="list-row role-row" key={role.key}><div><strong>{role.label}</strong><span><code>{role.key}</code> · escopo {role.scope}</span></div><small>{role.permissions.join(" · ")}</small></article>)}</div></div>;
 }
 
 export function ForbiddenPage() { return <div className="page"><h1>Acesso não permitido</h1><p>Seu perfil atual não possui esta permissão.</p></div>; }
