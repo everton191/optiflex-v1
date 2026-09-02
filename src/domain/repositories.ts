@@ -4,6 +4,7 @@ import type { ClinicalRecord } from "./clinical";
 import type { Sale } from "./sales";
 import type { WorkOrder } from "./work-order";
 import type { InventoryItem, InventoryMovement } from "./inventory";
+import type { CashEntry, CashSession } from "./cash";
 
 export interface SettingsRepository {
   get(): Promise<OrganizationSettings>;
@@ -57,4 +58,10 @@ export interface InventoryRepository {
   listByStore(storeId: string): Promise<InventoryItem[]>;
   saveItem(item: InventoryItem): Promise<void>;
   addMovement(movement: InventoryMovement): Promise<void>;
+}
+
+export interface CashRepository {
+  current(storeId: string): Promise<CashSession | undefined>;
+  saveSession(session: CashSession): Promise<void>;
+  addEntry(entry: CashEntry): Promise<void>;
 }

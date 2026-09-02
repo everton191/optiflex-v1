@@ -4,7 +4,8 @@ import type { ClinicalRecord } from "../../domain/clinical";
 import type { Sale } from "../../domain/sales";
 import type { WorkOrder } from "../../domain/work-order";
 import type { InventoryItem, InventoryMovement } from "../../domain/inventory";
-import type { AdministrationRepository, AttendanceRepository, ClinicalRepository, CustomerRepository, InventoryRepository, SaleRepository, SessionRepository, SettingsRepository, WorkOrderRepository } from "../../domain/repositories";
+import type { CashEntry, CashSession } from "../../domain/cash";
+import type { AdministrationRepository, AttendanceRepository, CashRepository, ClinicalRepository, CustomerRepository, InventoryRepository, SaleRepository, SessionRepository, SettingsRepository, WorkOrderRepository } from "../../domain/repositories";
 import { database } from "./database";
 
 const defaultSettings: OrganizationSettings = {
@@ -90,4 +91,10 @@ export class LocalInventoryRepository implements InventoryRepository {
   async listByStore(storeId: string): Promise<InventoryItem[]> { return database.inventoryItems.where("storeId").equals(storeId).sortBy("name"); }
   async saveItem(item: InventoryItem): Promise<void> { await database.inventoryItems.put(item); }
   async addMovement(movement: InventoryMovement): Promise<void> { await database.inventoryMovements.put(movement); }
+}
+
+export class LocalCashRepository implements CashRepository {
+  async current(storeId: string): Promise<CashSession | undefined> { return database.cashSessions.where("storeId").equals(storeId).filter((session) => !session.closedAt).first(); }
+  async saveSession(session: CashSession): Promise<void> { await database.cashSessions.put(session); }
+  async addEntry(entry: CashEntry): Promise<void> { await database.cashEntries.put(entry); }
 }
