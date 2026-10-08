@@ -21,12 +21,12 @@ Fonte canônica: `src/domain/access.ts`. Guards: `src/app/permissions.tsx`. Rota
 | `attendance.create` | attendance | criar atendimento | role | ação existente, sem guard interno separado |
 | `attendance.queue.read` | attendance | consultar fila | role | service; rota usa `attendance.read` |
 | `clinical.workspace.access` | clinical | abrir área clínica | role | `/clinico`, `/clinico/atendimento/:attendanceId` |
-| `sales.read` | sales | consultar vendas | role | aba no `/caixa` |
-| `sales.manage` | sales | criar/confirmar venda | role | ações no `/caixa` |
+| `sales.read` | sales | consultar vendas | role | aba no `/caixa`; rota `/ordens-servico` |
+| `sales.manage` | sales | criar/confirmar venda | role | ações no `/caixa`; transições e prazo em `/ordens-servico` |
 | `cash.read` | cash | acessar caixa | role | `/caixa` |
 | `cash.manage` | cash | abrir/receber | role | ações no `/caixa` |
 | `inventory.read` | inventory | consultar estoque | role | `/estoque` |
-| `inventory.manage` | inventory | movimentar estoque | role | service; sem ação na UI |
+| `inventory.manage` | inventory | movimentar estoque | role | ações no `/estoque` |
 
 O escopo (`SELF`, `STORE`, `ORGANIZATION`, `NETWORK`) pertence à definição da role/usuário. Os repositories filtram principalmente por `storeId`; não existe enforcement completo de escopo dentro de cada repository.
 

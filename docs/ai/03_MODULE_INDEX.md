@@ -102,14 +102,14 @@ Os módulos abaixo são responsabilidades reais encontradas. Como ainda não há
 
 ## Work Orders
 
-- Responsabilidade: criar uma ordem idempotente a partir de venda confirmada.
-- Rota/página própria: inexistente; ação na aba Vendas de `/caixa`.
-- Service: `WorkOrderService`.
-- Repository: `WorkOrderRepository` / `LocalWorkOrderRepository`.
-- Model: `WorkOrder`, `WorkOrderStatus`.
-- Dependências: sales.
-- Usado por: `CashDeskPage`.
-- Risco: a UI não possui gestão do ciclo de produção/entrega.
+- Responsabilidade: criar, produzir e entregar ordens com prazo e observações.
+- Rota/página: `/ordens-servico` (`src/app/WorkOrdersWorkspace.tsx`); criação rápida também na aba Vendas de `/caixa`.
+- Service: `WorkOrderService` (`list`, `getBySale`, `createFromConfirmedSale`, `transition`, `schedule`).
+- Repository: `WorkOrderRepository` / `LocalWorkOrderRepository` (criação atômica por `saleId` e atualização transacional com guarda de status obsoleto).
+- Model: `WorkOrder` (`dueAt?`, `notes?`, `updatedAt?`, `updatedBy?`), `WorkOrderStatus`, `workOrderTransitions`.
+- Dependências: sales, customers, store context, sessão (autor).
+- Usado por: `WorkOrdersPage` e `CashDeskPage`.
+- Risco: sem histórico completo de eventos e sem vínculo com itens de estoque/laboratório.
 - Docs: `modules/work-orders/MODULE.md` e `AI_CONTEXT.md`.
 
 ## Inventory

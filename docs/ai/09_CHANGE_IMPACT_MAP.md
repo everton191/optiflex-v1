@@ -59,15 +59,15 @@ Verificar `CashService`, `CashRepository`, `CashSession`, `LocalCashRepository`,
 
 ## Alterar recebimento
 
-Verificar `CashService.receive`, `CashEntry`, cash repository e aba Recebimentos. Hoje a venda não recebe status pago durável.
+Verificar `CashService.receive`, `CashEntry`, cash repository e aba Recebimentos. A venda mantém `paymentStatus` durável (`PENDING`/`PAID`) e o recebimento grava a entrada na mesma transação.
 
 ## Alterar ordem de serviço
 
-Verificar `WorkOrderService`, `WorkOrder`, repository e ação na aba Vendas. A criação exige venda `CONFIRMED` e é idempotente por `saleId`.
+Verificar `WorkOrderService`, `WorkOrder`, `LocalWorkOrderRepository` e `WorkOrdersWorkspace`. A criação exige venda `CONFIRMED` e é atômica por `saleId`; transições e prazo passam pela mesma transação.
 
 ## Alterar estoque
 
-Verificar `InventoryPage`, `InventoryService.adjust`, modelos, repository e tabelas `inventoryItems`/`inventoryMovements`. Cadastro/movimentação não estão expostos na UI.
+Verificar `InventoryWorkspace`, `InventoryService`, modelos, repository e tabelas `inventoryItems`/`inventoryMovements`. Cadastro e movimentação estão expostos na UI; o saldo nunca é editado diretamente.
 
 ## Alterar IndexedDB/schema
 

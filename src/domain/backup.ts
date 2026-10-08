@@ -38,7 +38,7 @@ export function validateBackup(value: unknown): BackupSnapshot {
         for (const field of ["expectedBalance", "closingBalance"]) if (row[field] !== undefined && (typeof row[field] !== "number" || !Number.isFinite(row[field]) || (row[field] as number) < 0)) throw invalid();
         if (row.difference !== undefined && (typeof row.difference !== "number" || !Number.isFinite(row.difference))) throw invalid();
       }
-      for (const field of ["cpf", "phone", "birthDate", "email", "receptionNotes", "closedAt", "closedBy", "closingNote", "code", "author"]) if (row[field] !== undefined && typeof row[field] !== "string") throw invalid();
+      for (const field of ["cpf", "phone", "birthDate", "email", "receptionNotes", "closedAt", "closedBy", "closingNote", "code", "author", "updatedAt", "updatedBy", "dueAt", "notes"]) if (row[field] !== undefined && typeof row[field] !== "string") throw invalid();
       if (name === "clinicalRecords" || name === "clinicalVersions") {
         if (!Array.isArray(row.attachments) || row.attachments.some((item) => !object(item) || typeof item.id !== "string" || typeof item.name !== "string" || typeof item.mimeType !== "string" || typeof item.size !== "number" || typeof item.createdAt !== "string")) throw invalid();
         for (const field of ["revision", "version"]) if (row[field] !== undefined && (!Number.isSafeInteger(row[field]) || (row[field] as number) < (field === "version" ? 1 : 0))) throw invalid();

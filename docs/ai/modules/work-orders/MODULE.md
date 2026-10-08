@@ -2,47 +2,47 @@
 
 ## Purpose
 
-Criar uma ordem de serviço única a partir de uma venda confirmada.
+Criar uma ordem única por venda confirmada e acompanhar produção, prazo e entrega.
 
 ## Directory
 
-Domínio em `src/domain/work-order.ts` e `work-order-service.ts`; UI dentro de `CashDeskPage`; repository em storage.
+Domínio em `src/domain/work-order.ts` e `work-order-service.ts`; página em `src/app/WorkOrdersWorkspace.tsx` (re-exportada em `pages.tsx`); ação de criação também em `CashDeskPage`.
 
 ## Routes
 
-Não possui rota própria. A ação está em `/caixa`, aba Vendas.
+- `/ordens-servico` (guard: `sales.read`).
 
 ## Main Pages
 
-Não há página própria; `CashDeskPage` é a consumidora.
+`WorkOrdersPage`: filtros por status, criação a partir de vendas confirmadas sem ordem, transições de status, prazo e observações.
 
 ## Components
 
-Button e feedback na lista de vendas.
+Botões de transição, filtros `.status-filters`, formulário `.orders-form` e Badge de status.
 
 ## Services
 
-`WorkOrderService.list`, `createFromConfirmedSale`.
+`WorkOrderService.list`, `getBySale`, `createFromConfirmedSale`, `transition`, `schedule`.
 
 ## Repositories
 
-`WorkOrderRepository` / `LocalWorkOrderRepository`.
+`WorkOrderRepository` / `LocalWorkOrderRepository`: `create` atômico por `saleId` e `update` transacional com `expectedStatus`.
 
 ## Stores / Hooks
 
-Sem store/hook. Lista fica no estado do `CashDeskPage`.
+Sem store/hook; estado local + `currentStoreId` + `session.userName`.
 
 ## Models
 
-`WorkOrder`, `WorkOrderStatus`.
+`WorkOrder` (`status`, `dueAt?`, `notes?`, `updatedAt?`, `updatedBy?`), `WorkOrderStatus`, `workOrderStatusLabels`, `workOrderTransitions`, `canTransition`.
 
 ## Permissions
 
-Não há permission específica; ação é exibida sob `sales.manage`.
+`sales.read` para a rota; `sales.manage` para criação, transições e prazo.
 
 ## Dependencies
 
-Sale confirmada e store/customer IDs da venda.
+Sales confirmadas, clientes, loja atual e sessão.
 
 ## Public API
 
@@ -50,29 +50,31 @@ Sale confirmada e store/customer IDs da venda.
 
 ## Files Normally Modified
 
-- Regra: `work-order-service.ts`.
-- Estado/modelo: `work-order.ts`.
+- Página: `src/app/WorkOrdersWorkspace.tsx`.
+- Fluxo/validações: `work-order-service.ts`.
+- Transições: `work-order.ts`.
 - Persistência: `LocalWorkOrderRepository`.
-- Ação visual: `CashDeskPage`.
+- Menu/rota: `AppShell.tsx`, `router.tsx`.
+- Backup: campos opcionais em `backup.ts`.
 
 ## Avoid Modifying
 
-Não remover verificação de venda confirmada ou idempotência por `saleId`.
+Não pular estados nem criar mais de uma ordem por venda. Não editar `createdAt`/`saleId`/`customerId`/`storeId` em atualização.
 
 ## Common Tasks
 
-### Alterar criação
+### Alterar transições
 
-→ `createFromConfirmedSale` + repository + testes.
+→ `workOrderTransitions` + `WorkOrderService.transition` + testes.
 
-### Alterar status
+### Alterar prazo/observações
 
-→ WorkOrderStatus + futura UI de produção.
+→ `WorkOrderService.schedule` + `WorkOrdersWorkspace`.
 
-### Criar página de acompanhamento
+### Alterar persistência
 
-→ nova rota/permission/page em tarefa funcional própria.
+→ contrato + `LocalWorkOrderRepository` + nova versão Dexie apenas se mudar índices.
 
 ## Related Modules
 
-Sales e, futuramente, inventory/laboratories.
+Sales (origem da venda), dashboard (próxima fase) e futuramente inventory/laboratório.

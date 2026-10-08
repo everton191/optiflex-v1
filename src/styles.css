@@ -142,6 +142,17 @@ textarea { min-height: 6rem; }
 .inventory-form .form-actions, .inventory-form .help-text { grid-column: 1 / -1; }
 .badge.is-low { background: color-mix(in srgb, var(--color-focus), transparent 88%); color: var(--color-focus) !important; }
 .badge.is-out { background: color-mix(in srgb, #a12525, transparent 90%); color: #a12525 !important; }
+.status-filters { display: flex; flex-wrap: wrap; gap: var(--space-1); width: max-content; max-width: 100%; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-1); background: var(--color-surface); margin-block: var(--space-4); }
+.status-filters button { min-height: 2.25rem; border: 0; border-radius: var(--radius-sm); padding: 0 var(--space-4); background: transparent; color: var(--color-muted); font-weight: 700; cursor: pointer; }
+.status-filters button.active { background: var(--color-brand); color: white; }
+.status-filters button span { color: inherit; opacity: .75; margin-left: var(--space-1); }
+.work-order-row { flex-wrap: wrap; }
+.work-order-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--space-2); }
+.orders-form { flex: 1 1 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: var(--space-3); align-items: end; padding-top: var(--space-3); border-top: 1px dashed var(--color-border); }
+.orders-form label { display: grid; gap: var(--space-2); font-weight: 600; }
+.orders-form .form-actions { display: flex; gap: var(--space-2); grid-column: 1 / -1; }
+.work-order-notes { overflow-wrap: anywhere; }
+.list-row .error-text { color: #a12525; }
 
 @media (max-width: 720px), (min-width: 721px) and (max-width: 1024px) and (orientation: portrait) {
   .user-summary { display: none; }

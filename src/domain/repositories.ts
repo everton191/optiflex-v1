@@ -2,7 +2,7 @@ import type { CurrentStoreContext, LocalSession, OrganizationSettings, Store, Us
 import type { Attendance, Customer } from "./customer";
 import type { ClinicalRecord, ClinicalVersion } from "./clinical";
 import type { Sale } from "./sales";
-import type { WorkOrder } from "./work-order";
+import type { WorkOrder, WorkOrderStatus } from "./work-order";
 import type { InventoryItem, InventoryMovement } from "./inventory";
 import type { CashEntry, CashSession } from "./cash";
 
@@ -53,7 +53,8 @@ export interface SaleRepository {
 export interface WorkOrderRepository {
   listByStore(storeId: string): Promise<WorkOrder[]>;
   getBySale(saleId: string): Promise<WorkOrder | undefined>;
-  save(order: WorkOrder): Promise<void>;
+  create(order: WorkOrder): Promise<WorkOrder>;
+  update(order: WorkOrder, expectedStatus?: WorkOrderStatus): Promise<WorkOrder>;
 }
 
 export interface InventoryRepository {

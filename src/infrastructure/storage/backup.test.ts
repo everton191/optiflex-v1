@@ -67,4 +67,15 @@ describe("encrypted backup and transactional restore", () => {
     const payment = structuredClone(snapshot); payment.tables.sales[0].paymentStatus = "RECEIVED";
     expect(() => validateBackup(payment)).toThrow("inválido");
   });
+  it("accepts order scheduling fields and rejects invalid optional values", async () => {
+    const snapshot = await repository.snapshot();
+    snapshot.tables.customers.push({ id: "customer-os", name: "Cliente OS", createdAt: "2026-01-01T09:00:00.000Z" });
+    snapshot.tables.sales.push({ id: "sale-os", customerId: "customer-os", storeId: "store-centro", status: "CONFIRMED", description: "Armação", total: 300, createdAt: "2026-01-01T11:00:00.000Z" });
+    snapshot.tables.workOrders.push({ id: "os-x", saleId: "sale-os", storeId: "store-centro", customerId: "customer-os", status: "OPEN", createdAt: "2026-01-01T12:00:00.000Z", dueAt: "2026-02-01T12:00:00.000Z", notes: "Prazo combinado", updatedBy: "Operador", updatedAt: "2026-01-01T12:30:00.000Z" });
+    expect(() => validateBackup(snapshot)).not.toThrow();
+    const badPrazo = structuredClone(snapshot); badPrazo.tables.workOrders[0].dueAt = 123;
+    expect(() => validateBackup(badPrazo)).toThrow("inválido");
+    const badStatus = structuredClone(snapshot); badStatus.tables.workOrders[0].status = "PAUSED";
+    expect(() => validateBackup(badStatus)).toThrow("inválido");
+  });
 });

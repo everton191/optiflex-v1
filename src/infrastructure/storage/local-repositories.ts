@@ -2,7 +2,7 @@ import type { CurrentStoreContext, LocalSession, OrganizationSettings, Store, Us
 import type { Attendance, Customer } from "../../domain/customer";
 import type { ClinicalRecord } from "../../domain/clinical";
 import type { Sale } from "../../domain/sales";
-import type { WorkOrder } from "../../domain/work-order";
+import type { WorkOrder, WorkOrderStatus } from "../../domain/work-order";
 import type { InventoryItem, InventoryMovement } from "../../domain/inventory";
 import type { CashEntry, CashSession } from "../../domain/cash";
 import { cashTotals } from "../../domain/cash";
@@ -134,7 +134,24 @@ export class LocalSaleRepository implements SaleRepository {
 export class LocalWorkOrderRepository implements WorkOrderRepository {
   async listByStore(storeId: string): Promise<WorkOrder[]> { return database.workOrders.where("storeId").equals(storeId).reverse().sortBy("createdAt"); }
   async getBySale(saleId: string): Promise<WorkOrder | undefined> { return database.workOrders.where("saleId").equals(saleId).first(); }
-  async save(order: WorkOrder): Promise<void> { await database.workOrders.put(order); }
+  async create(order: WorkOrder): Promise<WorkOrder> {
+    return database.transaction("rw", database.workOrders, async () => {
+      const existing = await database.workOrders.where("saleId").equals(order.saleId).first();
+      if (existing) return existing;
+      await database.workOrders.put(order);
+      return order;
+    });
+  }
+  async update(order: WorkOrder, expectedStatus?: WorkOrderStatus): Promise<WorkOrder> {
+    return database.transaction("rw", database.workOrders, async () => {
+      const current = await database.workOrders.get(order.id);
+      if (!current || current.storeId !== order.storeId) throw new Error("Ordem não encontrada nesta loja.");
+      if (expectedStatus && current.status !== expectedStatus) throw new Error("A ordem foi alterada em outra sessão. Recarregue a lista.");
+      const updated: WorkOrder = { ...current, ...order, createdAt: current.createdAt, saleId: current.saleId, customerId: current.customerId, storeId: current.storeId };
+      await database.workOrders.put(updated);
+      return updated;
+    });
+  }
 }
 
 export class LocalInventoryRepository implements InventoryRepository {

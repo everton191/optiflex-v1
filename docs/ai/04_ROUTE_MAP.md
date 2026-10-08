@@ -13,6 +13,7 @@ Todas as rotas usam `AppShell`. A configuração canônica está em `src/app/rou
 | `/clinico/atendimento/:attendanceId` | `ClinicalWorkspacePage` | clinical | `clinical.workspace.access` | AppShell |
 | `/caixa` | `CashDeskPage` | cash/sales | `cash.read` | AppShell |
 | `/estoque` | `InventoryPage` | inventory | `inventory.read` | AppShell |
+| `/ordens-servico` | `WorkOrdersPage` | work-orders | `sales.read` | AppShell |
 | `/vendas` | redirect para `/caixa` | sales | guard aplicado no destino | AppShell |
 | `/pagamentos` | redirect para `/caixa` | cash | guard aplicado no destino | AppShell |
 | `/admin/usuarios` | `UsersPage` | administration | `users.read` | AppShell |
