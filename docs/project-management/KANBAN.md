@@ -56,7 +56,7 @@ Classificação de inventário (Etapa 4) no corpo de cada card:
 
 - Issues totais: **155** (8 épicas + 147 tarefas).
 - Tarefas por fase: F1=14 · F2=18 · F3=20 · F4=20 · F5=19 · F6=19 · F7=19 · F8=18.
-- Tarefas por status (revisado em 08/10/2026): DONE=18 · IN PROGRESS=1 · READY=39 · TESTING=0 · CODE REVIEW=0 · BACKLOG=39 · BLOCKED=50.
+- Tarefas por status (revisado em 08/10/2026; F1-09 concluída no mesmo dia): DONE=19 · IN PROGRESS=1 · READY=38 · TESTING=0 · CODE REVIEW=0 · BACKLOG=39 · BLOCKED=50.
 - Bloqueios: **50 tarefas** bloqueadas — 47 por dependência de fase futura/externa + **3 reclassificadas em 08/10** (F4-13 #70, F8-03 #137, F3-20 #57: status desatualizado, decisão externa já registrada).
 - **Revisão de dependências 08/10/2026:** 7 ciclos detectados (SCC/Tarjan sobre este arquivo) e corrigidos em KANBAN + corpos das issues; **0 ciclos remanescentes**. Detalhe antes/depois em `DEPENDENCIES.md`.
 
@@ -83,7 +83,7 @@ Regra de ouro: **nunca mover para DONE sem evidência verificável** (comando de
 | F1-06 | [Modelos de produtos, itens de venda e pagamentos](https://github.com/everton191/optiflex-v1/issues/14) | Infraestrutura | READY | p1 | F4-09 (recebimentos, concluído). Ciclo corrigido 08/10: F2-11 depende de F1-06. |
 | F1-07 | [Modelos de prescrições e ordens de serviço](https://github.com/everton191/optiflex-v1/issues/15) | Infraestrutura | READY | p1 | nenhuma. Ciclo corrigido 08/10: F3-06/F3-07 dependem de F1-07. |
 | F1-08 | [Estratégia de migração do IndexedDB](https://github.com/everton191/optiflex-v1/issues/16) | Infraestrutura | DONE | p1 | nenhuma. |
-| F1-09 | [Valores monetários e precisão decimal](https://github.com/everton191/optiflex-v1/issues/17) | Infraestrutura | READY | p1 | nenhuma. |
+| F1-09 | [Valores monetários e precisão decimal](https://github.com/everton191/optiflex-v1/issues/17) | Infraestrutura | DONE | p1 | nenhuma. Concluído 08/10/2026 (`7dc1d7b`, 115 testes). |
 | F1-10 | [Auditoria de alterações](https://github.com/everton191/optiflex-v1/issues/18) | Infraestrutura | BACKLOG | p1 | F1-02 (contrato), F2-05 (permissões por loja). |
 | F1-11 | [Permissões e autorização](https://github.com/everton191/optiflex-v1/issues/19) | Access | READY | p0 | F7-02 (login local identidade). |
 | F1-12 | [Tratamento global de erros](https://github.com/everton191/optiflex-v1/issues/20) | Infraestrutura | BACKLOG | p1 | nenhuma. Ciclo corrigido 08/10: F7-11 depende de F1-12. |
@@ -280,7 +280,7 @@ Ordem recomendada para a próxima sessão de desenvolvimento (status READY/IN PR
 | 7 | F4-10 | #67 | [Cash] Formas de pagamento | P1 | F4-9 (feito), F1-08 | Pré-requisito de parciais, cartão e conciliação. |
 | 8 | F4-12 | #69 | [Cash] Pagamentos parciais | P1 | F4-10, F1-09 | Saldo pendente já existe; falta entrada de valor parcial. |
 | 9 | F2-06 | #28 | [Customers] Edição de clientes | P1 | F1-03 | Cadastro sem edição é lacuna visível na operação. |
-| 10 | F1-09 | #17 | [Infraestrutura] Valores monetários e precisão decimal | P1 | — | Regra única de centavos evita divergência em parcelas/relatórios (F4-13 exige). |
+| 10 | F1-02 | #10 | [Infraestrutura] Definição de entidades e contratos | P1 | F1-09 (feito) | Desbloqueado pela conclusão de F1-09; contratos base citados por F3-10 e F4-11. |
 
 Os `#?` devem ser resolvidos pela tabela acima (coluna ID → link da issue). Os números já estão fixados nas tabelas das fases; para referência rápida: consulte `DEPENDENCIES.md`.
 

@@ -51,7 +51,7 @@ F1-06 modelos produto/pagamento (OBR)
        └─ F2-15 campos fiscais do produto (OBR p/ F6)
             └─ F6-04 NCM/CFOP (OBR)
                  └─ F6-07 NF-e / F6-08 NFC-e (OBR p/ emissão)
-F1-09 precisão decimal (OBR p/ F4-13 parcelas)
+F1-09 precisão decimal (FEITO 08/10 — OBR p/ F4-13 parcelas)
 ```
 
 ### 2. Venda confirmada → pagamentos → caixa → relatórios

@@ -2,6 +2,16 @@
 
 Registro de entregas relevantes. Formato: data · commit · escopo · evidência.
 
+## 08/10/2026
+
+### `7dc1d7b` — feat: enforce single money rounding rule (F1-09 precisão monetária)
+
+- Novo `src/domain/money.ts`: regra única (`isMoney`, `requireMoney`, `toCents`, `fromCents`, `roundMoney`) — fronteira em reais finitos, cálculo em centavos inteiros.
+- `itemsTotalCents` + `itemsTotal` via centavos (0.1 + 0.2 = 0.3 exato); helpers locais `cents`/`money` removidos de `cash.ts`/`cash-service.ts` em favor do compartilhado.
+- Correções de fuga: `createQuote` rejeitava `NaN`/`Infinity` (`NaN <= 0` é falso); `confirm` agora valida total e itens; `stockState` trata saldo não finito como `OUT`.
+- Evidência: `npm.cmd test` **115/115** (15 arquivos; novos `money.test.ts` com 10 casos), build 0, tsc 0.
+- Card: F1-09/#17 → DONE.
+
 ## 07/10/2026
 
 ### `d6ab1d4` — feat: deduct stock when confirming sales with items (Fase E do fluxo operacional)

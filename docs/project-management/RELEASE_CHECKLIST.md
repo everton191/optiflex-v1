@@ -7,7 +7,7 @@ Nenhuma versão é liberada com apenas "build verde".
 
 - [ ] Branch e escopo revisados (`git log` da release, `git status` limpo).
 - [ ] Toda feature ligada a Issue com `status/done` e evidência de teste no card.
-- [ ] `npm.cmd test` → 100% verde (números atuais: 101/101 em `d6ab1d4`).
+- [ ] `npm.cmd test` → 100% verde (números atuais: 115/115 em `7dc1d7b`).
 - [ ] `npm.cmd run build` → exit 0.
 - [ ] `npx.cmd tsc -b --pretty false` → exit 0.
 - [ ] Sem segredos/credenciais no repositório (varredura).

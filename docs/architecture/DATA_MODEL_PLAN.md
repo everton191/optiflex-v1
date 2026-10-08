@@ -23,7 +23,7 @@ Atualizado em: 07/10/2026 · Base: `d6ab1d4` (schema IndexedDB `opticore-v1` v9)
 1. **Todo modelo novo** nasce com: tipo em `src/domain/`, contrato em `repositories.ts`, teste de domínio, entrada em backup (`src/infrastructure/storage/backup.ts`) quando persistido.
 2. **Migração Dexie:** campo opcional **sem índice** → sem bump de versão (regra adotada nas fases A–E). Índice novo ou mudança de tipo → bump + teste de upgrade com registros (`database.test.ts`).
 3. **Nunca recriar o banco** `opticore-v1`; migração incremental sempre.
-4. **Precisão monetária:** cálculos em centavos inteiros (`paidCents`/`pendingCents` já são o padrão); validar finitude e não-negatividade no domínio (F1-09).
+4. **Precisão monetária (F1-09 — concluído em 08/10/2026, `7dc1d7b`):** regra única em `src/domain/money.ts` — fronteira sempre em reais finitos (`requireMoney`/`isMoney`), cálculo em centavos inteiros (`toCents`/`fromCents`, arredondamento `Math.round` aplicado na linha/orçamento), soma apenas de centavos (`itemsTotalCents`, `paidCents`, `cashTotals`); NaN/Infinity rejeitados na fronteira dos serviços (`createQuote`, `confirm`, caixa). **Não usar arredondamento ad-hoc** (`Math.round(x*100)/100`) fora de `money.ts`.
 5. **`organizationId` opcional** nos novos registros até a Fase 5 (F1-05), para não travar o multiempresa depois.
 6. **Cancelamento não destrutivo:** status + motivo + autor; nunca apagar registro financeiro/clínico.
 
