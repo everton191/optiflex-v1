@@ -309,7 +309,7 @@ Os `#?` devem ser resolvidos pela tabela acima (coluna ID → link da issue). Os
 
 Quando um agente iniciar nova sessão:
 
-1. Confirmar pasta `C:\Users\PAESS\OneDrive\Documentos\erpNE3d\apps\opticore`, branch e `git status`.
+1. Confirmar a pasta local do projeto, branch e `git status`.
 2. Ler `AGENTS.md`.
 3. Ler `docs/project-management/PROJECT_STATUS.md`.
 4. Consultar este quadro (coluna READY / IN PROGRESS).
