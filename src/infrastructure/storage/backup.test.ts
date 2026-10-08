@@ -54,4 +54,17 @@ describe("encrypted backup and transactional restore", () => {
     await expect(repository.restore(replacement)).rejects.toThrow();
     expect((await repository.snapshot()).tables).toEqual(original.tables);
   });
+  it("accepts closed cash sessions and rejects inconsistent payment or closing values", async () => {
+    const snapshot = await repository.snapshot();
+    snapshot.tables.cashSessions.push({ id: "cash-x", storeId: "store-centro", openedAt: "2026-01-01T10:00:00.000Z", closedAt: "2026-01-01T18:00:00.000Z", openingBalance: 100, expectedBalance: 400, closingBalance: 415, difference: 15, closedBy: "Operadora", closingNote: "conferido" });
+    snapshot.tables.customers.push({ id: "customer-x", name: "Cliente", createdAt: "2026-01-01T09:00:00.000Z" });
+    snapshot.tables.sales.push({ id: "sale-x", customerId: "customer-x", storeId: "store-centro", status: "CONFIRMED", paymentStatus: "PAID", description: "Armação", total: 300, createdAt: "2026-01-01T11:00:00.000Z" });
+    expect(() => validateBackup(snapshot)).not.toThrow();
+    const negative = structuredClone(snapshot); negative.tables.cashSessions[0].closingBalance = -1;
+    expect(() => validateBackup(negative)).toThrow("inválido");
+    const uncounted = structuredClone(snapshot); uncounted.tables.cashSessions[0].difference = "15";
+    expect(() => validateBackup(uncounted)).toThrow("inválido");
+    const payment = structuredClone(snapshot); payment.tables.sales[0].paymentStatus = "RECEIVED";
+    expect(() => validateBackup(payment)).toThrow("inválido");
+  });
 });

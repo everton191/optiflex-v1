@@ -46,6 +46,7 @@ export interface ClinicalRepository {
 
 export interface SaleRepository {
   listByStore(storeId: string): Promise<Sale[]>;
+  get(id: string): Promise<Sale | undefined>;
   save(sale: Sale): Promise<void>;
 }
 
@@ -61,8 +62,17 @@ export interface InventoryRepository {
   addMovement(movement: InventoryMovement): Promise<void>;
 }
 
+export interface CashCloseInput {
+  closingBalance: number;
+  closedBy?: string;
+  note?: string;
+}
+
 export interface CashRepository {
   current(storeId: string): Promise<CashSession | undefined>;
-  saveSession(session: CashSession): Promise<void>;
-  addEntry(entry: CashEntry): Promise<void>;
+  listSessions(storeId: string): Promise<CashSession[]>;
+  listEntries(storeId: string): Promise<CashEntry[]>;
+  openSession(session: CashSession): Promise<CashSession>;
+  recordReceipt(entry: CashEntry): Promise<CashEntry>;
+  closeSession(storeId: string, input: CashCloseInput): Promise<CashSession>;
 }

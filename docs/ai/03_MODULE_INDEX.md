@@ -94,7 +94,7 @@ Os módulos abaixo são responsabilidades reais encontradas. Como ainda não há
 - Página: `CashDeskPage`, aba Vendas.
 - Service: `SalesService`.
 - Repository: `SaleRepository` / `LocalSaleRepository`.
-- Model: `Sale`, `SaleStatus`.
+- Model: `Sale`, `SaleStatus`, `SalePaymentStatus` (atualizado pelo Caixa).
 - Permissões: `sales.read`, `sales.manage` e acesso da rota por `cash.read`.
 - Dependências: customers, cash e work-orders.
 - Risco: página comercial é compartilhada; mudanças podem afetar recebimentos e abertura.
@@ -127,14 +127,14 @@ Os módulos abaixo são responsabilidades reais encontradas. Como ainda não há
 
 ## Cash
 
-- Responsabilidade: tela unificada de vendas, recebimentos e abertura do caixa.
+- Responsabilidade: tela unificada de vendas, recebimentos, abertura e fechamento do caixa.
 - Rota: `/caixa`; redirects `/vendas` e `/pagamentos`.
 - Página: `CashDeskPage`.
 - Service: `CashService`; também orquestra SalesService e WorkOrderService.
-- Repository: `CashRepository` / `LocalCashRepository`.
-- Models: `CashSession`, `CashEntry`.
+- Repository: `CashRepository` / `LocalCashRepository` (abertura, recebimento e fechamento transacionais).
+- Models: `CashSession`, `CashEntry`, `cashTotals`.
 - Permissões: `cash.read`, `cash.manage`; abas variam por função.
 - Dependências: sales, customers, work-orders, store context.
-- Risco: não existe fechamento; recebimento não altera status da venda de forma durável.
-- Tarefas: abertura/receber → cash service/repository; interface → `CashDeskPage` e estilos `cash-*`.
+- Risco: sangria/suprimento e formas de pagamento ainda não têm UI; parcelas/carnê inexistentes.
+- Tarefas: abertura/receber/fechar → cash service/repository; interface → `CashDeskPage` e estilos `cash-*`.
 - Docs: `modules/cash/MODULE.md` e `AI_CONTEXT.md`.

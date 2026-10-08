@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Unificar vendas, recebimentos e abertura de caixa em uma tela adaptada às permissions do usuário.
+Unificar vendas, recebimentos, abertura e fechamento de caixa em uma tela adaptada às permissions do usuário.
 
 ## Directory
 
@@ -15,19 +15,19 @@ UI em `CashDeskPage` dentro de `src/app/pages.tsx`; domínio em `cash.ts` e `cas
 
 ## Main Pages
 
-`CashDeskPage`, com abas Vendas, Recebimentos e Abertura conforme perfil.
+`CashDeskPage`, com abas Vendas, Recebimentos e Sessão conforme perfil.
 
 ## Components
 
-`Button`, `Input`, `Card`, `.cash-tabs`, `.cash-panel`, `.summary-card`, listas.
+`Button`, `Input`, `Card`, `.cash-tabs`, `.cash-panel`, `.cash-totals`, `.summary-card`, listas.
 
 ## Services
 
-`CashService.open`, `receive`; a página também usa SalesService e WorkOrderService.
+`CashService.open`, `receive` e `close`; a página também usa SalesService e WorkOrderService.
 
 ## Repositories
 
-`CashRepository` / `LocalCashRepository`.
+`CashRepository` / `LocalCashRepository`: `current`, `listSessions`, `listEntries`, `openSession`, `recordReceipt` e `closeSession`. Abertura, recebimento e fechamento são transacionais no IndexedDB.
 
 ## Stores / Hooks
 
@@ -35,7 +35,7 @@ Sem store/hook. Estado temporário e tabs usam `useState`.
 
 ## Models
 
-`CashSession`, `CashEntry`; Sale/WorkOrder são dependências.
+`CashSession` (com `expectedBalance`, `closingBalance`, `difference`, `closedBy`, `closingNote`), `CashEntry`; Sale/WorkOrder são dependências. `cashTotals` centraliza o cálculo por centavos.
 
 ## Permissions
 
@@ -59,21 +59,21 @@ Sales, customers, work-orders, currentStore e access.
 
 ## Avoid Modifying
 
-Não recriar telas separadas de Venda/Recebimento. Não receber sem sessão aberta. Não tratar prevenção visual de clique repetido como idempotência durável.
+Não recriar telas separadas de Venda/Recebimento. Não receber sem sessão aberta. Não confiar em bloqueio de botão como idempotência: a garantia é a transação de `recordReceipt`/`closeSession`.
 
 ## Common Tasks
 
 ### Alterar abertura
 
-→ CashDeskPage + CashService.open + CashSession.
+→ CashDeskPage + CashService.open + CashRepository.openSession.
 
 ### Alterar recebimento
 
-→ CashDeskPage + CashService.receive + CashEntry.
+→ CashDeskPage + CashService.receive + CashRepository.recordReceipt + `Sale.paymentStatus`.
 
-### Implementar fechamento
+### Alterar fechamento
 
-→ novo método/contrato/repository/UI + testes; hoje não existe.
+→ CashDeskPage + CashService.close + CashRepository.closeSession + `cashTotals`.
 
 ### Alterar botões/abas
 

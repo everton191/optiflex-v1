@@ -17,14 +17,13 @@
 
 - Venda é uma descrição + total, sem itens/produtos.
 - Não há cancelamento na UI.
-- Status de pagamento não pertence a Sale.
+- `paymentStatus` é atualizado pelo Caixa em transação; venda cancelada depois de paga não é tratada.
 - Rota usa `cash.read`, exigindo essa permission para seller.
 
 ## Pending Work
 
 - Itens de venda e catálogo.
-- Estados de pagamento duráveis.
-- Regras de desconto/cancelamento.
+- Cancelamento auditado e regras de desconto/aprovação.
 - Testes do SalesService.
 
 ## Important Files Right Now

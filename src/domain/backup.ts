@@ -33,7 +33,12 @@ export function validateBackup(value: unknown): BackupSnapshot {
       if ((name === "stores" || name === "users") && typeof row.active !== "boolean") throw invalid();
       if (name === "users" && (!Array.isArray(row.storeIds) || row.storeIds.some((id) => typeof id !== "string"))) throw invalid();
       if (name === "users" && (!Object.hasOwn(rolePermissions, row.role as string) || !["SELF", "STORE", "ORGANIZATION", "NETWORK"].includes(row.scope as string))) throw invalid();
-      for (const field of ["cpf", "phone", "birthDate", "email", "receptionNotes", "closedAt"]) if (row[field] !== undefined && typeof row[field] !== "string") throw invalid();
+      if (name === "sales" && row.paymentStatus !== undefined && !["PENDING", "PAID"].includes(row.paymentStatus as string)) throw invalid();
+      if (name === "cashSessions") {
+        for (const field of ["expectedBalance", "closingBalance"]) if (row[field] !== undefined && (typeof row[field] !== "number" || !Number.isFinite(row[field]) || (row[field] as number) < 0)) throw invalid();
+        if (row.difference !== undefined && (typeof row.difference !== "number" || !Number.isFinite(row.difference))) throw invalid();
+      }
+      for (const field of ["cpf", "phone", "birthDate", "email", "receptionNotes", "closedAt", "closedBy", "closingNote"]) if (row[field] !== undefined && typeof row[field] !== "string") throw invalid();
       if (name === "clinicalRecords" || name === "clinicalVersions") {
         if (!Array.isArray(row.attachments) || row.attachments.some((item) => !object(item) || typeof item.id !== "string" || typeof item.name !== "string" || typeof item.mimeType !== "string" || typeof item.size !== "number" || typeof item.createdAt !== "string")) throw invalid();
         for (const field of ["revision", "version"]) if (row[field] !== undefined && (!Number.isSafeInteger(row[field]) || (row[field] as number) < (field === "version" ? 1 : 0))) throw invalid();

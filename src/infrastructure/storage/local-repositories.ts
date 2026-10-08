@@ -5,7 +5,8 @@ import type { Sale } from "../../domain/sales";
 import type { WorkOrder } from "../../domain/work-order";
 import type { InventoryItem, InventoryMovement } from "../../domain/inventory";
 import type { CashEntry, CashSession } from "../../domain/cash";
-import type { AdministrationRepository, AttendanceRepository, CashRepository, ClinicalRepository, CustomerRepository, InventoryRepository, SaleRepository, SessionRepository, SettingsRepository, WorkOrderRepository } from "../../domain/repositories";
+import { cashTotals } from "../../domain/cash";
+import type { AdministrationRepository, AttendanceRepository, CashCloseInput, CashRepository, ClinicalRepository, CustomerRepository, InventoryRepository, SaleRepository, SessionRepository, SettingsRepository, WorkOrderRepository } from "../../domain/repositories";
 import { database } from "./database";
 
 const defaultSettings: OrganizationSettings = {
@@ -126,6 +127,7 @@ export class LocalClinicalRepository implements ClinicalRepository {
 
 export class LocalSaleRepository implements SaleRepository {
   async listByStore(storeId: string): Promise<Sale[]> { return database.sales.where("storeId").equals(storeId).reverse().sortBy("createdAt"); }
+  async get(id: string): Promise<Sale | undefined> { return database.sales.get(id); }
   async save(sale: Sale): Promise<void> { await database.sales.put(sale); }
 }
 
@@ -142,7 +144,46 @@ export class LocalInventoryRepository implements InventoryRepository {
 }
 
 export class LocalCashRepository implements CashRepository {
-  async current(storeId: string): Promise<CashSession | undefined> { return database.cashSessions.where("storeId").equals(storeId).filter((session) => !session.closedAt).first(); }
-  async saveSession(session: CashSession): Promise<void> { await database.cashSessions.put(session); }
-  async addEntry(entry: CashEntry): Promise<void> { await database.cashEntries.put(entry); }
+  private openSessionOf(storeId: string) { return database.cashSessions.where("storeId").equals(storeId).filter((session) => !session.closedAt).first(); }
+  async current(storeId: string): Promise<CashSession | undefined> { return this.openSessionOf(storeId); }
+  async listSessions(storeId: string): Promise<CashSession[]> { return database.cashSessions.where("storeId").equals(storeId).reverse().sortBy("openedAt"); }
+  async listEntries(storeId: string): Promise<CashEntry[]> { return database.cashEntries.where("storeId").equals(storeId).reverse().sortBy("createdAt"); }
+  async openSession(session: CashSession): Promise<CashSession> {
+    return database.transaction("rw", database.cashSessions, async () => {
+      if (await this.openSessionOf(session.storeId)) throw new Error("Já existe um caixa aberto nesta loja.");
+      await database.cashSessions.add(session);
+      return session;
+    });
+  }
+  async recordReceipt(entry: CashEntry): Promise<CashEntry> {
+    return database.transaction("rw", database.cashSessions, database.cashEntries, database.sales, async () => {
+      const session = await database.cashSessions.get(entry.sessionId);
+      if (!session || session.storeId !== entry.storeId || session.closedAt) throw new Error("Abra o caixa antes de registrar recebimentos.");
+      if (!entry.saleId) { await database.cashEntries.add(entry); return entry; }
+      const sale = await database.sales.get(entry.saleId);
+      if (!sale || sale.storeId !== entry.storeId) throw new Error("Venda não encontrada nesta loja.");
+      if (sale.status !== "CONFIRMED") throw new Error("Somente vendas confirmadas podem ser recebidas.");
+      const entries = await database.cashEntries.where("saleId").equals(entry.saleId).toArray();
+      const paid = entries.reduce((total, item) => item.type === "RECEIPT" ? total + Math.round(item.amount * 100) : total, 0);
+      const amount = Math.round(entry.amount * 100);
+      const total = Math.round(sale.total * 100);
+      if (paid >= total) throw new Error("Esta venda já foi recebida.");
+      if (paid + amount > total) throw new Error("O valor informado excede o saldo pendente da venda.");
+      await database.cashEntries.add(entry);
+      await database.sales.put({ ...sale, paymentStatus: paid + amount >= total ? "PAID" : "PENDING" });
+      return entry;
+    });
+  }
+  async closeSession(storeId: string, input: CashCloseInput): Promise<CashSession> {
+    return database.transaction("rw", database.cashSessions, database.cashEntries, async () => {
+      const session = await this.openSessionOf(storeId);
+      if (!session) throw new Error("Abra o caixa antes de fechar.");
+      const entries = await database.cashEntries.where("sessionId").equals(session.id).toArray();
+      const totals = cashTotals(session.openingBalance, entries);
+      const note = input.note?.trim();
+      const closed: CashSession = { ...session, closedAt: new Date().toISOString(), expectedBalance: totals.expected, closingBalance: input.closingBalance, difference: Math.round((input.closingBalance - totals.expected) * 100) / 100, closedBy: input.closedBy?.trim() || undefined, closingNote: note || undefined };
+      await database.cashSessions.put(closed);
+      return closed;
+    });
+  }
 }
