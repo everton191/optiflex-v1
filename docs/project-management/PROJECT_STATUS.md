@@ -9,8 +9,9 @@
 - **Branch analisada:** `docs/master-kanban` (documentação/planejamento).
 - **Branch de desenvolvimento:** `feat/operational-flow-v2` (6 commits à frente de `v1`; merge-base `3510602`).
 - **Último commit analisado (código):** `d6ab1d4` — *feat: deduct stock when confirming sales with items*.
+- **Último commit (documentação):** `634eb37` — *docs: add master development kanban and planning tree* (branch `docs/master-kanban`).
 - **Remote:** `https://github.com/everton191/optiflex-v1.git` (branch `v1` no remoto).
-- **Working tree:** limpa antes do commit de documentação; nenhum stash.
+- **Working tree:** limpa após o commit de documentação; nenhum stash.
 
 ## Fase atual (taxonomia do Kanban — 8 fases)
 
@@ -32,7 +33,7 @@
 3. `8a68d67` — Fluxo de OS com prazo/estados (F3-14 parcial) — `work-order-service.test.ts` + `work-orders.test.ts`.
 4. `3f2c0c1` — Estoque com cadastro/movimentação/histórico (F4-01..04) — `inventory-service.test.ts` + `inventory.test.ts`.
 5. `cbcf80f` — Fechamento de caixa, recebimento idempotente e `paymentStatus` (F4-08/09/17) — `cash*.test.ts`.
-6. Esta execução: Kanban mestre + Issues (#1–#155) + árvore de documentação.
+6. Esta execução: Kanban mestre + Issues (#1–#155) + árvore de documentação — commit `634eb37`.
 
 ## Próxima tarefa
 
