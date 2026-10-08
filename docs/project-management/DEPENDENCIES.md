@@ -1,8 +1,43 @@
 # DEPENDENCIES — mapa de dependências do Opticore
 
-Atualizado em: 07/10/2026 · IDs locais (`F3-14`) resolvem para Issues na tabela de `KANBAN.md`.
+Atualizado em: 08/10/2026 · IDs locais (`F3-14`) resolvem para Issues na tabela de `KANBAN.md`.
 
 Legenda: **OBR** = dependência obrigatória (não iniciar sem ela) · **OPC** = melhoria opcional/paralela possível.
+
+## Correções de 08/10/2026 — ciclos eliminados (7 → 0)
+
+Detecção por SCC (Tarjan) sobre as colunas Deps do `KANBAN.md` (147 nós, 184 arestas).
+
+| # | Ciclo antes | Correção aplicada | Issues atualizadas |
+|---|---|---|---|
+| 1 | F1-06 ↔ F2-11 | modelo **antes** do catálogo: F2-11 depende de F1-06 | #14 |
+| 2 | F1-07 ↔ F3-06 ↔ F3-07 | modelos antes do uso clínico: F3-06/F3-07 dependem de F1-07 | #15 |
+| 3 | F1-11 ↔ F2-04 ↔ F7-02 | fila correta: **F2-04 → F7-02 → F1-11** (CRUD → login → escopo por registro) | #26, #117 |
+| 4 | F1-12 ↔ F7-11 | infraestrutura de erros antes dos indicadores: F7-11 depende de F1-12 | #20 |
+| 5 | F2-01 ↔ F2-03 | cadastro da empresa antes dos dados jurídicos: F2-03 depende de F2-01 | #23 |
+| 6 | F3-14 ↔ F3-15 | OS antes de laboratórios: F3-15 depende de F3-14 | #53 |
+| 7 | F4-14 ↔ F7-13 | framework de impressão antes do carnê: F4-14 depende de F7-13 | #128 |
+
+Corpos das issues e colunas do `KANBAN.md` sincronizados; verificação final: **0 ciclos**.
+
+### Status corrigidos (decisão já registrada, label desatualizada)
+
+| Card | Issue | De → Para | Motivo |
+|---|---|---|---|
+| F4-13 parcelamentos | #70 | BACKLOG → **BLOCKED** | decisão P4 (juros/multas/prazo) já listada como bloqueante |
+| F8-03 testes e2e | #137 | BACKLOG → **BLOCKED** | decisão P5 (ferramenta) |
+| F3-20 garantias | #57 | BACKLOG → **BLOCKED** | decisão P7 (política de garantia) |
+
+Anomalia inversa encontrada e mantida com ressalva: **F4-17 (DONE) depende de F4-16 (não concluído)** — a dependência é opcional (sangria/suprimento *afina* os totais; o fechamento foi implementado e testado em `cbcf80f`). Registrar em F4-16 que ela alimenta o F4-17.
+
+## Classificação dos bloqueios (08/10/2026)
+
+| Categoria | O que é | Cards |
+|---|---|---|
+| **Decisão externa pendente** | aguarda o usuário/jurídico/contador — não é código | F4-13, F8-03, F3-20 (corrigidos acima); F8-08, F8-16, F5-12..15, F2-17, F5-01, F6-01 (raiz das Fases 5 e 6) |
+| **Bloqueio técnico real** | dependência de código ainda não concluído | F1-11←F7-02; F8-04/F8-10←F3-09; F3-17←F3-14; F8-07←F7-02+F1-11; F8-06←F1-11+F2-05; F4-14/15←F4-13; F7-19←F5-07 |
+| **Fase futura (escopo já planejado)** | bloqueada por estrutura do roadmap, raiz = decisão das fases 5/6 | F5-02..19 (após F5-01), F6-02..19 (após F6-01), F8-05/11/12/13/18 |
+| **Dependência concluída, status desatualizado** | verificação automática: **nenhuma** (0 BACKLOG/BLOCKED com deps todas DONE) | — |
 
 ## Cadeias principais (Etapa 6)
 
@@ -39,26 +74,25 @@ F4-7 baixa transacional (FEITO)
 ### 3. Venda confirmada → ordem de serviço → laboratório → entrega
 
 ```text
-F3-13 confirmação de venda (FEITO)
+F1-07 modelos de prescrição/OS (OBR — parte de OS já testada em 8a68d67)
   └─ F3-14 OS (IN PROGRESS)
-       ├─ F1-07 histórico de eventos da OS (OBR)
-       ├─ F3-15 laboratórios (OBR p/ produção)
-       │    └─ pré-req: F2-10 cadastro de fornecedores/lab
+       ├─ F3-15 laboratórios (OBR p/ produção; pré-req: F2-10 fornecedores)
        ├─ F3-16 acompanhamento de fabricação (OBR p/ prazo fino)
        ├─ F3-17 prazos e alertas (parcial — dashboard pronto)
        ├─ F3-18 produtos prontos (OPC, usa F4-5 reserva)
        ├─ F3-19 entrega ao cliente (OBR p/ fechar ciclo)
-       └─ F3-20 garantias/ajustes (OPC pós-ciclo; exige política)
+       └─ F3-20 garantias/ajustes (BLOCKED: decisão P7 política)
+F3-13 confirmação de venda (FEITO) alimenta F3-14
 ```
 
 ### 4. Organização → usuários → permissões → isolamento SaaS
 
 ```text
-F7-02 login local (P0, READY)
-  └─ F1-11 permissões/escopo por registro (P0)
-       ├─ F2-04 usuários CRUD (OBR)
-       ├─ F2-05 permissões por loja (OBR)
-       └─ F8-06 testes de permissões (OBR p/ evidência)
+F2-04 usuários CRUD (sem dependências — perfis pré-definidos)
+  └─ F7-02 login local (P0, READY)
+       └─ F1-11 permissões/escopo por registro (P0)
+            ├─ F2-05 permissões por loja (OBR)
+            └─ F8-06 testes de permissões (OBR p/ evidência)
 F1-05 organizationId nos registros (OBR p/ SaaS)
   └─ F5-01 backend (BLOQUEIO: decisão)
        ├─ F5-02 autenticação real (OBR)
@@ -77,7 +111,7 @@ F5-01 (decisão) → F5-07 sync offline → F5-08 outbox → F5-09 conflitos
 ### 6. Cadastro fiscal → provedor → homologação → emissão
 
 ```text
-F2-03 dados jurídicos (OBR)
+F2-01 cadastro da empresa → F2-03 dados jurídicos (OBR)
   └─ F6-01/02/03 identificação fiscal (BLOQUEIO: especificação)
 F2-11 catálogo → F2-15 campos fiscais → F6-04 NCM/CFOP
 F6-05 modelo de documento (OBR)
