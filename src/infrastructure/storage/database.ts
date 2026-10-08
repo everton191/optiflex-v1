@@ -1,7 +1,7 @@
 import Dexie, { type EntityTable } from "dexie";
 import type { CurrentStoreContext, LocalSession, OrganizationSettings, Store, User } from "../../domain/access";
 import type { Attendance, Customer } from "../../domain/customer";
-import type { ClinicalRecord } from "../../domain/clinical";
+import type { ClinicalRecord, ClinicalVersion } from "../../domain/clinical";
 import type { Sale } from "../../domain/sales";
 import type { WorkOrder } from "../../domain/work-order";
 import type { InventoryItem, InventoryMovement } from "../../domain/inventory";
@@ -16,6 +16,7 @@ export class OpticoreDatabase extends Dexie {
   customers!: EntityTable<Customer, "id">;
   attendances!: EntityTable<Attendance, "id">;
   clinicalRecords!: EntityTable<ClinicalRecord, "attendanceId">;
+  clinicalVersions!: EntityTable<ClinicalVersion, "id">;
   sales!: EntityTable<Sale, "id">;
   workOrders!: EntityTable<WorkOrder, "id">;
   inventoryItems!: EntityTable<InventoryItem, "id">;
@@ -33,6 +34,16 @@ export class OpticoreDatabase extends Dexie {
     this.version(6).stores({ settings: "id", sessions: "id", stores: "id, active", users: "id, role, active", currentStore: "id, storeId", customers: "id, name, cpf, phone", attendances: "id, storeId, customerId, status, createdAt", clinicalRecords: "attendanceId, updatedAt", sales: "id, storeId, customerId, status, createdAt", workOrders: "id, saleId, storeId, customerId, status, createdAt" });
     this.version(7).stores({ settings: "id", sessions: "id", stores: "id, active", users: "id, role, active", currentStore: "id, storeId", customers: "id, name, cpf, phone", attendances: "id, storeId, customerId, status, createdAt", clinicalRecords: "attendanceId, updatedAt", sales: "id, storeId, customerId, status, createdAt", workOrders: "id, saleId, storeId, customerId, status, createdAt", inventoryItems: "id, storeId, name", inventoryMovements: "id, itemId, storeId, type, createdAt" });
     this.version(8).stores({ settings: "id", sessions: "id", stores: "id, active", users: "id, role, active", currentStore: "id, storeId", customers: "id, name, cpf, phone", attendances: "id, storeId, customerId, status, createdAt", clinicalRecords: "attendanceId, updatedAt", sales: "id, storeId, customerId, status, createdAt", workOrders: "id, saleId, storeId, customerId, status, createdAt", inventoryItems: "id, storeId, name", inventoryMovements: "id, itemId, storeId, type, createdAt", cashSessions: "id, storeId, openedAt, closedAt", cashEntries: "id, sessionId, storeId, saleId, type, createdAt" });
+    this.version(9).stores({ stores: "id, name, active", users: "id, name, role, active" });
+    this.version(10).stores({ clinicalVersions: "id, attendanceId, finalizedAt" }).upgrade(async (transaction) => {
+      const records = await transaction.table("clinicalRecords").toArray() as ClinicalRecord[];
+      for (const record of records) {
+        if (!record.finalizedAt) continue;
+        await transaction.table("clinicalVersions").put({ ...record, version: record.version ?? 1, id: `${record.attendanceId}:${record.version ?? 1}` });
+        const attendance = await transaction.table("attendances").get(record.attendanceId);
+        if (attendance && attendance.status !== "CANCELLED") await transaction.table("attendances").update(record.attendanceId, { status: "FINISHED" });
+      }
+    });
   }
 }
 

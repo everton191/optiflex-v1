@@ -24,7 +24,7 @@ Todas as rotas usam `AppShell`. A configuração canônica está em `src/app/rou
 
 - `customerId`: identifica o cliente carregado por `ReceptionService.getCustomer`.
 - `attendanceId`: chave do `ClinicalRecord` e vínculo com atendimento.
-- O perfil do cliente cria link `/atendimentos?customer=<id>`, porém `AttendancePage` ainda não lê esse query parameter.
+- Cadastro/perfil encaminham `/atendimentos?customer=<id>` para pré-seleção validada na fila; o parâmetro é removido após o envio. Cadastro sem `attendance.create` retorna ao perfil.
 
 ## Guards e navegação
 

@@ -59,7 +59,7 @@ Access, Dexie, shell e Design System.
 
 ## Avoid Modifying
 
-Não mudar schema ou seeds por ajuste visual. Não remover fallback sem definir experiência de falha.
+Não mudar schema ou seeds por ajuste visual. Preservar a experiência de falha com nova tentativa; não liberar o aplicativo com sessão/loja fictícias quando o carregamento falhar.
 
 ## Common Tasks
 

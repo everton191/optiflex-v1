@@ -31,7 +31,7 @@ Dexie / IndexedDB
 
 ### Aplicação e estado
 
-`AppProviders` carrega organização, sessão, lojas, usuários e loja atual. O estado é React Context + `useState`; não há store externa. Se o IndexedDB falhar, existe fallback em memória para permitir que a interface carregue.
+`AppProviders` carrega organização, sessão, lojas, usuários e loja atual. O estado é React Context + `useState`; não há store externa. As páginas só montam após o carregamento. Falhas exibem uma mensagem com nova tentativa, sem conceder OWNER ou criar loja fictícia em memória.
 
 ### Domínio
 
@@ -39,7 +39,7 @@ Os arquivos `*-service.ts` aplicam validações e orquestram repositories. `repo
 
 ### Infraestrutura
 
-`database.ts` declara oito versões do schema Dexie. `local-repositories.ts` implementa todos os contratos locais e contém seeds de configurações, lojas e usuários.
+`database.ts` declara nove versões do schema Dexie. A versão 9 acrescenta índices de nome em lojas e usuários, preservando as tabelas anteriores. `local-repositories.ts` implementa todos os contratos locais e contém seeds de configurações, lojas e usuários. `database.test.ts` verifica inicialização, migração e persistência com IndexedDB em memória exclusivo para testes.
 
 ## Direção das dependências
 

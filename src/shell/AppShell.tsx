@@ -1,4 +1,5 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { useState } from "react";
+import { Link, NavLink, Outlet } from "react-router-dom";
 import { useAppContext } from "../app/providers";
 import { hasPermission, roleDefinitions, type Permission } from "../domain/access";
 
@@ -7,7 +8,13 @@ const mainLinks: readonly MenuItem[] = [{ to: "/", label: "Visão geral", shortL
 const administrationLinks: readonly MenuItem[] = [{ to: "/admin/usuarios", label: "Usuários", shortLabel: "Usuários", permission: "users.read" }, { to: "/admin/perfis", label: "Perfis de acesso", shortLabel: "Perfis", permission: "roles.read" }, { to: "/admin/configuracoes", label: "Configurações", shortLabel: "Ajustes", permission: "settings.manage" }];
 
 export function AppShell() {
-  const { settings, session, stores, currentStoreId, selectStore } = useAppContext();
+  const { settings, session, stores, currentStoreId, selectStore, navigationLocked } = useAppContext();
+  const [storeError, setStoreError] = useState(""); const [switching, setSwitching] = useState(false);
+  async function changeStore(id: string) {
+    setSwitching(true); setStoreError("");
+    try { await selectStore(id); } catch { setStoreError("Não foi possível trocar de loja. Salve as alterações e tente novamente."); }
+    finally { setSwitching(false); }
+  }
   const canOpen = (item: MenuItem) => !item.permission || hasPermission(session.role, item.permission);
   const visibleMainLinks = mainLinks.filter(canOpen);
   const visibleAdministrationLinks = administrationLinks.filter(canOpen);
@@ -18,7 +25,7 @@ export function AppShell() {
       <nav aria-label="Navegação principal"><span className="nav-section-label">Menu</span>{visibleMainLinks.map((link) => <NavLink key={link.to} to={link.to} end={link.to === "/"}>{link.label}</NavLink>)}</nav>
       {visibleAdministrationLinks.length > 0 && <nav className="sidebar-bottom" aria-label="Administração"><span className="nav-section-label">Administração</span>{visibleAdministrationLinks.map((link) => <NavLink key={link.to} to={link.to}>{link.label}</NavLink>)}</nav>}
     </aside>
-    <main className="content"><header className="topbar"><label className="store-selector">Loja atual<select value={currentStoreId} onChange={(event) => void selectStore(event.target.value)}>{stores.map((store) => <option key={store.id} value={store.id}>{store.name}</option>)}</select></label><span className="user-summary"><strong>{session.userName}</strong><small>{roleLabel}</small></span></header><Outlet /></main>
+    <main className="content"><header className="topbar"><label className="store-selector">Loja atual<select disabled={navigationLocked || switching} value={currentStoreId} onChange={(event) => void changeStore(event.target.value)}>{stores.filter((store) => store.active).map((store) => <option key={store.id} value={store.id}>{store.name}</option>)}</select></label>{hasPermission(session.role, "settings.manage") && <Link to="/admin/configuracoes">Ajustes</Link>}<span className="user-summary"><strong>{session.userName}</strong><small>{roleLabel}</small></span></header>{storeError && <p role="alert">{storeError}</p>}<Outlet /></main>
     <nav className="mobile-nav" aria-label="Navegação móvel">{visibleMainLinks.map((link) => <NavLink key={link.to} to={link.to} end={link.to === "/"}>{link.shortLabel}</NavLink>)}</nav>
   </div>;
 }

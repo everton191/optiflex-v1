@@ -11,20 +11,18 @@
 
 - Uma única `ReceptionService` atende customers e attendance.
 - Busca normaliza para minúsculas pt-BR e filtra em memória.
-- Após cadastrar, navega para `/atendimentos?customer=<id>`.
+- Após cadastrar, navega para `/atendimentos?customer=<id>` quando permitido; caso contrário, abre o perfil.
 
 ## Known Problems
 
-- `AttendancePage` ainda não consome o query parameter `customer`.
 - Não há edição/exclusão de cliente.
 - Busca lê toda a tabela antes de filtrar.
 - Não há validação de CPF ou duplicidade.
 
 ## Pending Work
 
-- Pré-selecionar cliente no novo atendimento.
-- Validadores de formulário.
-- Testes para busca e criação.
+- Completar campos/validadores de formulário (telefone obrigatório no plano, CPF e duplicidade).
+- Testes específicos de busca e componentes.
 
 ## Important Files Right Now
 
@@ -35,6 +33,11 @@
 
 ## Recent Structural Changes
 
+- Nome vazio após trim é rejeitado; contatos são normalizados.
+- Cadastro impede envio repetido durante gravação e exibe erro sem limpar campos.
+- Listagem/perfil têm loading, erro, retry e descarte de consultas antigas.
+- Pré-seleção do cliente na fila corrigida; testes de service e persistência adicionados.
+
 - Textos da interface foram simplificados; arquitetura não mudou.
 
 ## Be Careful With
@@ -44,4 +47,4 @@
 
 ## Next Likely Task
 
-Corrigir o fluxo de cadastro para pré-selecionar o cliente no atendimento.
+Completar cadastro/perfil e histórico integrado conforme `docs/DEVELOPMENT_AUDIT_A_H.md`.

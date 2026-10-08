@@ -7,7 +7,13 @@ export interface ClinicalRecord {
   attachments: ClinicalAttachment[];
   finalizedAt?: string;
   updatedAt: string;
+  revision?: number;
+  version?: number;
+  author?: string;
+  amendmentReason?: string;
 }
+
+export interface ClinicalVersion extends ClinicalRecord { id: string; finalizedAt: string; }
 
 export interface ClinicalAttachment {
   id: string;

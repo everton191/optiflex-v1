@@ -1,6 +1,6 @@
 import type { CurrentStoreContext, LocalSession, OrganizationSettings, Store, User } from "./access";
 import type { Attendance, Customer } from "./customer";
-import type { ClinicalRecord } from "./clinical";
+import type { ClinicalRecord, ClinicalVersion } from "./clinical";
 import type { Sale } from "./sales";
 import type { WorkOrder } from "./work-order";
 import type { InventoryItem, InventoryMovement } from "./inventory";
@@ -39,8 +39,9 @@ export interface AttendanceRepository {
 }
 
 export interface ClinicalRepository {
-  get(attendanceId: string): Promise<ClinicalRecord | undefined>;
-  save(record: ClinicalRecord): Promise<void>;
+  load(attendanceId: string, storeId: string): Promise<{ record: ClinicalRecord; customer: Customer }>;
+  write(record: ClinicalRecord, storeId: string, author: string, action: "save" | "finalize" | "amend", reason?: string): Promise<ClinicalRecord>;
+  history(attendanceId: string, storeId: string): Promise<ClinicalVersion[]>;
 }
 
 export interface SaleRepository {

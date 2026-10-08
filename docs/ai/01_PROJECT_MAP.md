@@ -2,6 +2,8 @@
 
 ## Visão rápida
 
+Para pendências funcionais, todas as guias e critérios de conclusão das fases A–H, consulte [Auditoria do desenvolvimento](../DEVELOPMENT_AUDIT_A_H.md). Mapa estrutural não é certificado de conclusão das fases.
+
 ```text
 opticore/
 ├── AGENTS.md

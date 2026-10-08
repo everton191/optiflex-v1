@@ -27,7 +27,7 @@ main.tsx
 → leitura paralela de settings, session, stores, users e loja atual
 ```
 
-Se o armazenamento falhar, `AppProviders` usa organização, usuário proprietário e loja temporários em memória para liberar a interface.
+Se o armazenamento falhar, `AppProviders` bloqueia a montagem das páginas e oferece nova tentativa, sem substituir sessão ou loja por dados fictícios. A migração 9 corrige os índices ausentes usados na ordenação de lojas/usuários por nome.
 
 ## Cliente
 
@@ -52,7 +52,7 @@ Cliente
 → ClinicalQueuePage
 ```
 
-O histórico do cliente também lê `attendances` por `customerId`.
+O histórico do cliente também lê `attendances` por `customerId`. A fila consome `?customer=<id>`, verifica a existência do cliente e limpa o parâmetro após criar o atendimento. A criação exige `attendance.create` na interface; links clínicos exigem `clinical.workspace.access`. O service rejeita cliente inexistente e loja vazia. Isso não substitui autenticação e enforcement de escopo.
 
 ## Clínica
 

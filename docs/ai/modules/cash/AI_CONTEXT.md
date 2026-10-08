@@ -19,7 +19,7 @@
 - CashRepository não lista entradas.
 - Venda continua confirmada após receber; não há estado pago.
 - `receivedSaleIds` evita repetição apenas na montagem atual da página.
-- IAB pode indisponibilizar IndexedDB; provider possui fallback somente para boot.
+- O erro reproduzido no boot era índice `name` ausente de lojas/usuários, corrigido na migração 9; não atribuir essa falha ao navegador. Falha real de storage agora impede abrir a operação.
 
 ## Pending Work
 

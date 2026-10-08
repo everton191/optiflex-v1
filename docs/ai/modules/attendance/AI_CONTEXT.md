@@ -4,7 +4,7 @@
 
 - Criação de consulta e fila por loja.
 - Listagem exibe apenas status `WAITING`.
-- Itens da fila abrem prontuário clínico.
+- Itens da fila abrem prontuário somente para perfis com acesso clínico; recepção vê itens sem link.
 - Histórico por cliente está funcional.
 
 ## Current Decisions
@@ -15,16 +15,13 @@
 
 ## Known Problems
 
-- Query parameter `customer` não é lido.
 - Não há ações para cancelar, iniciar ou concluir attendance.
 - Não há formulário para tipo/notas de recepção.
-- `attendance.create` não é verificada separadamente no botão.
 
 ## Pending Work
 
-- Pré-seleção do cliente.
 - Transições explícitas de status.
-- Testes do service e da fila.
+- Automatização de testes da interface da fila; service/persistência já têm regressões básicas.
 
 ## Important Files Right Now
 
@@ -35,6 +32,11 @@
 
 ## Recent Structural Changes
 
+- Pré-seleção por query validada; parâmetro removido após envio.
+- Criação protegida por `attendance.create`, seleção válida e bloqueio de envio pendente.
+- Estado vazio usa apenas WAITING, inclusive quando há atendimentos finalizados.
+- Loading/erro/retry e estado isolado por montagem da loja evitam reaproveitar fila antiga.
+
 - Menu de atendimento foi reduzido conforme role; fluxo de dados permaneceu igual.
 
 ## Be Careful With
@@ -44,4 +46,4 @@
 
 ## Next Likely Task
 
-Completar transições da fila e consumir o cliente informado pela rota.
+Completar transições da fila, atribuição de profissional, tipos e prioridade.

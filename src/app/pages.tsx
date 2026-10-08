@@ -1,24 +1,23 @@
-import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAppContext } from "./providers";
 import { Button, Card, Input } from "../design-system/components";
 import { hasPermission, roleDefinitions } from "../domain/access";
 import type { Attendance, Customer } from "../domain/customer";
 import { ReceptionService } from "../domain/reception-service";
-import { ClinicalService } from "../domain/clinical-service";
+import { BackupPanel } from "./BackupPanel";
+export { ClinicalWorkspacePage } from "./ClinicalWorkspace";
 import { SalesService } from "../domain/sales-service";
 import type { Sale } from "../domain/sales";
 import { WorkOrderService } from "../domain/work-order-service";
 import { InventoryService } from "../domain/inventory-service";
 import { CashService } from "../domain/cash-service";
 import type { WorkOrder } from "../domain/work-order";
-import type { ClinicalRecord } from "../domain/clinical";
 import type { InventoryItem } from "../domain/inventory";
 import type { CashSession } from "../domain/cash";
-import { LocalAttendanceRepository, LocalCashRepository, LocalClinicalRepository, LocalCustomerRepository, LocalInventoryRepository, LocalSaleRepository, LocalWorkOrderRepository } from "../infrastructure/storage/local-repositories";
+import { LocalAttendanceRepository, LocalCashRepository, LocalCustomerRepository, LocalInventoryRepository, LocalSaleRepository, LocalWorkOrderRepository } from "../infrastructure/storage/local-repositories";
 
 const receptionService = new ReceptionService(new LocalCustomerRepository(), new LocalAttendanceRepository());
-const clinicalService = new ClinicalService(new LocalClinicalRepository());
 const salesService = new SalesService(new LocalSaleRepository());
 const workOrderService = new WorkOrderService(new LocalWorkOrderRepository());
 const inventoryService = new InventoryService(new LocalInventoryRepository());
@@ -46,7 +45,7 @@ export function SettingsPage() {
     <label>Cargo exibido na área clínica<Input value={draft.clinicalProfessionalLabel} onChange={(event) => setDraft({ ...draft, clinicalProfessionalLabel: event.target.value })} required /></label>
     <p className="help-text">Use o nome adotado pela empresa, como Médico, Oftalmologista ou Profissional autorizado.</p>
     <Button type="submit">Salvar alterações</Button>{saved && <span className="success">Configuração salva.</span>}
-  </form></div>;
+  </form><BackupPanel /></div>;
 }
 
 export function UsersPage() {
@@ -60,37 +59,120 @@ export function ProfilesPage() {
 }
 
 export function CustomersPage() {
+  const { session } = useAppContext();
   const [customers, setCustomers] = useState<Customer[]>([]); const [query, setQuery] = useState("");
-  useEffect(() => { void receptionService.listCustomers(query).then(setCustomers); }, [query]);
-  return <div className="page"><p className="eyebrow">Recepção</p><div className="page-title"><div><h1>Clientes</h1><p className="page-intro">Encontre ou cadastre clientes para iniciar um atendimento.</p></div><Link className="button" to="/clientes/novo">Novo cliente</Link></div><Input aria-label="Buscar cliente" placeholder="Buscar por nome, CPF ou telefone" value={query} onChange={(event) => setQuery(event.target.value)} /><div className="list-card">{customers.length ? customers.map((customer) => <Link className="list-row list-link" key={customer.id} to={`/clientes/${customer.id}`}><div><strong>{customer.name}</strong><span>{customer.cpf || customer.phone || "Sem documento ou telefone"}</span></div></Link>) : <p className="empty-state">Nenhum cliente encontrado.</p>}</div></div>;
+  const [loading, setLoading] = useState(true); const [error, setError] = useState(""); const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    let active = true;
+    setLoading(true); setError("");
+    void receptionService.listCustomers(query).then((items) => { if (active) setCustomers(items); })
+      .catch(() => { if (active) setError("Não foi possível carregar os clientes."); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [query, attempt]);
+  return <div className="page"><p className="eyebrow">Recepção</p><div className="page-title"><div><h1>Clientes</h1><p className="page-intro">Encontre ou cadastre clientes para iniciar um atendimento.</p></div>{hasPermission(session.role, "customers.manage") && <Link className="button" to="/clientes/novo">Novo cliente</Link>}</div><Input aria-label="Buscar cliente" placeholder="Buscar por nome, CPF ou telefone" value={query} onChange={(event) => setQuery(event.target.value)} />{error && <p role="alert">{error} <Button type="button" onClick={() => setAttempt((value) => value + 1)}>Tentar novamente</Button></p>}<div className="list-card">{loading ? <p role="status" className="empty-state">Carregando clientes…</p> : !error && (customers.length ? customers.map((customer) => <Link className="list-row list-link" key={customer.id} to={`/clientes/${customer.id}`}><div><strong>{customer.name}</strong><span>{customer.cpf || customer.phone || "Sem documento ou telefone"}</span></div></Link>) : <p className="empty-state">Nenhum cliente encontrado.</p>)}</div></div>;
 }
 
 export function CustomerProfilePage() {
+  const { session, currentStoreId } = useAppContext();
   const { customerId = "" } = useParams(); const [customer, setCustomer] = useState<Customer>(); const [history, setHistory] = useState<Attendance[]>([]);
-  useEffect(() => { void Promise.all([receptionService.getCustomer(customerId), receptionService.listCustomerAttendances(customerId)]).then(([loadedCustomer, loadedHistory]) => { setCustomer(loadedCustomer); setHistory(loadedHistory); }); }, [customerId]);
+  const [loading, setLoading] = useState(true); const [error, setError] = useState(""); const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    let active = true;
+    setLoading(true); setError("");
+    void Promise.all([receptionService.getCustomer(customerId), receptionService.listCustomerAttendances(customerId)])
+      .then(([loadedCustomer, loadedHistory]) => { if (active) { setCustomer(loadedCustomer); setHistory(loadedHistory); } })
+      .catch(() => { if (active) setError("Não foi possível abrir este cliente."); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [customerId, attempt]);
+  if (loading) return <div className="page" role="status">Carregando cliente…</div>;
+  if (error) return <div className="page"><p role="alert">{error}</p><Button type="button" onClick={() => setAttempt((value) => value + 1)}>Tentar novamente</Button></div>;
   if (!customer) return <div className="page"><h1>Cliente não encontrado</h1></div>;
-  return <div className="page"><p className="eyebrow">Cliente</p><div className="page-title"><div><h1>{customer.name}</h1><p className="page-intro">{customer.phone || "Sem telefone"} · {customer.cpf || "Sem CPF"}</p></div><Link className="button" to={`/atendimentos?customer=${customer.id}`}>Novo atendimento</Link></div><h2 className="section-title">Histórico</h2><div className="list-card">{history.length ? history.map((item) => <article className="list-row" key={item.id}><div><strong>{attendanceTypeLabels[item.type]}</strong><span>{new Date(item.createdAt).toLocaleString("pt-BR")}</span></div><span className="badge">{attendanceStatusLabels[item.status]}</span></article>) : <p className="empty-state">Nenhum atendimento registrado.</p>}</div></div>;
+  return <div className="page"><p className="eyebrow">Cliente</p><div className="page-title"><div><h1>{customer.name}</h1><p className="page-intro">{customer.phone || "Sem telefone"} · {customer.cpf || "Sem CPF"}</p></div>{hasPermission(session.role, "attendance.create") && <Link className="button" to={`/atendimentos?customer=${customer.id}`}>Novo atendimento</Link>}</div><h2 className="section-title">Histórico de atendimentos</h2><div className="list-card">{history.length ? history.map((item) => <article className="list-row" key={item.id}><div><strong>{attendanceTypeLabels[item.type]}</strong><span>{new Date(item.createdAt).toLocaleString("pt-BR")}</span>{hasPermission(session.role, "clinical.workspace.access") && item.status !== "CANCELLED" && (item.storeId === currentStoreId ? <Link to={`/clinico/atendimento/${item.id}`}>Ver consulta e versões</Link> : <small>Consulta de outra loja — selecione a loja correspondente para acessar.</small>)}</div><span className="badge">{attendanceStatusLabels[item.status]}</span></article>) : <p className="empty-state">Nenhum atendimento registrado.</p>}</div></div>;
 }
 
 export function CustomerNewPage() {
+  const { session } = useAppContext();
   const navigate = useNavigate(); const [name, setName] = useState(""); const [phone, setPhone] = useState(""); const [cpf, setCpf] = useState("");
-  async function submit(event: React.FormEvent) { event.preventDefault(); const customer = await receptionService.createCustomer({ name, phone: phone || undefined, cpf: cpf || undefined }); navigate(`/atendimentos?customer=${customer.id}`); }
-  return <div className="page"><p className="eyebrow">Recepção</p><h1>Novo cliente</h1><form className="settings-form" onSubmit={submit}><label>Nome completo<Input value={name} onChange={(event) => setName(event.target.value)} required /></label><label>Telefone<Input value={phone} onChange={(event) => setPhone(event.target.value)} /></label><label>CPF<Input value={cpf} onChange={(event) => setCpf(event.target.value)} /></label><Button type="submit">Salvar e iniciar atendimento</Button></form></div>;
+  const [saving, setSaving] = useState(false); const [error, setError] = useState(""); const pending = useRef(false);
+  const canStart = hasPermission(session.role, "attendance.create");
+  async function submit(event: React.FormEvent) {
+    event.preventDefault();
+    if (pending.current || !hasPermission(session.role, "customers.manage")) return;
+    pending.current = true; setSaving(true); setError("");
+    try {
+      const customer = await receptionService.createCustomer({ name, phone, cpf });
+      navigate(canStart ? `/atendimentos?customer=${customer.id}` : `/clientes/${customer.id}`);
+    } catch { setError(!name.trim() ? "Informe o nome do cliente." : "Não foi possível salvar o cliente. Tente novamente."); }
+    finally { pending.current = false; setSaving(false); }
+  }
+  return <div className="page"><p className="eyebrow">Recepção</p><h1>Novo cliente</h1><form className="settings-form" onSubmit={submit}><label>Nome completo<Input value={name} onChange={(event) => setName(event.target.value)} disabled={saving} required /></label><label>Telefone<Input value={phone} onChange={(event) => setPhone(event.target.value)} disabled={saving} /></label><label>CPF<Input value={cpf} onChange={(event) => setCpf(event.target.value)} disabled={saving} /></label>{error && <p role="alert" className="error-text">{error}</p>}<Button type="submit" disabled={saving}>{saving ? "Salvando…" : canStart ? "Salvar e iniciar atendimento" : "Salvar cliente"}</Button></form></div>;
 }
 
 export function AttendancePage() {
-  const { currentStoreId } = useAppContext(); const [queue, setQueue] = useState<Attendance[]>([]); const [customers, setCustomers] = useState<Customer[]>([]); const [customerId, setCustomerId] = useState("");
-  async function refresh() { setQueue(await receptionService.listQueue(currentStoreId)); setCustomers(await receptionService.listCustomers()); }
-  useEffect(() => { void refresh(); }, [currentStoreId]);
-  async function start() { if (!customerId) return; await receptionService.startAttendance(customerId, currentStoreId, "CONSULTATION"); setCustomerId(""); await refresh(); }
+  const { currentStoreId } = useAppContext();
+  return <AttendanceQueue key={currentStoreId} />;
+}
+
+function AttendanceQueue() {
+  const { currentStoreId, session } = useAppContext();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedCustomerId = searchParams.get("customer") ?? "";
+  const [queue, setQueue] = useState<Attendance[]>([]); const [customers, setCustomers] = useState<Customer[]>([]); const [customerId, setCustomerId] = useState(requestedCustomerId);
+  const [loading, setLoading] = useState(true); const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(""); const [message, setMessage] = useState(""); const [attempt, setAttempt] = useState(0);
+  const pending = useRef(false); const mounted = useRef(true);
+  const canCreate = hasPermission(session.role, "attendance.create");
+  const canOpenClinical = hasPermission(session.role, "clinical.workspace.access");
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  useEffect(() => { setCustomerId(requestedCustomerId); }, [requestedCustomerId]);
+  useEffect(() => {
+    let active = true;
+    setLoading(true); setError("");
+    void Promise.all([receptionService.listQueue(currentStoreId), receptionService.listCustomers()])
+      .then(([loadedQueue, loadedCustomers]) => { if (active) { setQueue(loadedQueue); setCustomers(loadedCustomers); } })
+      .catch(() => { if (active) setError("Não foi possível carregar os atendimentos desta loja."); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [currentStoreId, attempt]);
+  const validCustomer = customers.some((customer) => customer.id === customerId);
+  async function start() {
+    if (pending.current || loading || !validCustomer || !canCreate) return;
+    pending.current = true; setSaving(true); setError(""); setMessage("");
+    try {
+      const attendance = await receptionService.startAttendance(customerId, currentStoreId, "CONSULTATION");
+      if (!mounted.current) return;
+      setQueue((items) => [attendance, ...items]); setCustomerId("");
+      setMessage("Cliente adicionado à fila.");
+      setSearchParams((params) => { params.delete("customer"); return params; }, { replace: true });
+    } catch { if (mounted.current) setError("Não foi possível adicionar à fila. Confira o cliente e tente novamente."); }
+    finally { pending.current = false; if (mounted.current) setSaving(false); }
+  }
+  const waiting = queue.filter((item) => item.status === "WAITING");
   const customerName = (id: string) => customers.find((customer) => customer.id === id)?.name ?? "Cliente";
-  return <div className="page"><p className="eyebrow">Recepção</p><h1>Atendimentos</h1><div className="attendance-start"><select aria-label="Selecionar cliente" value={customerId} onChange={(event) => setCustomerId(event.target.value)}><option value="">Selecionar cliente</option>{customers.map((customer) => <option key={customer.id} value={customer.id}>{customer.name}</option>)}</select><Button type="button" disabled={!customerId} onClick={() => void start()}>Adicionar à fila</Button></div><h2 className="section-title">Fila atual</h2><div className="list-card">{queue.length ? queue.filter((item) => item.status === "WAITING").map((item) => <Link className="list-row list-link" key={item.id} to={`/clinico/atendimento/${item.id}`}><div><strong>{customerName(item.customerId)}</strong><span>{attendanceTypeLabels[item.type]} · aguardando atendimento</span></div></Link>) : <p className="empty-state">Nenhum atendimento aguardando.</p>}</div></div>;
+  return <div className="page"><p className="eyebrow">Recepção</p><h1>Atendimentos</h1>
+    {canCreate && <div className="attendance-start"><select aria-label="Selecionar cliente" value={validCustomer ? customerId : ""} disabled={loading || saving} onChange={(event) => setCustomerId(event.target.value)}><option value="">Selecionar cliente</option>{customers.map((customer) => <option key={customer.id} value={customer.id}>{customer.name}</option>)}</select><Button type="button" disabled={loading || saving || !validCustomer} onClick={() => void start()}>{saving ? "Adicionando…" : "Adicionar à fila"}</Button></div>}
+    {!loading && customerId && !validCustomer && <p role="alert">Cliente não encontrado. Selecione um cliente cadastrado.</p>}
+    {error && <p role="alert" className="error-text">{error} <Button type="button" disabled={saving || loading} onClick={() => setAttempt((value) => value + 1)}>Atualizar fila</Button></p>}
+    {message && <p role="status" className="success">{message}</p>}
+    <h2 className="section-title">Fila atual</h2><div className="list-card">{loading ? <p role="status" className="empty-state">Carregando atendimentos…</p> : waiting.length ? waiting.map((item) => {
+      const content = <div><strong>{customerName(item.customerId)}</strong><span>{attendanceTypeLabels[item.type]} · aguardando atendimento</span></div>;
+      return canOpenClinical ? <Link className="list-row list-link" key={item.id} to={`/clinico/atendimento/${item.id}`}>{content}</Link> : <article className="list-row" key={item.id}>{content}</article>;
+    }) : !error && <p className="empty-state">Nenhum atendimento aguardando.</p>}</div></div>;
 }
 
 export function ClinicalQueuePage() {
-  const { currentStoreId } = useAppContext(); const [queue, setQueue] = useState<Attendance[]>([]);
-  useEffect(() => { void receptionService.listQueue(currentStoreId).then((items) => setQueue(items.filter((item) => item.status === "WAITING"))); }, [currentStoreId]);
-  return <div className="page"><p className="eyebrow">Área clínica</p><div className="page-title"><div><h1>Prontuários em atendimento</h1><p className="page-intro">Selecione um atendimento para registrar anamnese, prescrição e exames.</p></div><Link className="button" to="/atendimentos">Ver fila</Link></div><div className="list-card">{queue.length ? queue.map((attendance) => <Link className="list-row list-link" key={attendance.id} to={`/clinico/atendimento/${attendance.id}`}><div><strong>Atendimento {attendance.id.slice(-6)}</strong><span>Aguardando preenchimento</span></div><span className="badge">Abrir prontuário</span></Link>) : <p className="empty-state">Não há atendimentos aguardando nesta loja.</p>}</div></div>;
+  const { currentStoreId } = useAppContext(); const [queue, setQueue] = useState<Attendance[]>([]); const [customers, setCustomers] = useState<Customer[]>([]);
+  const [loadedStore, setLoadedStore] = useState(""); const [error, setError] = useState(""); const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    let active = true; setLoadedStore(""); setError("");
+    void Promise.all([receptionService.listQueue(currentStoreId), receptionService.listCustomers()])
+      .then(([items, clients]) => { if (active) { setQueue(items.filter((item) => item.status === "WAITING" || item.status === "IN_PROGRESS")); setCustomers(clients); setLoadedStore(currentStoreId); } })
+      .catch(() => { if (active) setError("Não foi possível carregar a fila."); });
+    return () => { active = false; };
+  }, [currentStoreId, attempt]);
+  return <div className="page"><p className="eyebrow">Área clínica</p><div className="page-title"><div><h1>Consultas em andamento</h1><p className="page-intro">Abra uma consulta ou continue um rascunho. Consultas finalizadas ficam no histórico do cliente.</p></div><Link className="button" to="/clientes">Buscar cliente</Link></div>{error && <p role="alert">{error} <Button onClick={() => setAttempt((value) => value + 1)}>Tentar novamente</Button></p>}<div className="list-card">{error ? null : loadedStore !== currentStoreId ? <p role="status">Carregando fila…</p> : queue.length ? queue.map((attendance) => <Link className="list-row list-link" key={attendance.id} to={`/clinico/atendimento/${attendance.id}`}><div><strong>{customers.find((customer) => customer.id === attendance.customerId)?.name ?? "Cliente"}</strong><span>{attendanceStatusLabels[attendance.status]}</span></div><span className="badge">{attendance.status === "IN_PROGRESS" ? "Continuar consulta" : "Abrir consulta"}</span></Link>) : <p className="empty-state">Não há consultas aguardando ou em andamento nesta loja.</p>}</div></div>;
 }
 
 export function InventoryPage() {
@@ -116,15 +198,6 @@ export function CashDeskPage() {
   async function createOrder(sale: Sale) { try { await workOrderService.createFromConfirmedSale(sale); setMessage("Ordem criada."); await refresh(); } catch (reason) { setError(reason instanceof Error ? reason.message : "Não foi possível criar a ordem."); } }
   async function receive(sale: Sale) { try { await cashService.receive(currentStoreId, sale.id, sale.total); setReceivedSaleIds((current) => new Set(current).add(sale.id)); setMessage("Recebimento registrado."); setError(""); } catch (reason) { setError(reason instanceof Error ? reason.message : "Não foi possível registrar o recebimento."); } }
   return <div className="page cash-desk"><div className="cash-heading"><div><p className="eyebrow">Operação da loja</p><h1>Caixa</h1><p className="page-intro">Vendas, recebimentos e abertura do caixa em um só lugar.</p></div><span className={`cash-state ${cashSession ? "is-open" : ""}`}>{cashSession ? "Caixa aberto" : "Caixa fechado"}</span></div><div className="cash-summary-grid">{showSales && <button type="button" className="summary-card" onClick={() => setView("sales")}><small>Vendas registradas</small><strong>{sales.length}</strong><span>Ver vendas</span></button>}{showReceipts && <button type="button" className="summary-card" onClick={() => setView("receipts")}><small>Aguardando recebimento</small><strong>{confirmedSales.length}</strong><span>Ver recebimentos</span></button>}{showSession && <button type="button" className="summary-card" onClick={() => setView("session")}><small>Situação do caixa</small><strong>{cashSession ? "Aberto" : "Fechado"}</strong><span>Ver detalhes</span></button>}</div><div className="cash-tabs" role="tablist" aria-label="Áreas do caixa">{showSales && <button type="button" role="tab" aria-selected={view === "sales"} className={view === "sales" ? "active" : ""} onClick={() => setView("sales")}>Vendas</button>}{showReceipts && <button type="button" role="tab" aria-selected={view === "receipts"} className={view === "receipts" ? "active" : ""} onClick={() => setView("receipts")}>Recebimentos</button>}{showSession && <button type="button" role="tab" aria-selected={view === "session"} className={view === "session" ? "active" : ""} onClick={() => setView("session")}>Abertura</button>}</div>{message && <p className="notice success">{message}</p>}{error && <p className="notice error-text">{error}</p>}{view === "sales" && <section className="cash-panel" aria-label="Vendas"><div className="section-heading"><div><h2>Orçamentos e vendas</h2><p>Crie um orçamento e confirme quando o cliente aprovar.</p></div></div>{canManageSales && <form className="commerce-form" onSubmit={createSale}><select aria-label="Cliente" value={customerId} onChange={(event) => setCustomerId(event.target.value)} required><option value="">Selecione o cliente</option>{customers.map((customer) => <option value={customer.id} key={customer.id}>{customer.name}</option>)}</select><Input placeholder="Produto ou serviço" value={description} onChange={(event) => setDescription(event.target.value)} required /><Input type="number" min="0.01" step="0.01" placeholder="Valor" value={total} onChange={(event) => setTotal(event.target.value)} required /><Button type="submit">Criar orçamento</Button></form>}<div className="list-card compact-list">{sales.length ? sales.map((sale) => <article className="list-row" key={sale.id}><div><strong>{sale.description}</strong><span>{customers.find((customer) => customer.id === sale.customerId)?.name ?? "Cliente"}</span></div><div><span className="badge">R$ {sale.total.toFixed(2)} · {saleStatusLabels[sale.status]}</span>{canManageSales && sale.status === "QUOTE" && <Button type="button" onClick={() => void confirmSale(sale)}>Confirmar</Button>}{canManageSales && sale.status === "CONFIRMED" && (orders.some((order) => order.saleId === sale.id) ? <span className="success">Ordem criada</span> : <Button type="button" onClick={() => void createOrder(sale)}>Criar ordem</Button>)}</div></article>) : <p className="empty-state">Nenhuma venda registrada.</p>}</div></section>}{view === "receipts" && <section className="cash-panel" aria-label="Recebimentos"><div className="section-heading"><div><h2>Recebimentos</h2><p>Vendas confirmadas que estão prontas para pagamento.</p></div></div><div className="list-card compact-list">{confirmedSales.length ? confirmedSales.map((sale) => <article className="list-row" key={sale.id}><div><strong>{sale.description}</strong><span>Venda confirmada</span></div><div><span className="badge">R$ {sale.total.toFixed(2)}</span>{canManageCash && <Button type="button" disabled={receivedSaleIds.has(sale.id)} onClick={() => void receive(sale)}>{receivedSaleIds.has(sale.id) ? "Recebido" : "Receber"}</Button>}</div></article>) : <p className="empty-state">Nenhum recebimento pendente.</p>}</div></section>}{view === "session" && <section className="cash-panel" aria-label="Abertura do caixa"><div className="section-heading"><div><h2>Abertura do caixa</h2><p>Confira a sessão ativa antes de registrar recebimentos.</p></div></div>{cashSession ? <Card><span className="cash-state is-open">Em operação</span><h2>Caixa aberto</h2><p>Saldo inicial: R$ {cashSession.openingBalance.toFixed(2)}</p><p className="help-text">Aberto em {new Date(cashSession.openedAt).toLocaleString("pt-BR")}.</p></Card> : canManageCash ? <form className="open-cash-form" onSubmit={openCash}><label>Saldo inicial<Input type="number" min="0" step="0.01" value={openingBalance} onChange={(event) => setOpeningBalance(event.target.value)} placeholder="R$ 0,00" /></label><Button type="submit">Abrir caixa</Button></form> : <p className="empty-state">O caixa ainda não foi aberto.</p>}</section>}</div>;
-}
-
-export function ClinicalWorkspacePage() {
-  const { attendanceId = "" } = useParams(); const [record, setRecord] = useState<ClinicalRecord>(); const [saved, setSaved] = useState(false); const [error, setError] = useState("");
-  useEffect(() => { void clinicalService.load(attendanceId).then(setRecord); }, [attendanceId]);
-  if (!record) return <div className="app-loading">Abrindo prontuário…</div>;
-  async function save(event: React.FormEvent) { event.preventDefault(); await clinicalService.save(record!); setSaved(true); }
-  async function finalize() { try { await clinicalService.finalize(record!); setRecord({ ...record!, finalizedAt: new Date().toISOString() }); setError(""); } catch (reason) { setError(reason instanceof Error ? reason.message : "Não foi possível finalizar."); } }
-  return <div className="page"><p className="eyebrow">Área clínica</p><h1>Atendimento clínico</h1><form className="settings-form clinical-form" onSubmit={save}><label>Anamnese<textarea value={record.anamnesis} onChange={(event) => setRecord({ ...record, anamnesis: event.target.value })} /></label><label>Exame<textarea value={record.examination} onChange={(event) => setRecord({ ...record, examination: event.target.value })} /></label><label>Solicitações<textarea value={record.requests} onChange={(event) => setRecord({ ...record, requests: event.target.value })} /></label><label>Prescrição<textarea value={record.prescription} onChange={(event) => setRecord({ ...record, prescription: event.target.value })} /></label><p className="help-text">Anexos: {record.attachments.length}</p><div className="form-actions"><Button type="submit">Salvar rascunho</Button><Button type="button" disabled={Boolean(record.finalizedAt)} onClick={() => void finalize()}>{record.finalizedAt ? "Atendimento finalizado" : "Finalizar atendimento"}</Button></div>{saved && <span className="success">Rascunho salvo.</span>}{error && <span className="error-text">{error}</span>}</form></div>;
 }
 
 export function ForbiddenPage() { return <div className="page"><h1>Acesso não permitido</h1><p>Seu perfil atual não possui esta permissão.</p></div>; }

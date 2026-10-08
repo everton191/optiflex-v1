@@ -41,7 +41,7 @@ Os módulos abaixo são responsabilidades reais encontradas. Como ainda não há
 - Estado: `AppProviders`.
 - Models: `Store`, `User`, `OrganizationSettings`, `CurrentStoreContext`, `LocalSession`.
 - Dependências: access, IndexedDB e shell.
-- Risco: seed e fallback estão em locais diferentes.
+- Risco: sessão OWNER padrão ainda é demo local, sem autenticação; falha de boot agora bloqueia a operação com nova tentativa.
 - Tarefas: seletor de loja → provider/service/shell; configuração → SettingsPage + repository.
 - Docs: `modules/administration/MODULE.md` e `AI_CONTEXT.md`.
 

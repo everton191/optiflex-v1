@@ -75,7 +75,7 @@ Verificar `database.ts`, todos os models afetados, repositories e migração de 
 
 ## Alterar inicialização ou loja atual
 
-Verificar `AppProviders`, `AdministrationService`, repositories de administração, seed/fallback e seletor em `AppShell`.
+Verificar `AppProviders`, `AdministrationService`, repositories de administração, seeds, estados de carregamento/erro e seletor em `AppShell`. Não conceder acesso com sessão/loja fictícias quando o boot falhar.
 
 ## Alterar rota
 

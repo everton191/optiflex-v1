@@ -72,8 +72,56 @@ export class LocalAttendanceRepository implements AttendanceRepository {
 }
 
 export class LocalClinicalRepository implements ClinicalRepository {
-  async get(attendanceId: string): Promise<ClinicalRecord | undefined> { return database.clinicalRecords.get(attendanceId); }
-  async save(record: ClinicalRecord): Promise<void> { await database.clinicalRecords.put(record); }
+  private async attendance(attendanceId: string, storeId: string) {
+    const attendance = await database.attendances.get(attendanceId);
+    if (!attendance || attendance.storeId !== storeId) throw new Error("Atendimento não encontrado nesta loja.");
+    if (attendance.status === "CANCELLED") throw new Error("Este atendimento foi cancelado.");
+    return attendance;
+  }
+  async load(attendanceId: string, storeId: string) {
+    return database.transaction("r", database.attendances, database.customers, database.clinicalRecords, async () => {
+      const attendance = await this.attendance(attendanceId, storeId);
+      const customer = await database.customers.get(attendance.customerId);
+      if (!customer) throw new Error("Cliente do atendimento não encontrado.");
+      const record = await database.clinicalRecords.get(attendanceId) ?? { attendanceId, anamnesis: "", examination: "", prescription: "", requests: "", attachments: [], revision: 0, version: 1, updatedAt: "" };
+      return { record, customer };
+    });
+  }
+  async write(input: ClinicalRecord, storeId: string, author: string, action: "save" | "finalize" | "amend", reason?: string): Promise<ClinicalRecord> {
+    return database.transaction("rw", database.attendances, database.clinicalRecords, database.clinicalVersions, async () => {
+      const attendance = await this.attendance(input.attendanceId, storeId);
+      const current = await database.clinicalRecords.get(input.attendanceId);
+      if ((current?.revision ?? 0) !== (input.revision ?? 0) || (current?.updatedAt ?? "") !== input.updatedAt) throw new Error("Este atendimento mudou em outra aba. Reabra a consulta antes de continuar; seu texto ainda está nesta tela.");
+      if (action === "amend") {
+        if (!current?.finalizedAt || !reason?.trim()) throw new Error("A correção exige um documento finalizado e um motivo.");
+        const version = current.version ?? 1;
+        const versionId = `${current.attendanceId}:${version}`;
+        if (!await database.clinicalVersions.get(versionId)) await database.clinicalVersions.add({ ...current, version, id: versionId, finalizedAt: current.finalizedAt });
+        const amended = { ...current, finalizedAt: undefined, version: version + 1, revision: (current.revision ?? 0) + 1, author, amendmentReason: reason.trim(), updatedAt: new Date().toISOString() };
+        await database.clinicalRecords.put(amended);
+        return amended;
+      }
+      if (current?.finalizedAt || input.finalizedAt) throw new Error("Documento finalizado: crie uma correção para preservar o original.");
+      if (attendance.status === "FINISHED" && !current?.amendmentReason) throw new Error("Este atendimento já foi concluído.");
+      if (action === "finalize" && !input.prescription.trim()) throw new Error("Preencha a prescrição antes de finalizar.");
+      const now = new Date().toISOString();
+      const saved: ClinicalRecord = { ...input, version: current?.version ?? 1, amendmentReason: current?.amendmentReason, revision: (current?.revision ?? 0) + 1, author, updatedAt: now, finalizedAt: action === "finalize" ? now : undefined };
+      await database.clinicalRecords.put(saved);
+      if (action === "finalize") {
+        await database.clinicalVersions.add({ ...saved, id: `${saved.attendanceId}:${saved.version}`, finalizedAt: now });
+        await database.attendances.update(saved.attendanceId, { status: "FINISHED" });
+      } else if (attendance.status === "WAITING" || attendance.status === "DRAFT") {
+        await database.attendances.update(saved.attendanceId, { status: "IN_PROGRESS" });
+      }
+      return saved;
+    });
+  }
+  async history(attendanceId: string, storeId: string) {
+    return database.transaction("r", database.attendances, database.clinicalVersions, async () => {
+      await this.attendance(attendanceId, storeId);
+      return database.clinicalVersions.where("attendanceId").equals(attendanceId).reverse().sortBy("version");
+    });
+  }
 }
 
 export class LocalSaleRepository implements SaleRepository {
