@@ -23,8 +23,8 @@ export interface InventoryMovement {
 export type StockState = "OUT" | "LOW" | "OK";
 
 export function stockState(item: Pick<InventoryItem, "quantity" | "minimumQuantity">): StockState {
-  if (item.quantity <= 0) return "OUT";
-  if (item.minimumQuantity > 0 && item.quantity <= item.minimumQuantity) return "LOW";
+  if (!Number.isFinite(item.quantity) || item.quantity <= 0) return "OUT";
+  if (Number.isFinite(item.minimumQuantity) && item.minimumQuantity > 0 && item.quantity <= item.minimumQuantity) return "LOW";
   return "OK";
 }
 

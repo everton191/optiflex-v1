@@ -15,6 +15,7 @@ describe("cash opening", () => {
     await expect(service.open("  ", 0)).rejects.toThrow("Selecione uma loja");
     await expect(service.open("store-centro", -1)).rejects.toThrow("saldo inicial válido");
     await expect(service.open("store-centro", Number.NaN)).rejects.toThrow("saldo inicial válido");
+    await expect(service.open("store-centro", Number.POSITIVE_INFINITY)).rejects.toThrow("saldo inicial válido");
     expect(repository.openSession).not.toHaveBeenCalled();
   });
 
@@ -38,6 +39,8 @@ describe("cash receipts", () => {
     await expect(service.receive("store-centro", "sale-1", 0)).rejects.toThrow("Informe um valor válido");
     await expect(service.receive("store-centro", "sale-1", -10)).rejects.toThrow("Informe um valor válido");
     await expect(service.receive("store-centro", "sale-1", Number.NaN)).rejects.toThrow("Informe um valor válido");
+    await expect(service.receive("store-centro", "sale-1", Number.POSITIVE_INFINITY)).rejects.toThrow("Informe um valor válido");
+    await expect(service.receive("store-centro", "sale-1", 0.001)).rejects.toThrow("Informe um valor válido");
     expect(repository.current).not.toHaveBeenCalled();
   });
 

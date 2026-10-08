@@ -37,6 +37,19 @@ describe("quote creation with stock items", () => {
     const created = await service.createQuote("customer-1", "store-centro", "Serviço", 150);
     expect(created).toMatchObject({ total: 150, description: "Serviço", items: undefined });
   });
+
+  it("rejects non-finite totals (NaN and Infinity)", async () => {
+    await expect(service.createQuote("customer-1", "store-centro", "Venda", Number.NaN)).rejects.toThrow("descrição e valor");
+    await expect(service.createQuote("customer-1", "store-centro", "Venda", Number.POSITIVE_INFINITY)).rejects.toThrow("descrição e valor");
+    await expect(service.createQuote("customer-1", "store-centro", "Venda", Number.NEGATIVE_INFINITY)).rejects.toThrow("descrição e valor");
+    expect(repository.save).not.toHaveBeenCalled();
+  });
+
+  it("sums item lines in cents so 0.1 + 0.2 never drifts", async () => {
+    repository.save.mockResolvedValue(undefined);
+    const created = await service.createQuote("customer-1", "store-centro", "", 0, [item("i1", 1, 0.1), item("i2", 1, 0.2)]);
+    expect(created.total).toBe(0.3);
+  });
 });
 
 describe("confirmation with stock deduction", () => {
@@ -63,6 +76,16 @@ describe("confirmation with stock deduction", () => {
   it("rejects sales that are not pending quotes", async () => {
     await expect(service.confirm(quote({ status: "CONFIRMED" }))).rejects.toThrow("pendentes");
     await expect(service.confirm(quote({ status: "CANCELLED" }))).rejects.toThrow("pendentes");
+    expect(repository.confirm).not.toHaveBeenCalled();
+  });
+
+  it("rejects non-finite or non-positive values before confirming", async () => {
+    await expect(service.confirm(quote({ total: Number.NaN }))).rejects.toThrow("Valores da venda inválidos");
+    await expect(service.confirm(quote({ total: Number.POSITIVE_INFINITY }))).rejects.toThrow("Valores da venda inválidos");
+    await expect(service.confirm(quote({ total: 0 }))).rejects.toThrow("Valores da venda inválidos");
+    await expect(service.confirm(quote({ items: [item("i1", Number.NaN, 10)] }))).rejects.toThrow("Valores da venda inválidos");
+    await expect(service.confirm(quote({ items: [item("i1", -1, 10)] }))).rejects.toThrow("Valores da venda inválidos");
+    await expect(service.confirm(quote({ items: [item("i1", 1, Number.NaN)] }))).rejects.toThrow("Valores da venda inválidos");
     expect(repository.confirm).not.toHaveBeenCalled();
   });
 });

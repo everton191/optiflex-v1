@@ -1,4 +1,5 @@
 import type { InventoryMovement } from "./inventory";
+import { fromCents, toCents } from "./money";
 
 export type SaleStatus = "QUOTE" | "CONFIRMED" | "CANCELLED";
 export type SalePaymentStatus = "PENDING" | "PAID";
@@ -22,8 +23,12 @@ export interface Sale {
   createdAt: string;
 }
 
+export function itemsTotalCents(items: readonly SaleItem[]): number {
+  return items.reduce((total, item) => total + toCents(item.quantity * item.unitPrice), 0);
+}
+
 export function itemsTotal(items: readonly SaleItem[]): number {
-  return items.reduce((total, item) => total + item.quantity * item.unitPrice, 0);
+  return fromCents(itemsTotalCents(items));
 }
 
 export function stockMovementsFor(sale: Sale): InventoryMovement[] {

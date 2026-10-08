@@ -1,7 +1,6 @@
 import type { CashRepository, SaleRepository } from "./repositories";
 import type { CashEntry, CashSession } from "./cash";
-
-const money = (value: number) => Math.round(value * 100);
+import { isMoney, toCents } from "./money";
 
 export class CashService {
   constructor(private readonly repository: CashRepository, private readonly sales: SaleRepository) {}
@@ -13,14 +12,14 @@ export class CashService {
 
   async open(storeId: string, openingBalance: number): Promise<CashSession> {
     this.store(storeId);
-    if (!Number.isFinite(openingBalance) || openingBalance < 0) throw new Error("Informe um saldo inicial válido.");
+    if (!isMoney(openingBalance) || openingBalance < 0) throw new Error("Informe um saldo inicial válido.");
     if (await this.repository.current(storeId)) throw new Error("Já existe um caixa aberto nesta loja.");
     return this.repository.openSession({ id: `cash-${crypto.randomUUID()}`, storeId, openingBalance, openedAt: new Date().toISOString() });
   }
 
   async receive(storeId: string, saleId: string, amount: number): Promise<CashEntry> {
     this.store(storeId);
-    if (!Number.isFinite(amount) || money(amount) <= 0) throw new Error("Informe um valor válido.");
+    if (!isMoney(amount) || toCents(amount) <= 0) throw new Error("Informe um valor válido.");
     const session = await this.repository.current(storeId);
     if (!session) throw new Error("Abra o caixa antes de registrar recebimentos.");
     const sale = await this.sales.get(saleId);
@@ -31,7 +30,7 @@ export class CashService {
 
   async close(storeId: string, closingBalance: number, closedBy?: string, note?: string): Promise<CashSession> {
     this.store(storeId);
-    if (!Number.isFinite(closingBalance) || closingBalance < 0) throw new Error("Informe o valor contado no fechamento.");
+    if (!isMoney(closingBalance) || closingBalance < 0) throw new Error("Informe o valor contado no fechamento.");
     if (!await this.repository.current(storeId)) throw new Error("Abra o caixa antes de fechar.");
     return this.repository.closeSession(storeId, { closingBalance, closedBy, note });
   }

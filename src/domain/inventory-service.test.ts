@@ -85,6 +85,12 @@ describe("stock alerts", () => {
     expect(stockState({ quantity: 1, minimumQuantity: 0 })).toBe("OK");
   });
 
+  it("treats non-finite balances as out of stock instead of passing the check", () => {
+    expect(stockState({ quantity: Number.NaN, minimumQuantity: 0 })).toBe("OUT");
+    expect(stockState({ quantity: Number.POSITIVE_INFINITY, minimumQuantity: 3 })).toBe("OUT");
+    expect(stockState({ quantity: 2, minimumQuantity: Number.NaN })).toBe("OK");
+  });
+
   it("computes movement deltas by type", () => {
     expect(movementDelta({ type: "IN", quantity: 5 })).toBe(5);
     expect(movementDelta({ type: "OUT", quantity: 5 })).toBe(-5);
