@@ -114,15 +114,15 @@ Os módulos abaixo são responsabilidades reais encontradas. Como ainda não há
 
 ## Inventory
 
-- Responsabilidade: itens, saldo mínimo e movimentos de entrada/saída/ajuste.
+- Responsabilidade: itens, saldo mínimo e movimentos de entrada/saída/ajuste com histórico.
 - Rota: `/estoque`.
-- Página: `InventoryPage` (somente listagem atual).
-- Service: `InventoryService`.
-- Repository: `InventoryRepository` / `LocalInventoryRepository`.
-- Models: `InventoryItem`, `InventoryMovement`.
+- Página: `InventoryPage` (`src/app/InventoryWorkspace.tsx`): cadastro, movimentação, alertas e histórico.
+- Service: `InventoryService` (`list`, `history`, `create`, `update`, `adjust`).
+- Repository: `InventoryRepository` / `LocalInventoryRepository` (transacional, anti-saldo-negativo).
+- Models: `InventoryItem` (com `code?`), `InventoryMovement` (com `author?`), `stockState`, `movementDelta`.
 - Permissões: `inventory.read`, `inventory.manage`.
-- Dependências: store context.
-- Risco: service ajusta saldo, mas a UI ainda não expõe cadastro ou movimento.
+- Dependências: store context, sessão (autor), backup (`code`/`author` validados).
+- Risco: sales ainda não movimenta estoque; integração transacional pendente.
 - Docs: `modules/inventory/MODULE.md` e `AI_CONTEXT.md`.
 
 ## Cash

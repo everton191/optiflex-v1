@@ -10,19 +10,16 @@ export { ClinicalWorkspacePage } from "./ClinicalWorkspace";
 import { SalesService } from "../domain/sales-service";
 import type { Sale } from "../domain/sales";
 import { WorkOrderService } from "../domain/work-order-service";
-import { InventoryService } from "../domain/inventory-service";
 import { CashService } from "../domain/cash-service";
 import type { WorkOrder } from "../domain/work-order";
-import type { InventoryItem } from "../domain/inventory";
 import type { CashEntry, CashSession } from "../domain/cash";
 import { cashTotals } from "../domain/cash";
-import { LocalAttendanceRepository, LocalCashRepository, LocalCustomerRepository, LocalInventoryRepository, LocalSaleRepository, LocalWorkOrderRepository } from "../infrastructure/storage/local-repositories";
+import { LocalAttendanceRepository, LocalCashRepository, LocalCustomerRepository, LocalSaleRepository, LocalWorkOrderRepository } from "../infrastructure/storage/local-repositories";
 
 const receptionService = new ReceptionService(new LocalCustomerRepository(), new LocalAttendanceRepository());
 const saleRepository = new LocalSaleRepository();
 const salesService = new SalesService(saleRepository);
 const workOrderService = new WorkOrderService(new LocalWorkOrderRepository());
-const inventoryService = new InventoryService(new LocalInventoryRepository());
 const cashRepository = new LocalCashRepository();
 const cashService = new CashService(cashRepository, saleRepository);
 const scopeLabels = { SELF: "Próprio usuário", STORE: "Loja", ORGANIZATION: "Empresa", NETWORK: "Todas as lojas" } as const;
@@ -178,11 +175,7 @@ export function ClinicalQueuePage() {
   return <div className="page"><p className="eyebrow">Área clínica</p><div className="page-title"><div><h1>Consultas em andamento</h1><p className="page-intro">Abra uma consulta ou continue um rascunho. Consultas finalizadas ficam no histórico do cliente.</p></div><Link className="button" to="/clientes">Buscar cliente</Link></div>{error && <p role="alert">{error} <Button onClick={() => setAttempt((value) => value + 1)}>Tentar novamente</Button></p>}<div className="list-card">{error ? null : loadedStore !== currentStoreId ? <p role="status">Carregando fila…</p> : queue.length ? queue.map((attendance) => <Link className="list-row list-link" key={attendance.id} to={`/clinico/atendimento/${attendance.id}`}><div><strong>{customers.find((customer) => customer.id === attendance.customerId)?.name ?? "Cliente"}</strong><span>{attendanceStatusLabels[attendance.status]}</span></div><span className="badge">{attendance.status === "IN_PROGRESS" ? "Continuar consulta" : "Abrir consulta"}</span></Link>) : <p className="empty-state">Não há consultas aguardando ou em andamento nesta loja.</p>}</div></div>;
 }
 
-export function InventoryPage() {
-  const { currentStoreId } = useAppContext(); const [items, setItems] = useState<InventoryItem[]>([]);
-  useEffect(() => { void inventoryService.list(currentStoreId).then(setItems); }, [currentStoreId]);
-  return <div className="page"><p className="eyebrow">Operação</p><h1>Estoque</h1><p className="page-intro">Acompanhe os produtos e os saldos disponíveis nesta loja.</p><div className="list-card">{items.length ? items.map((item) => <article className="list-row" key={item.id}><div><strong>{item.name}</strong><span>Quantidade mínima: {item.minimumQuantity}</span></div><span className="badge">{item.quantity} disponíveis</span></article>) : <p className="empty-state">Nenhum item cadastrado nesta loja.</p>}</div></div>;
-}
+export { InventoryPage } from "./InventoryWorkspace";
 
 type CashDeskView = "sales" | "receipts" | "session";
 

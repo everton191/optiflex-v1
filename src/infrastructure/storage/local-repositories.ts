@@ -139,8 +139,36 @@ export class LocalWorkOrderRepository implements WorkOrderRepository {
 
 export class LocalInventoryRepository implements InventoryRepository {
   async listByStore(storeId: string): Promise<InventoryItem[]> { return database.inventoryItems.where("storeId").equals(storeId).sortBy("name"); }
-  async saveItem(item: InventoryItem): Promise<void> { await database.inventoryItems.put(item); }
-  async addMovement(movement: InventoryMovement): Promise<void> { await database.inventoryMovements.put(movement); }
+  async listMovements(storeId: string): Promise<InventoryMovement[]> { return database.inventoryMovements.where("storeId").equals(storeId).reverse().sortBy("createdAt"); }
+  async createItem(item: InventoryItem, initialMovement?: InventoryMovement): Promise<void> {
+    return database.transaction("rw", database.inventoryItems, database.inventoryMovements, async () => {
+      if (await database.inventoryItems.get(item.id)) throw new Error("Produto já cadastrado.");
+      await database.inventoryItems.put(item);
+      if (initialMovement) {
+        if (initialMovement.itemId !== item.id || initialMovement.storeId !== item.storeId) throw new Error("Movimentação inicial incompatível com o produto.");
+        await database.inventoryMovements.put(initialMovement);
+      }
+    });
+  }
+  async updateItem(item: InventoryItem): Promise<void> {
+    return database.transaction("rw", database.inventoryItems, async () => {
+      const current = await database.inventoryItems.get(item.id);
+      if (!current || current.storeId !== item.storeId) throw new Error("Produto não encontrado nesta loja.");
+      await database.inventoryItems.put({ ...item, quantity: current.quantity });
+    });
+  }
+  async applyMovement(movement: InventoryMovement): Promise<InventoryItem> {
+    return database.transaction("rw", database.inventoryItems, database.inventoryMovements, async () => {
+      const item = await database.inventoryItems.get(movement.itemId);
+      if (!item || item.storeId !== movement.storeId) throw new Error("Produto não encontrado nesta loja.");
+      const next = item.quantity + (movement.type === "OUT" ? -movement.quantity : movement.quantity);
+      if (next < 0) throw new Error("Saldo insuficiente para esta movimentação.");
+      const updated: InventoryItem = { ...item, quantity: next };
+      await database.inventoryItems.put(updated);
+      await database.inventoryMovements.put(movement);
+      return updated;
+    });
+  }
 }
 
 export class LocalCashRepository implements CashRepository {

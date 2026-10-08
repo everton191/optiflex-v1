@@ -136,6 +136,12 @@ textarea { min-height: 6rem; }
 .cash-totals div { display: grid; gap: var(--space-1); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-3); background: var(--color-surface); }
 .cash-totals small { color: var(--color-muted); }
 .cash-totals strong { font-size: 1rem; }
+.inventory-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: var(--space-3); align-items: end; max-width: 58rem; margin-block: var(--space-4); }
+.inventory-form label { display: grid; gap: var(--space-2); font-weight: 600; }
+.inventory-form select { min-height: 2.5rem; border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 0 var(--space-3); background: var(--color-surface); color: var(--color-text); }
+.inventory-form .form-actions, .inventory-form .help-text { grid-column: 1 / -1; }
+.badge.is-low { background: color-mix(in srgb, var(--color-focus), transparent 88%); color: var(--color-focus) !important; }
+.badge.is-out { background: color-mix(in srgb, #a12525, transparent 90%); color: #a12525 !important; }
 
 @media (max-width: 720px), (min-width: 721px) and (max-width: 1024px) and (orientation: portrait) {
   .user-summary { display: none; }
@@ -153,5 +159,6 @@ textarea { min-height: 6rem; }
   .compact-list .list-row .button { flex: 1; }
   .open-cash-form { align-items: stretch; flex-direction: column; max-width: none; }
   .open-cash-form .button, .form-actions .button { width: 100%; }
+  .inventory-form { grid-template-columns: 1fr; max-width: none; }
   .form-actions { flex-direction: column; }
 }

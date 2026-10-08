@@ -58,8 +58,10 @@ export interface WorkOrderRepository {
 
 export interface InventoryRepository {
   listByStore(storeId: string): Promise<InventoryItem[]>;
-  saveItem(item: InventoryItem): Promise<void>;
-  addMovement(movement: InventoryMovement): Promise<void>;
+  listMovements(storeId: string): Promise<InventoryMovement[]>;
+  createItem(item: InventoryItem, initialMovement?: InventoryMovement): Promise<void>;
+  updateItem(item: InventoryItem): Promise<void>;
+  applyMovement(movement: InventoryMovement): Promise<InventoryItem>;
 }
 
 export interface CashCloseInput {
