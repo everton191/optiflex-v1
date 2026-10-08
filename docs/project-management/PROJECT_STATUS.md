@@ -9,18 +9,16 @@
 - **Branch analisada:** `docs/master-kanban` (documentação/planejamento).
 - **Branch de desenvolvimento:** `feat/operational-flow-v2` (6 commits à frente de `v1`; merge-base `3510602`).
 - **Último commit (código):** `d6ab1d4` — *feat: deduct stock when confirming sales with items*.
-- **Último commit (documentação):** `0a8f10c` — *docs: fix 7 dependency cycles and reclassify 3 blocked cards* (após `634eb37` e `b8d1a84`).
+- **Último commit (documentação):** branch publicada de `634eb37` até o commit atual desta branch (`c4192c2` + esta atualização).
 - **Remote:** `https://github.com/everton191/optiflex-v1.git`.
 
-### Publicação (verificada em 08/10/2026)
+### Publicação (executada em 08/10/2026, com autorização do usuário)
 
-- Remoto contém **apenas `v1`** (`3510602`). `feat/operational-flow-v2` e `docs/master-kanban` existem **só localmente** — causa: nunca receberam `push` (sem upstream configurado).
-- Ancestralidade conferida: merge-base com `v1` = `3510602`, **0 atrás / 8 à frente**, `git fsck` limpo → publicação é fast-forward puro (sem sobrescrever nada).
-- **Proposta (aguarda confirmação do usuário, sem force-push, sem merge):**
-  ```powershell
-  git push -u origin feat/operational-flow-v2
-  git push -u origin docs/master-kanban
-  ```
+- Varredura de sigilos **antes do push** (repo público): chaves/certificados, tokens cloud, segredos em literais, CPF/CNPJ, JWT, `.env`, binários e históricos = **limpo**; caminho pessoal generalizado (`c4192c2`); autor dos commits = e-mail noreply do GitHub.
+- Push normal (`-u`, **sem force-push**) das duas branches; **`v1` preservada** (`3510602` local = remoto) e **nenhum merge executado**.
+- SHAs no remoto: `feat/operational-flow-v2` = `d6ab1d4` · `docs/master-kanban` = `c4192c2` + commits desta revisão.
+- Documentos do Kanban acessíveis via `raw.githubusercontent.com/.../docs/master-kanban/docs/project-management/`.
+- PR `docs/master-kanban` → `feat/operational-flow-v2` (somente documentação; ver relatório da sessão).
 
 ## Revisão executada em 08/10/2026 (somente planejamento — nenhum código alterado)
 
