@@ -4,7 +4,7 @@ import { AttendancePage, CashDeskPage, ClinicalQueuePage, ClinicalWorkspacePage,
 import { AppShell } from "../shell/AppShell";
 
 const router = createBrowserRouter([{ path: "/", element: <AppShell />, children: [
-  { index: true, element: <DashboardPage /> },
+  { index: true, element: <RequirePermission permission="dashboard.view"><DashboardPage /></RequirePermission> },
   { path: "clientes", element: <RequirePermission permission="customers.read"><CustomersPage /></RequirePermission> },
   { path: "clientes/novo", element: <RequirePermission permission="customers.manage"><CustomerNewPage /></RequirePermission> },
   { path: "clientes/:customerId", element: <RequirePermission permission="customers.read"><CustomerProfilePage /></RequirePermission> },

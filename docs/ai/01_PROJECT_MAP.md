@@ -27,9 +27,9 @@ opticore/
 
 Responsabilidade: compor a aplicação React, fornecer estado global, declarar rotas, aplicar guards e renderizar as páginas atuais.
 
-Arquivos: `App.tsx`, `providers.tsx`, `router.tsx`, `permissions.tsx`, `pages.tsx`.
+Arquivos: `App.tsx`, `providers.tsx`, `router.tsx`, `permissions.tsx`, `pages.tsx`, workspaces por módulo (`ClinicalWorkspace.tsx`, `DashboardWorkspace.tsx`, `InventoryWorkspace.tsx`, `WorkOrdersWorkspace.tsx`) e `BackupPanel.tsx`/`clinical-draft.ts`.
 
-Pode depender de: `domain`, `infrastructure`, `design-system` e `shell`. Atenção: `pages.tsx` concentra páginas de vários módulos e instancia services/repositories.
+Pode depender de: `domain`, `infrastructure`, `design-system` e `shell`. Atenção: `pages.tsx` ainda concentra páginas e instancia services/repositories; módulos maiores já foram extraídos para `*Workspace.tsx` re-exportados por `pages.tsx`.
 
 ## `src/design-system/`
 

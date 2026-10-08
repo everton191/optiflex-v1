@@ -4,7 +4,7 @@ Todas as rotas usam `AppShell`. A configuração canônica está em `src/app/rou
 
 | Rota | Página/ação | Módulo | Permissão | Layout |
 |---|---|---|---|---|
-| `/` | `DashboardPage` | dashboard | sem guard explícito | AppShell |
+| `/` | `DashboardPage` | dashboard | `dashboard.view` | AppShell |
 | `/clientes` | `CustomersPage` | customers | `customers.read` | AppShell |
 | `/clientes/novo` | `CustomerNewPage` | customers | `customers.manage` | AppShell |
 | `/clientes/:customerId` | `CustomerProfilePage` | customers | `customers.read` | AppShell |

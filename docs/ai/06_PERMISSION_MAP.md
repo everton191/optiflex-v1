@@ -6,7 +6,7 @@ Fonte canônica: `src/domain/access.ts`. Guards: `src/app/permissions.tsx`. Rota
 
 | Permissão | Módulo | Ação | Escopo efetivo | Rotas/uso |
 |---|---|---|---|---|
-| `dashboard.view` | dashboard | visualizar painel | definido pela role | `/` (não guardada hoje) |
+| `dashboard.view` | dashboard | visualizar painel | definido pela role | `/` |
 | `stores.read` | administration | consultar lojas | role | provider/topbar |
 | `stores.manage` | administration | administrar lojas | role | sem UI própria |
 | `stores.select` | administration | trocar loja | role | topbar |
@@ -55,6 +55,5 @@ Não foi encontrado `user.role === "admin"`. `CashDeskPage` usa combinações de
 
 ## Riscos
 
-- `/` não usa `RequirePermission` apesar de existir `dashboard.view`.
 - Algumas permissões de ação não têm guard interno dedicado (`attendance.create`, `stores.select`).
 - O frontend é a única barreira; não há backend para revalidar autorização.

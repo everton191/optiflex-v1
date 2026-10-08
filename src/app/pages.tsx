@@ -7,6 +7,7 @@ import type { Attendance, Customer } from "../domain/customer";
 import { ReceptionService } from "../domain/reception-service";
 import { BackupPanel } from "./BackupPanel";
 export { ClinicalWorkspacePage } from "./ClinicalWorkspace";
+export { DashboardPage } from "./DashboardWorkspace";
 import { SalesService } from "../domain/sales-service";
 import type { Sale } from "../domain/sales";
 import { WorkOrderService } from "../domain/work-order-service";
@@ -28,12 +29,6 @@ const attendanceStatusLabels = { DRAFT: "Em preparação", WAITING: "Aguardando"
 const saleStatusLabels = { QUOTE: "Orçamento", CONFIRMED: "Venda confirmada", CANCELLED: "Cancelada" } as const;
 const cashEntryLabels = { RECEIPT: "Recebimento", WITHDRAWAL: "Sangria", DEPOSIT: "Suprimento" } as const;
 const roleDescriptions = { OWNER: "Acesso completo a todas as lojas.", NETWORK_ADMINISTRATOR: "Administra lojas, usuários e configurações.", STORE_MANAGER: "Acompanha a operação da própria loja.", RECEPTIONIST: "Atende clientes e organiza a fila.", CLINICAL_PROFESSIONAL: "Preenche prontuários, exames e prescrições.", SELLER: "Cria orçamentos e registra vendas.", CASHIER: "Registra recebimentos e movimentações do caixa.", STOCK_MANAGER: "Controla produtos e quantidades.", FINANCE: "Acompanha cobranças e resultados financeiros.", AUDITOR: "Consulta informações e relatórios sem alterar dados." } as const;
-
-export function DashboardPage() {
-  const { settings, session } = useAppContext();
-  const flow = [{ label: "Cliente", to: "/clientes", show: hasPermission(session.role, "customers.read") }, { label: "Atendimento", to: "/atendimentos", show: hasPermission(session.role, "attendance.read") }, { label: "Prescrição", to: "/clinico", show: hasPermission(session.role, "clinical.workspace.access") }, { label: "Exames", to: "/clinico", show: hasPermission(session.role, "clinical.workspace.access") }, { label: "Finalizar", to: "/clinico", show: hasPermission(session.role, "clinical.workspace.access") }, { label: "Caixa", to: "/caixa", show: hasPermission(session.role, "cash.read") }, { label: "Estoque", to: "/estoque", show: hasPermission(session.role, "inventory.read") }].filter((step) => step.show);
-  return <div className="page dashboard"><section className="flow-card"><p className="eyebrow">Fluxo principal do atendimento</p><div className="flow-steps">{flow.map((step, index) => <Link className="flow-step" key={step.label} to={step.to}><span>{index + 1}</span><strong>{step.label}</strong></Link>)}</div></section><section className="page-title"><div><p className="eyebrow">Visão geral</p><h1>Olá, {session.userName}</h1><p className="page-intro">Acompanhe a operação de {settings.organizationName}.</p></div>{hasPermission(session.role, "customers.manage") && <Link className="button" to="/clientes/novo">Iniciar atendimento</Link>}</section><div className="metric-grid"><Card><small>Vendas hoje</small><strong>R$ 3.250,00</strong><span className="success">+12% vs. ontem</span></Card><Card><small>Recebimentos</small><strong>R$ 2.150,00</strong><span className="success">+8% vs. ontem</span></Card><Card><small>Atendimentos</small><strong>12</strong><span className="success">+25% vs. ontem</span></Card><Card><small>Clientes</small><strong>156</strong><span className="success">+5 novos</span></Card></div><div className="dashboard-grid"><Card><h2>Vendas dos últimos 7 dias</h2><div className="chart-placeholder" aria-label="Gráfico de vendas"><span /><span /><span /><span /><span /><span /><span /></div></Card><Card><h2>Pendências</h2><ul className="pending-list"><li>3 carnês vencidos</li><li>2 orçamentos para aprovar</li><li>1 pedido no laboratório</li></ul></Card></div></div>;
-}
 
 export function SettingsPage() {
   const { settings, saveSettings } = useAppContext();

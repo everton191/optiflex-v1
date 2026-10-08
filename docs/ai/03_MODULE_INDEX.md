@@ -5,16 +5,16 @@ Os módulos abaixo são responsabilidades reais encontradas. Como ainda não há
 ## Dashboard
 
 - Responsabilidade: visão geral, métricas mockadas e atalhos filtrados por permissão.
-- Diretório lógico: `src/app/pages.tsx`.
-- Rota: `/`.
+- Diretório lógico: `src/app/DashboardWorkspace.tsx` (re-exportada por `pages.tsx`).
+- Rota: `/` (guard `dashboard.view`).
 - Entrypoint/página: `DashboardPage`.
-- Service/repository/store/hooks: nenhum.
-- Models/permissões: `LocalSession`, `OrganizationSettings`, `hasPermission`; rota sem guard explícito.
-- Dependências: provider, `Card`, React Router, acesso.
+- Service/repository/store/hooks: nenhum próprio; consulta sales, caixa, fila, ordens e estoque do repositório local da loja.
+- Models/permissões: `LocalSession`, `OrganizationSettings`, `hasPermission`; seletores puros em `src/domain/dashboard.ts`.
+- Dependências: provider, `Card`, React Router, acesso e módulos operacionais.
 - Usado por: entrada após abrir a aplicação.
-- Arquivos importantes: `pages.tsx`, `AppShell.tsx`, `styles.css`.
-- Risco: métricas são estáticas; não tratá-las como dados calculados.
-- Tarefas: layout → `styles.css`; atalhos → `DashboardPage`; menu → `AppShell.tsx`.
+- Arquivos importantes: `DashboardWorkspace.tsx`, `dashboard.ts`, `AppShell.tsx`, `styles.css`.
+- Risco: métricas refletem apenas a loja atual e os dados locais; loading/error tratados por estado.
+- Tarefas: layout → `styles.css`; cálculos → `dashboard.ts` + `dashboard.test.ts`; menu → `AppShell.tsx`.
 - Docs: `modules/dashboard/MODULE.md` e `AI_CONTEXT.md`.
 
 ## Access

@@ -2,74 +2,72 @@
 
 ## Purpose
 
-Exibir visão geral da operação, métricas resumidas e atalhos para áreas permitidas ao perfil atual.
+Exibir a visão geral da operação da loja atual com métricas reais, pendências e atalhos por perfil.
 
 ## Directory
 
-Responsabilidade concentrada em `src/app/pages.tsx`; estilos em `src/styles.css`.
+Página em `src/app/DashboardWorkspace.tsx` (re-exportada em `src/app/pages.tsx`); cálculos puros em `src/domain/dashboard.ts`; estilos em `src/styles.css`.
 
 ## Routes
 
-- `/` — rota index dentro de `AppShell`.
+- `/` — rota index dentro de `AppShell`, guard `dashboard.view`.
 
 ## Main Pages
 
-- `DashboardPage`.
+- `DashboardPage`: passos do fluxo, métricas do dia, gráfico de 7 dias e pendências com links.
 
 ## Components
 
 - `Card` do Design System.
-- `.flow-card`, `.flow-steps`, `.metric-grid`, `.dashboard-grid`.
+- `.flow-card`, `.flow-steps`, `.metric-grid`, `.dashboard-grid`, `.chart-placeholder`, `.pending-list`.
 
 ## Services / Repositories / Stores
 
-Não possui service ou repository próprios. Usa `AppProviders` para sessão e organização. Não existe store dedicada.
+Sem service próprio: consulta `SalesService`, `LocalCashRepository`, `ReceptionService`, `WorkOrderService` e `InventoryService` do escopo atual (`currentStoreId`).
 
 ## Models
 
-- `LocalSession` e `OrganizationSettings`, via contexto.
+- `LocalSession`, `OrganizationSettings` (contexto).
+- Selectores: `salesTodayCents`, `receiptsTodayCents`, `salesByDay`, `chartHeights`, `waitingQueue`, `stockAlerts`, `openOrders`, `overdueOrders`, `pendingQuotes`.
 
 ## Permissions
 
-- `dashboard.view` existe na matriz, mas a rota `/` não tem guard explícito.
-- Atalhos internos são filtrados com `hasPermission`.
+- Rota guardada por `dashboard.view`.
+- Cards e pendências aparecem conforme `sales.read`, `cash.read`/`cash.manage`, `attendance.queue.read` e `inventory.read`.
 
 ## Dependencies
 
-React Router, App Context, Design System e access.
+React Router, App Context, Design System, access e módulos operacionais.
 
 ## Public API
 
-`DashboardPage`, importada diretamente por `router.tsx`.
-
-## Shared Components
-
-`Card`, `AppShell`, `useAppContext`.
+`DashboardPage`, importada por `router.tsx`.
 
 ## Files Normally Modified
 
-- Conteúdo/atalhos: `src/app/pages.tsx` no símbolo `DashboardPage`.
-- Layout: `src/styles.css` nas classes `dashboard`, `flow-*`, `metric-*`.
+- Página: `src/app/DashboardWorkspace.tsx`.
+- Cálculos: `src/domain/dashboard.ts` + `dashboard.test.ts`.
+- Layout: `src/styles.css` nas classes `dashboard`, `flow-*`, `metric-*`, `chart-placeholder`, `pending-list`.
 - Permissões: `src/domain/access.ts`.
 
 ## Avoid Modifying
 
-Não alterar repositories ou schema para ajustar apenas o painel. Não assumir que métricas visuais são calculadas.
+Não apresentar valores fixos como se fossem dados reais. Não duplicar `Card` ou tokens dentro da página.
 
 ## Common Tasks
 
 ### Alterar métrica
 
-→ `DashboardPage`; hoje os valores são mockados.
+→ `DashboardWorkspace` (montagem) + `dashboard.ts` (regra) + `dashboard.test.ts`.
 
-### Alterar atalho
+### Alterar pendência
 
-→ `DashboardPage`, depois confirmar rota e permission.
+→ lista `pendencias` em `DashboardWorkspace` + rota/permission correspondentes.
 
-### Alterar card global
+### Alterar layout
 
-→ `src/design-system/components.tsx` + `.card` em `styles.css`.
+→ `styles.css` (`.metric-grid`, `.dashboard-grid`, `.flow-steps`).
 
 ## Related Modules
 
-Access, application shell e todos os módulos apontados pelos atalhos.
+Access, application shell, sales, cash, attendance, work-orders e inventory.
