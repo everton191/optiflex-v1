@@ -129,6 +129,18 @@ export class LocalSaleRepository implements SaleRepository {
   async listByStore(storeId: string): Promise<Sale[]> { return database.sales.where("storeId").equals(storeId).reverse().sortBy("createdAt"); }
   async get(id: string): Promise<Sale | undefined> { return database.sales.get(id); }
   async save(sale: Sale): Promise<void> { await database.sales.put(sale); }
+  async confirm(sale: Sale, movements: readonly InventoryMovement[]): Promise<void> {
+    return database.transaction("rw", database.sales, database.inventoryItems, database.inventoryMovements, async () => {
+      const current = await database.sales.get(sale.id);
+      if (!current || current.storeId !== sale.storeId) throw new Error("Venda não encontrada nesta loja.");
+      if (current.status !== "QUOTE") throw new Error("Somente orçamentos pendentes podem ser confirmados.");
+      for (const movement of movements) {
+        if (movement.storeId !== sale.storeId) throw new Error("Movimentação incompatível com a venda.");
+        await applyStockMovement(movement);
+      }
+      await database.sales.put({ ...current, status: "CONFIRMED" });
+    });
+  }
 }
 
 export class LocalWorkOrderRepository implements WorkOrderRepository {
@@ -154,6 +166,18 @@ export class LocalWorkOrderRepository implements WorkOrderRepository {
   }
 }
 
+async function applyStockMovement(movement: InventoryMovement): Promise<InventoryItem> {
+  if (movement.type !== "ADJUSTMENT" && (!Number.isFinite(movement.quantity) || movement.quantity <= 0)) throw new Error("Quantidade inválida para a movimentação.");
+  const item = await database.inventoryItems.get(movement.itemId);
+  if (!item || item.storeId !== movement.storeId) throw new Error("Produto não encontrado nesta loja.");
+  const next = item.quantity + (movement.type === "OUT" ? -movement.quantity : movement.quantity);
+  if (next < 0) throw new Error(`Saldo insuficiente de "${item.name}" (disponível: ${item.quantity}).`);
+  const updated: InventoryItem = { ...item, quantity: next };
+  await database.inventoryItems.put(updated);
+  await database.inventoryMovements.put(movement);
+  return updated;
+}
+
 export class LocalInventoryRepository implements InventoryRepository {
   async listByStore(storeId: string): Promise<InventoryItem[]> { return database.inventoryItems.where("storeId").equals(storeId).sortBy("name"); }
   async listMovements(storeId: string): Promise<InventoryMovement[]> { return database.inventoryMovements.where("storeId").equals(storeId).reverse().sortBy("createdAt"); }
@@ -175,16 +199,7 @@ export class LocalInventoryRepository implements InventoryRepository {
     });
   }
   async applyMovement(movement: InventoryMovement): Promise<InventoryItem> {
-    return database.transaction("rw", database.inventoryItems, database.inventoryMovements, async () => {
-      const item = await database.inventoryItems.get(movement.itemId);
-      if (!item || item.storeId !== movement.storeId) throw new Error("Produto não encontrado nesta loja.");
-      const next = item.quantity + (movement.type === "OUT" ? -movement.quantity : movement.quantity);
-      if (next < 0) throw new Error("Saldo insuficiente para esta movimentação.");
-      const updated: InventoryItem = { ...item, quantity: next };
-      await database.inventoryItems.put(updated);
-      await database.inventoryMovements.put(movement);
-      return updated;
-    });
+    return database.transaction("rw", database.inventoryItems, database.inventoryMovements, async () => applyStockMovement(movement));
   }
 }
 

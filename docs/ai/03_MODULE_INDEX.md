@@ -89,14 +89,14 @@ Os módulos abaixo são responsabilidades reais encontradas. Como ainda não há
 
 ## Sales
 
-- Responsabilidade: criar orçamento, confirmar venda e listar vendas dentro do Caixa.
+- Responsabilidade: criar orçamento (com itens de estoque opcionais), confirmar venda baixando saldo e listar vendas dentro do Caixa.
 - Rota canônica: `/caixa`; redirects `/vendas` e `/pagamentos`.
-- Página: `CashDeskPage`, aba Vendas.
-- Service: `SalesService`.
-- Repository: `SaleRepository` / `LocalSaleRepository`.
-- Model: `Sale`, `SaleStatus`, `SalePaymentStatus` (atualizado pelo Caixa).
+- Página: `CashDeskPage`, aba Vendas (form + seletor `.sale-items-form`).
+- Service: `SalesService` (`createQuote` calcula total/descrição dos itens; `confirm` dispara a baixa).
+- Repository: `SaleRepository` / `LocalSaleRepository` (`confirm` transacional venda + estoque).
+- Model: `Sale`, `SaleStatus`, `SalePaymentStatus`, `SaleItem`, `stockMovementsFor`.
 - Permissões: `sales.read`, `sales.manage` e acesso da rota por `cash.read`.
-- Dependências: customers, cash e work-orders.
+- Dependências: customers, cash, work-orders e inventory.
 - Risco: página comercial é compartilhada; mudanças podem afetar recebimentos e abertura.
 - Docs: `modules/sales/MODULE.md` e `AI_CONTEXT.md`.
 
@@ -122,7 +122,7 @@ Os módulos abaixo são responsabilidades reais encontradas. Como ainda não há
 - Models: `InventoryItem` (com `code?`), `InventoryMovement` (com `author?`), `stockState`, `movementDelta`.
 - Permissões: `inventory.read`, `inventory.manage`.
 - Dependências: store context, sessão (autor), backup (`code`/`author` validados).
-- Risco: sales ainda não movimenta estoque; integração transacional pendente.
+- Risco: baixa ocorre só em vendas com itens; OS e cancelamento ainda não movimentam estoque.
 - Docs: `modules/inventory/MODULE.md` e `AI_CONTEXT.md`.
 
 ## Cash

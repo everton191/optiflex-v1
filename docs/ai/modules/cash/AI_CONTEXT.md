@@ -8,6 +8,7 @@
 - Fechamento grava `expectedBalance`, `closingBalance`, `difference`, `closedBy` e `closingNote`.
 - Recebimento atualiza `Sale.paymentStatus` (`PENDING`/`PAID`) na mesma transação da entrada.
 - Extrato "Movimentos registrados" lista `CashEntry` por loja, sem estado em memória.
+- Aba Vendas inclui seletor opcional de itens de estoque; a confirmação baixa o saldo em transação (Fase E).
 
 ## Current Decisions
 
@@ -49,7 +50,7 @@
 
 ## Be Careful With
 
-- CashDeskPage também altera sales e work-orders.
+- CashDeskPage também altera sales, work-orders e baixa estoque ao confirmar venda com itens.
 - Novos campos de `cashSessions`/`sales` são opcionais e não mudam índices; não exigem nova versão Dexie e o backup valida seus tipos.
 - Fechamento precisa preservar histórico e impedir novos lançamentos.
 

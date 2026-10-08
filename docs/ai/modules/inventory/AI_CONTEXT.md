@@ -17,13 +17,14 @@
 
 ## Known Problems
 
-- Sales não reduz estoque.
+- Ordens de serviço não consomem estoque.
 - Nenhum seed de produto.
+- Vendas sem itens (serviços) não geram movimento.
 
 ## Pending Work
 
-- Integração transacional venda → movimento de saída.
-- Ordens de serviço consumindo estoque (Fase C).
+- OS consumindo insumos ao concluir/entregar.
+- Cancelamento de venda devolvendo saldo.
 
 ## Important Files Right Now
 
@@ -34,9 +35,10 @@
 
 ## Recent Structural Changes
 
+- Fase E: baixa de estoque na confirmação de venda (`LocalSaleRepository.confirm` reutiliza `applyStockMovement`).
 - `InventoryPage` extraída de `pages.tsx` para `InventoryWorkspace.tsx`.
 - Contrato `InventoryRepository` trocado por `createItem`/`updateItem`/`applyMovement` transacionais.
-- Backup valida os novos campos `code` e `author`.
+- Backup valida os novos campos `code`, `author` e os itens de venda vinculados.
 
 ## Be Careful With
 
@@ -45,4 +47,4 @@
 
 ## Next Likely Task
 
-Fase C — vincular ordens de serviço a movimentos de estoque.
+Vincular ordens de serviço a movimentos de estoque (insumos) ou devolução no cancelamento de venda.

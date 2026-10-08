@@ -48,6 +48,7 @@ export interface SaleRepository {
   listByStore(storeId: string): Promise<Sale[]>;
   get(id: string): Promise<Sale | undefined>;
   save(sale: Sale): Promise<void>;
+  confirm(sale: Sale, movements: readonly InventoryMovement[]): Promise<void>;
 }
 
 export interface WorkOrderRepository {

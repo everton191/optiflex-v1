@@ -51,7 +51,7 @@ Verificar `ClinicalAttachment`, `ClinicalRecord`, `ClinicalWorkspacePage` e Dexi
 
 ## Alterar vendas ou orçamento
 
-Verificar `CashDeskPage`, `SalesService`, `Sale`, repositories, permissions `sales.*` e redirects `/vendas`/`/pagamentos`.
+Verificar `CashDeskPage`, `SalesService`, `Sale`/`SaleItem`, `LocalSaleRepository.confirm`, `applyStockMovement`, repositories, permissions `sales.*` e redirects `/vendas`/`/pagamentos`. Confirmar venda com itens baixa estoque na mesma transação.
 
 ## Corrigir fechamento de caixa
 

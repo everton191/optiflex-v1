@@ -56,4 +56,5 @@ Não foi encontrado `user.role === "admin"`. `CashDeskPage` usa combinações de
 ## Riscos
 
 - Algumas permissões de ação não têm guard interno dedicado (`attendance.create`, `stores.select`).
+- O form de venda carrega a lista de produtos para quem tem `sales.manage`, mesmo sem `inventory.read`; a tela `/estoque` continua protegida.
 - O frontend é a única barreira; não há backend para revalidar autorização.

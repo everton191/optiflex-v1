@@ -34,6 +34,7 @@ export function validateBackup(value: unknown): BackupSnapshot {
       if (name === "users" && (!Array.isArray(row.storeIds) || row.storeIds.some((id) => typeof id !== "string"))) throw invalid();
       if (name === "users" && (!Object.hasOwn(rolePermissions, row.role as string) || !["SELF", "STORE", "ORGANIZATION", "NETWORK"].includes(row.scope as string))) throw invalid();
       if (name === "sales" && row.paymentStatus !== undefined && !["PENDING", "PAID"].includes(row.paymentStatus as string)) throw invalid();
+      if (name === "sales" && row.items !== undefined && (!Array.isArray(row.items) || row.items.some((item) => !object(item) || typeof item.inventoryItemId !== "string" || typeof item.name !== "string" || typeof item.quantity !== "number" || !Number.isFinite(item.quantity) || item.quantity <= 0 || typeof item.unitPrice !== "number" || !Number.isFinite(item.unitPrice) || item.unitPrice < 0))) throw invalid();
       if (name === "cashSessions") {
         for (const field of ["expectedBalance", "closingBalance"]) if (row[field] !== undefined && (typeof row[field] !== "number" || !Number.isFinite(row[field]) || (row[field] as number) < 0)) throw invalid();
         if (row.difference !== undefined && (typeof row.difference !== "number" || !Number.isFinite(row.difference))) throw invalid();
@@ -61,6 +62,8 @@ export function validateBackup(value: unknown): BackupSnapshot {
     for (const row of tables[child]) if (parents.get(row[field])?.storeId !== row.storeId) throw invalid();
   }
   const sales = new Map(tables.sales.map((row) => [row.id, row]));
+  const inventoryItems = new Map(tables.inventoryItems.map((row) => [row.id, row]));
+  for (const row of tables.sales) for (const item of (row.items ?? []) as Record<string, unknown>[]) if (inventoryItems.get(item.inventoryItemId as string)?.storeId !== row.storeId) throw invalid();
   if (tables.cashEntries.some((row) => row.saleId !== undefined && sales.get(row.saleId)?.storeId !== row.storeId)) throw invalid();
   for (const row of tables.clinicalVersions) {
     if (row.id !== `${row.attendanceId}:${row.version ?? 1}` || !Number.isFinite(Date.parse(row.finalizedAt as string))) throw invalid();

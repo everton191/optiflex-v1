@@ -154,6 +154,13 @@ textarea { min-height: 6rem; }
 .orders-form .form-actions { display: flex; gap: var(--space-2); grid-column: 1 / -1; }
 .work-order-notes { overflow-wrap: anywhere; }
 .list-row .error-text { color: #a12525; }
+.sale-items-form { display: grid; grid-template-columns: minmax(12rem, 2fr) minmax(4.5rem, .5fr) minmax(7rem, .8fr) auto; gap: var(--space-2); align-items: end; max-width: 58rem; margin-top: var(--space-3); }
+.sale-items-form select { min-height: 2.5rem; border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 0 var(--space-3); background: var(--color-surface); color: var(--color-text); }
+.sale-items-list { list-style: none; margin: var(--space-3) 0 0; padding: 0; display: grid; gap: var(--space-2); max-width: 58rem; }
+.sale-items-list li { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: var(--space-2) var(--space-3); background: var(--color-surface); }
+.sale-items-list li span { color: var(--color-text); }
+.sale-items-list .button { padding: .5rem .75rem; }
+.sale-items { overflow-wrap: anywhere; }
 
 @media (max-width: 720px), (min-width: 721px) and (max-width: 1024px) and (orientation: portrait) {
   .user-summary { display: none; }
@@ -172,5 +179,6 @@ textarea { min-height: 6rem; }
   .open-cash-form { align-items: stretch; flex-direction: column; max-width: none; }
   .open-cash-form .button, .form-actions .button { width: 100%; }
   .inventory-form { grid-template-columns: 1fr; max-width: none; }
+  .sale-items-form { grid-template-columns: 1fr; max-width: none; }
   .form-actions { flex-direction: column; }
 }

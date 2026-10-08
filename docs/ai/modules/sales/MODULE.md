@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Criar orçamentos, confirmar vendas e iniciar ordem de serviço na área unificada de Caixa.
+Criar orçamentos (com itens opcionais de estoque), confirmar vendas baixando saldo e iniciar ordem de serviço na área unificada de Caixa.
 
 ## Directory
 
@@ -19,11 +19,11 @@ UI em `CashDeskPage`; domínio em `sales.ts` e `sales-service.ts`; repository em
 
 ## Components
 
-`Input`, `Button`, `.commerce-form`, `.cash-tabs`, listas e badges.
+`Input`, `Button`, `.commerce-form`, `.sale-items-form`, `.sale-items-list`, `.cash-tabs`, listas e badges.
 
 ## Services
 
-`SalesService.list`, `createQuote`, `confirm`.
+`SalesService.list`, `createQuote` (calcula total e descrição a partir dos itens), `confirm` (transação que confirma a venda e baixa o estoque).
 
 ## Repositories
 
@@ -35,7 +35,7 @@ Estado React local; sem store/hook dedicado.
 
 ## Models
 
-`Sale`, `SaleStatus`.
+`Sale`, `SaleStatus`, `SalePaymentStatus`, `SaleItem`; helpers `itemsTotal` e `stockMovementsFor`.
 
 ## Permissions
 
@@ -43,7 +43,7 @@ Estado React local; sem store/hook dedicado.
 
 ## Dependencies
 
-Customers, cash, work-orders e currentStore.
+Customers, cash, work-orders, inventory (estoque) e currentStore.
 
 ## Public API
 
@@ -51,15 +51,16 @@ Customers, cash, work-orders e currentStore.
 
 ## Files Normally Modified
 
-- UI/abas: `CashDeskPage`.
+- UI/abas: `CashDeskPage` (form de venda e seletor de itens).
 - Regras: `sales-service.ts`.
-- Tipos: `sales.ts`.
-- Persistência: `LocalSaleRepository`.
+- Tipos: `sales.ts` (`SaleItem`, `stockMovementsFor`).
+- Persistência: `LocalSaleRepository.confirm` (transação venda + estoque).
+- Backup: validação de `items` em `backup.ts`.
 - Acesso: `access.ts` e `/caixa`.
 
 ## Avoid Modifying
 
-Não recriar página `/vendas`; ela redireciona para o Caixa. Não confirmar venda sem status `QUOTE`.
+Não recriar página `/vendas`; ela redireciona para o Caixa. Não confirmar venda sem status `QUOTE` nem sem a transação que baixa o estoque.
 
 ## Common Tasks
 
@@ -69,7 +70,11 @@ Não recriar página `/vendas`; ela redireciona para o Caixa. Não confirmar ven
 
 ### Alterar confirmação
 
-→ SalesService + status/ações da UI.
+→ SalesService + `LocalSaleRepository.confirm` + status/ações da UI.
+
+### Alterar itens ou baixa de estoque
+
+→ `sales.ts` (`SaleItem`/`stockMovementsFor`) + validações de `createQuote` + `applyStockMovement` + testes `sales-service.test.ts` e `sale-stock.test.ts`.
 
 ### Alterar listagem
 
@@ -77,4 +82,4 @@ Não recriar página `/vendas`; ela redireciona para o Caixa. Não confirmar ven
 
 ## Related Modules
 
-Customers, cash e work-orders.
+Customers, cash, work-orders e inventory.

@@ -4,7 +4,7 @@ import type { CashEntry, CashSession } from "./cash";
 import type { Sale } from "./sales";
 
 const repository = { current: vi.fn(), listSessions: vi.fn(), listEntries: vi.fn(), openSession: vi.fn(), recordReceipt: vi.fn(), closeSession: vi.fn() };
-const sales = { get: vi.fn(), listByStore: vi.fn(), save: vi.fn() };
+const sales = { get: vi.fn(), listByStore: vi.fn(), save: vi.fn(), confirm: vi.fn() };
 const service = new CashService(repository, sales);
 const activeSession: CashSession = { id: "cash-1", storeId: "store-centro", openedAt: "2026-01-01T10:00:00.000Z", openingBalance: 100 };
 const confirmedSale: Sale = { id: "sale-1", customerId: "customer-1", storeId: "store-centro", status: "CONFIRMED", description: "Armação", total: 300, createdAt: "2026-01-01T11:00:00.000Z" };

@@ -19,7 +19,7 @@ UI em `CashDeskPage` dentro de `src/app/pages.tsx`; domínio em `cash.ts` e `cas
 
 ## Components
 
-`Button`, `Input`, `Card`, `.cash-tabs`, `.cash-panel`, `.cash-totals`, `.summary-card`, listas.
+`Button`, `Input`, `Card`, `.cash-tabs`, `.cash-panel`, `.cash-totals`, `.summary-card`, `.sale-items-form`, `.sale-items-list`, listas.
 
 ## Services
 

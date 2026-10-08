@@ -78,4 +78,19 @@ describe("encrypted backup and transactional restore", () => {
     const badStatus = structuredClone(snapshot); badStatus.tables.workOrders[0].status = "PAUSED";
     expect(() => validateBackup(badStatus)).toThrow("inválido");
   });
+  it("accepts sale stock items and rejects invalid quantities or broken links", async () => {
+    const snapshot = await repository.snapshot();
+    snapshot.tables.customers.push({ id: "customer-items", name: "Cliente Itens", createdAt: "2026-01-01T09:00:00.000Z" });
+    snapshot.tables.inventoryItems.push({ id: "item-x", storeId: "store-centro", name: "Lente", quantity: 5, minimumQuantity: 1 });
+    snapshot.tables.sales.push({ id: "sale-items", customerId: "customer-items", storeId: "store-centro", status: "QUOTE", description: "Venda com item", total: 120, createdAt: "2026-01-01T11:00:00.000Z", items: [{ inventoryItemId: "item-x", name: "Lente", quantity: 1, unitPrice: 120 }] });
+    expect(() => validateBackup(snapshot)).not.toThrow();
+    type ItemRow = { inventoryItemId: string; name: string; quantity: number; unitPrice: number };
+    const saleItems = (row: Record<string, unknown>) => row.items as ItemRow[];
+    const badQuantity = structuredClone(snapshot); saleItems(badQuantity.tables.sales[0])[0].quantity = 0;
+    expect(() => validateBackup(badQuantity)).toThrow("inválido");
+    const badPrice = structuredClone(snapshot); saleItems(badPrice.tables.sales[0])[0].unitPrice = -1;
+    expect(() => validateBackup(badPrice)).toThrow("inválido");
+    const badLink = structuredClone(snapshot); saleItems(badLink.tables.sales[0])[0].inventoryItemId = "missing-item";
+    expect(() => validateBackup(badLink)).toThrow("inválido");
+  });
 });

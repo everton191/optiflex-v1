@@ -76,4 +76,4 @@ Não ajustar quantidade diretamente pela página/repository sem criar movimento.
 
 ## Related Modules
 
-Administration/stores; sales ainda não movimenta inventory.
+Administration/stores; sales baixa o estoque na confirmação de vendas com itens, usando o helper `applyStockMovement` do mesmo arquivo de repositórios.
