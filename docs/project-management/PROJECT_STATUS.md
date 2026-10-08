@@ -9,7 +9,7 @@
 - **Branch analisada:** `docs/master-kanban` (documentação/planejamento).
 - **Branch de desenvolvimento:** `feat/operational-flow-v2` (6 commits à frente de `v1`; merge-base `3510602`).
 - **Último commit (código):** `d6ab1d4` — *feat: deduct stock when confirming sales with items*.
-- **Último commit (documentação):** `b8d1a84` — *docs: record document commit hash in project status* + commit desta revisão (ver `git log`).
+- **Último commit (documentação):** `0a8f10c` — *docs: fix 7 dependency cycles and reclassify 3 blocked cards* (após `634eb37` e `b8d1a84`).
 - **Remote:** `https://github.com/everton191/optiflex-v1.git`.
 
 ### Publicação (verificada em 08/10/2026)
