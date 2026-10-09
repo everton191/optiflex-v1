@@ -1,11 +1,13 @@
 import { roleDefinitions, type CurrentStoreContext, type RoleKey, type Store, type User } from "./access";
 import type { AdministrationRepository } from "./repositories";
+import { assertPasswordStrength, generateSalt, hashPassword } from "./password";
 
 export interface UserInput {
   name: string;
   email: string;
   role: RoleKey;
   storeIds: string[];
+  password?: string;
 }
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -24,6 +26,12 @@ function validateUserInput(input: UserInput, users: readonly User[], stores: rea
   return { name, email, role: input.role, scope: definition.scope, storeIds };
 }
 
+async function buildCredential(password: string): Promise<Pick<User, "passwordHash" | "passwordSalt">> {
+  assertPasswordStrength(password);
+  const salt = generateSalt();
+  return { passwordSalt: salt, passwordHash: await hashPassword(password, salt) };
+}
+
 export class AdministrationService {
   constructor(private readonly repository: AdministrationRepository) {}
   async initialize(): Promise<void> { await this.repository.initialize(); }
@@ -38,7 +46,8 @@ export class AdministrationService {
 
   async createUser(input: UserInput): Promise<User> {
     const [users, stores] = await Promise.all([this.repository.listUsers(), this.repository.listStores()]);
-    const user: User = { id: `user-${crypto.randomUUID()}`, ...validateUserInput(input, users, stores), active: true };
+    const credential = input.password ? await buildCredential(input.password) : undefined;
+    const user: User = { id: `user-${crypto.randomUUID()}`, ...validateUserInput(input, users, stores), active: true, ...(credential ?? {}) };
     await this.repository.saveUser(user);
     return user;
   }
@@ -48,7 +57,8 @@ export class AdministrationService {
     const existing = users.find((user) => user.id === id);
     if (!existing) throw new Error("Usuário não encontrado.");
     const stores = await this.repository.listStores();
-    const user: User = { ...existing, ...validateUserInput(input, users, stores, id) };
+    const credential = input.password ? await buildCredential(input.password) : undefined;
+    const user: User = { ...existing, ...validateUserInput(input, users, stores, id), ...(credential ?? {}) };
     await this.repository.saveUser(user);
     return user;
   }

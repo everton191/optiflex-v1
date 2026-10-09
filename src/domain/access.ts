@@ -45,6 +45,8 @@ export interface LocalSession {
   id: "current";
   userName: string;
   role: RoleKey;
+  issuedAt?: string;
+  demo?: boolean;
 }
 
 export interface Store {
@@ -66,6 +68,8 @@ export interface User {
   scope: Scope;
   storeIds: string[];
   active: boolean;
+  passwordHash?: string;
+  passwordSalt?: string;
 }
 
 export interface RoleDefinition {
@@ -111,4 +115,13 @@ export function sessionUserState(users: readonly User[], session: LocalSession):
   const user = users.find((candidate) => candidate.name === session.userName);
   if (!user) return "unknown";
   return user.active ? "active" : "inactive";
+}
+
+export const SESSION_TTL_HOURS = 12;
+
+export function isSessionExpired(session: LocalSession, now: Date = new Date()): boolean {
+  if (!session.issuedAt) return true;
+  const issuedAt = Date.parse(session.issuedAt);
+  if (Number.isNaN(issuedAt)) return true;
+  return now.getTime() - issuedAt > SESSION_TTL_HOURS * 60 * 60 * 1000;
 }

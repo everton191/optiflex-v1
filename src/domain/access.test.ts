@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hasPermission, sessionUserState } from "./access";
+import { isSessionExpired, hasPermission, sessionUserState } from "./access";
 import type { User } from "./access";
 
 describe("clinical professional permission model", () => {
@@ -72,5 +72,20 @@ describe("inactive users do not enter", () => {
   it("allows active or unidentified sessions", () => {
     expect(sessionUserState(users, { id: "current", userName: "Beto", role: "CASHIER" })).toBe("active");
     expect(sessionUserState(users, { id: "current", userName: "Zeca", role: "RECEPTIONIST" })).toBe("unknown");
+  });
+});
+
+describe("session expiry guard", () => {
+  const now = new Date("2026-10-08T12:00:00.000Z");
+  const session = { id: "current" as const, userName: "Ana", role: "SELLER" as const };
+
+  it("expires sessions without issue date or with an invalid date", () => {
+    expect(isSessionExpired(session, now)).toBe(true);
+    expect(isSessionExpired({ ...session, issuedAt: "data-invalida" }, now)).toBe(true);
+  });
+
+  it("keeps sessions inside the TTL and expires older ones", () => {
+    expect(isSessionExpired({ ...session, issuedAt: "2026-10-08T01:00:00.000Z" }, now)).toBe(false);
+    expect(isSessionExpired({ ...session, issuedAt: "2026-10-07T23:59:59.000Z" }, now)).toBe(true);
   });
 });

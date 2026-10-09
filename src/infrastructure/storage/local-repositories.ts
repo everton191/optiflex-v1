@@ -15,7 +15,6 @@ const defaultSettings: OrganizationSettings = {
   clinicalProfessionalLabel: "Profissional clínico"
 };
 
-const defaultSession: LocalSession = { id: "current", userName: "Administrador local", role: "OWNER" };
 const seedStores: Store[] = [{ id: "store-centro", name: "Loja Centro", active: true }, { id: "store-shopping", name: "Loja Shopping", active: true }];
 const seedUsers: User[] = [
   { id: "user-owner", name: "Administrador local", email: "admin@opticore.local", role: "OWNER", scope: "NETWORK", storeIds: seedStores.map((store) => store.id), active: true },
@@ -32,11 +31,14 @@ export class LocalSettingsRepository implements SettingsRepository {
 }
 
 export class LocalSessionRepository implements SessionRepository {
-  async get(): Promise<LocalSession> {
-    return (await database.sessions.get("current")) ?? defaultSession;
+  async get(): Promise<LocalSession | null> {
+    return (await database.sessions.get("current")) ?? null;
   }
   async save(session: LocalSession): Promise<void> {
     await database.sessions.put(session);
+  }
+  async clear(): Promise<void> {
+    await database.sessions.delete("current");
   }
 }
 

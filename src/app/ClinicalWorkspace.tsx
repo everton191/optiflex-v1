@@ -6,7 +6,7 @@ import type { ClinicalVersion } from "../domain/clinical";
 import type { Customer } from "../domain/customer";
 import { LocalClinicalRepository } from "../infrastructure/storage/local-repositories";
 import { ClinicalDraft } from "./clinical-draft";
-import { useAppContext } from "./providers";
+import { useAppContext, useSession } from "./providers";
 
 const service = new ClinicalService(new LocalClinicalRepository());
 const fields = [["anamnesis", "Anamnese"], ["examination", "Exame"], ["requests", "Solicitações"], ["prescription", "Prescrição"]] as const;
@@ -18,7 +18,8 @@ export function ClinicalWorkspacePage() {
 }
 
 function ClinicalWorkspace({ attendanceId }: { attendanceId: string }) {
-  const { currentStoreId, session, settings, setNavigationLocked } = useAppContext();
+  const { currentStoreId, settings, setNavigationLocked } = useAppContext();
+  const session = useSession();
   const [draft, setDraft] = useState<ClinicalDraft>();
   const [customer, setCustomer] = useState<Customer>();
   const [versions, setVersions] = useState<ClinicalVersion[]>([]);

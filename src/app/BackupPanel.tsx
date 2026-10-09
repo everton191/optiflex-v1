@@ -4,7 +4,7 @@ import { Button, Card, Input } from "../design-system/components";
 import { BackupService, backupTables, type BackupSnapshot } from "../domain/backup";
 import { LocalBackupRepository } from "../infrastructure/storage/local-backup";
 import { EncryptedBackupCodec } from "../infrastructure/storage/backup-codec";
-import { useAppContext } from "./providers";
+import { useAppContext, useSession } from "./providers";
 
 const service = new BackupService(new LocalBackupRepository(), new EncryptedBackupCodec());
 function download(content: string, name: string) {
@@ -13,7 +13,8 @@ function download(content: string, name: string) {
   setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 export function BackupPanel() {
-  const { session, setNavigationLocked } = useAppContext();
+  const { setNavigationLocked } = useAppContext();
+  const session = useSession();
   const [password, setPassword] = useState(""); const [repeat, setRepeat] = useState("");
   const [file, setFile] = useState<File>(); const [preview, setPreview] = useState<BackupSnapshot>();
   const [confirmation, setConfirmation] = useState(""); const [safetySaved, setSafetySaved] = useState(false);

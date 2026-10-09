@@ -12,8 +12,9 @@ export interface SettingsRepository {
 }
 
 export interface SessionRepository {
-  get(): Promise<LocalSession>;
+  get(): Promise<LocalSession | null>;
   save(session: LocalSession): Promise<void>;
+  clear(): Promise<void>;
 }
 
 export interface AdministrationRepository {

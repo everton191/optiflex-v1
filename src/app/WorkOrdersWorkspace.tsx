@@ -9,7 +9,7 @@ import { ReceptionService } from "../domain/reception-service";
 import { SalesService } from "../domain/sales-service";
 import { WorkOrderService } from "../domain/work-order-service";
 import { LocalAttendanceRepository, LocalCustomerRepository, LocalSaleRepository, LocalWorkOrderRepository } from "../infrastructure/storage/local-repositories";
-import { useAppContext } from "./providers";
+import { useAppContext, useSession } from "./providers";
 
 const service = new WorkOrderService(new LocalWorkOrderRepository());
 const salesService = new SalesService(new LocalSaleRepository());
@@ -25,7 +25,8 @@ type Filter = "ALL" | WorkOrderStatus;
 const filters: readonly Filter[] = ["ALL", "OPEN", "IN_PRODUCTION", "READY", "DELIVERED", "CANCELLED"];
 
 export function WorkOrdersPage() {
-  const { currentStoreId, session } = useAppContext();
+  const { currentStoreId } = useAppContext();
+  const session = useSession();
   const canManage = hasPermission(session.role, "sales.manage");
   const [orders, setOrders] = useState<WorkOrder[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);

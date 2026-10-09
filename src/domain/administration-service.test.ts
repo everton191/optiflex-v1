@@ -79,3 +79,21 @@ describe("active status", () => {
     expect(repository.saveUser).not.toHaveBeenCalled();
   });
 });
+
+describe("credentials", () => {
+  it("stores a salted hash and keeps it when the edit omits the password", async () => {
+    const created = await service.createUser({ ...input, name: "Nova", email: "nova@opticore.local", password: "senha-segura-123" });
+    expect(created.passwordHash).toMatch(/^[0-9a-f]{64}$/);
+    expect(created.passwordSalt).toBeTruthy();
+    expect(JSON.stringify(created)).not.toContain("senha-segura-123");
+    repository.listUsers.mockResolvedValue([owner, created]);
+    const updated = await service.updateUser(created.id, { name: "Nova N.", email: created.email, role: created.role, storeIds: created.storeIds });
+    expect(updated.passwordHash).toBe(created.passwordHash);
+    expect(updated.passwordSalt).toBe(created.passwordSalt);
+  });
+
+  it("rejects weak passwords", async () => {
+    await expect(service.createUser({ ...input, email: "fraca@opticore.local", password: "123" })).rejects.toThrow("ao menos 8");
+    expect(repository.saveUser).not.toHaveBeenCalled();
+  });
+});

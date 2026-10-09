@@ -183,3 +183,15 @@ textarea { min-height: 6rem; }
   .sale-items-form { grid-template-columns: 1fr; max-width: none; }
   .form-actions { flex-direction: column; }
 }
+
+/* Login, sessão e troca de senha (F7-02) */
+.login-page { display: grid; place-items: center; min-height: 100vh; padding: var(--space-4); background: color-mix(in srgb, var(--color-surface), var(--color-border) 18%); }
+.login-card { display: grid; gap: var(--space-3); width: min(28rem, 100%); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-6); background: var(--color-surface); box-shadow: var(--shadow-card); }
+.login-card h1 { margin: 0; }
+.login-card .brand { margin-bottom: 0; }
+.login-card .brand-copy small { color: var(--color-muted); }
+.login-card .settings-form { max-width: none; margin-top: 0; }
+.demo-box { display: grid; gap: var(--space-2); border-top: 1px solid var(--color-border); padding-top: var(--space-4); }
+.demo-box h2 { margin: 0; font-size: 1rem; }
+.demo-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); font-size: .875rem; color: var(--color-muted); }
+.topbar .button { min-height: 2.25rem; padding: .5rem .75rem; }

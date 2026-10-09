@@ -5,7 +5,7 @@ import { InventoryService } from "../domain/inventory-service";
 import type { InventoryItem, InventoryMovement, InventoryMovementType } from "../domain/inventory";
 import { stockState } from "../domain/inventory";
 import { LocalInventoryRepository } from "../infrastructure/storage/local-repositories";
-import { useAppContext } from "./providers";
+import { useAppContext, useSession } from "./providers";
 
 const service = new InventoryService(new LocalInventoryRepository());
 const stateLabels = { OK: "Disponível", LOW: "Abaixo do mínimo", OUT: "Esgotado" } as const;
@@ -14,7 +14,8 @@ const movementLabels = { IN: "Entrada", OUT: "Saída", ADJUSTMENT: "Ajuste" } as
 const movementSign = (movement: InventoryMovement) => movement.type === "OUT" ? "-" : "+";
 
 export function InventoryPage() {
-  const { currentStoreId, session } = useAppContext();
+  const { currentStoreId } = useAppContext();
+  const session = useSession();
   const canManage = hasPermission(session.role, "inventory.manage");
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [movements, setMovements] = useState<InventoryMovement[]>([]);

@@ -13,7 +13,7 @@ import { ReceptionService } from "../domain/reception-service";
 import { SalesService } from "../domain/sales-service";
 import { WorkOrderService } from "../domain/work-order-service";
 import { LocalAttendanceRepository, LocalCashRepository, LocalCustomerRepository, LocalInventoryRepository, LocalSaleRepository, LocalWorkOrderRepository } from "../infrastructure/storage/local-repositories";
-import { useAppContext } from "./providers";
+import { useAppContext, useSession } from "./providers";
 
 const receptionService = new ReceptionService(new LocalCustomerRepository(), new LocalAttendanceRepository());
 const salesService = new SalesService(new LocalSaleRepository());
@@ -24,7 +24,8 @@ const brl = (cents: number) => (cents / 100).toLocaleString("pt-BR", { style: "c
 const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
 
 export function DashboardPage() {
-  const { settings, session, currentStoreId } = useAppContext();
+  const { settings, currentStoreId } = useAppContext();
+  const session = useSession();
   const canReadSales = hasPermission(session.role, "sales.read");
   const canReadCash = hasPermission(session.role, "cash.read");
   const canManageCash = hasPermission(session.role, "cash.manage");

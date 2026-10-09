@@ -1,25 +1,32 @@
 import { createBrowserRouter, Navigate, RouterProvider } from "react-router-dom";
-import { RequirePermission } from "./permissions";
-import { AttendancePage, CashDeskPage, ClinicalQueuePage, ClinicalWorkspacePage, CustomerNewPage, CustomerProfilePage, CustomersPage, DashboardPage, ForbiddenPage, InventoryPage, ProfilesPage, SettingsPage, UsersPage, WorkOrdersPage } from "./pages";
+import { RequirePermission, RequireSession } from "./permissions";
+import { AttendancePage, BlockedPage, CashDeskPage, ChangePasswordPage, ClinicalQueuePage, ClinicalWorkspacePage, CustomerNewPage, CustomerProfilePage, CustomersPage, DashboardPage, ForbiddenPage, InventoryPage, LoginPage, ProfilesPage, SettingsPage, UsersPage, WorkOrdersPage } from "./pages";
 import { AppShell } from "../shell/AppShell";
 
-const router = createBrowserRouter([{ path: "/", element: <AppShell />, children: [
-  { index: true, element: <RequirePermission permission="dashboard.view"><DashboardPage /></RequirePermission> },
-  { path: "clientes", element: <RequirePermission permission="customers.read"><CustomersPage /></RequirePermission> },
-  { path: "clientes/novo", element: <RequirePermission permission="customers.manage"><CustomerNewPage /></RequirePermission> },
-  { path: "clientes/:customerId", element: <RequirePermission permission="customers.read"><CustomerProfilePage /></RequirePermission> },
-  { path: "atendimentos", element: <RequirePermission permission="attendance.read"><AttendancePage /></RequirePermission> },
-  { path: "clinico", element: <RequirePermission permission="clinical.workspace.access"><ClinicalQueuePage /></RequirePermission> },
-  { path: "clinico/atendimento/:attendanceId", element: <RequirePermission permission="clinical.workspace.access"><ClinicalWorkspacePage /></RequirePermission> },
-  { path: "vendas", element: <Navigate to="/caixa" replace /> },
-  { path: "pagamentos", element: <Navigate to="/caixa" replace /> },
-  { path: "caixa", element: <RequirePermission permission="cash.read"><CashDeskPage /></RequirePermission> },
-  { path: "estoque", element: <RequirePermission permission="inventory.read"><InventoryPage /></RequirePermission> },
-  { path: "ordens-servico", element: <RequirePermission permission="sales.read"><WorkOrdersPage /></RequirePermission> },
-  { path: "admin/usuarios", element: <RequirePermission permission="users.read"><UsersPage /></RequirePermission> },
-  { path: "admin/perfis", element: <RequirePermission permission="roles.read"><ProfilesPage /></RequirePermission> },
-  { path: "admin/configuracoes", element: <RequirePermission permission="settings.manage"><SettingsPage /></RequirePermission> },
-  { path: "sem-acesso", element: <ForbiddenPage /> }
-]}]);
+const router = createBrowserRouter([
+  { path: "/login", element: <LoginPage /> },
+  { path: "/bloqueado", element: <BlockedPage /> },
+  { path: "/", element: <RequireSession />, children: [
+    { element: <AppShell />, children: [
+      { index: true, element: <RequirePermission permission="dashboard.view"><DashboardPage /></RequirePermission> },
+      { path: "clientes", element: <RequirePermission permission="customers.read"><CustomersPage /></RequirePermission> },
+      { path: "clientes/novo", element: <RequirePermission permission="customers.manage"><CustomerNewPage /></RequirePermission> },
+      { path: "clientes/:customerId", element: <RequirePermission permission="customers.read"><CustomerProfilePage /></RequirePermission> },
+      { path: "atendimentos", element: <RequirePermission permission="attendance.read"><AttendancePage /></RequirePermission> },
+      { path: "clinico", element: <RequirePermission permission="clinical.workspace.access"><ClinicalQueuePage /></RequirePermission> },
+      { path: "clinico/atendimento/:attendanceId", element: <RequirePermission permission="clinical.workspace.access"><ClinicalWorkspacePage /></RequirePermission> },
+      { path: "vendas", element: <Navigate to="/caixa" replace /> },
+      { path: "pagamentos", element: <Navigate to="/caixa" replace /> },
+      { path: "caixa", element: <RequirePermission permission="cash.read"><CashDeskPage /></RequirePermission> },
+      { path: "estoque", element: <RequirePermission permission="inventory.read"><InventoryPage /></RequirePermission> },
+      { path: "ordens-servico", element: <RequirePermission permission="sales.read"><WorkOrdersPage /></RequirePermission> },
+      { path: "admin/usuarios", element: <RequirePermission permission="users.read"><UsersPage /></RequirePermission> },
+      { path: "admin/perfis", element: <RequirePermission permission="roles.read"><ProfilesPage /></RequirePermission> },
+      { path: "admin/configuracoes", element: <RequirePermission permission="settings.manage"><SettingsPage /></RequirePermission> },
+      { path: "trocar-senha", element: <ChangePasswordPage /> },
+      { path: "sem-acesso", element: <ForbiddenPage /> }
+    ]}
+  ]}
+]);
 
 export function AppRouter() { return <RouterProvider router={router} />; }
