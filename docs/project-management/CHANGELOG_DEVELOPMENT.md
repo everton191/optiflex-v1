@@ -4,6 +4,16 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `e56939e` — feat: add work order detail route, event history, audited cancellation and stock inputs (F3-14 OS)
+
+- Rota `/ordens-servico/:orderId` (guard `sales.read`) com `WorkOrderDetailPage`: situação completa, ações de transição/cancelamento/prazo, registro de insumos e histórico de eventos.
+- Eventos auditados embutidos em `WorkOrder.events` (`WorkOrderEvent`: CREATED/STATUS/SCHEDULE/CANCELLED/INPUTS, autor + `at`) — sem tabela nova e sem bump de versão Dexie; `backup.ts` valida `events` e `cancelReason` no bloco `workOrders`.
+- Cancelamento auditado: `WorkOrderService.cancel(order, reason, author)` exige motivo (persistido em `cancelReason`) e grava evento `CANCELLED`; `transition(..., "CANCELLED")` agora lança "Cancelamento auditado" de propósito.
+- Insumos: `LocalWorkOrderRepository.recordInputs` baixa estoque numa única transação Dexie (`workOrders` + `inventoryItems` + `inventoryMovements`, rollback se saldo insuficiente), com movimentos `OUT` (`Insumos OS <id>`) e evento `INPUTS`.
+- `createFromConfirmedSale(sale, author)` grava evento `CREATED` com autor; `schedule` grava evento `SCHEDULE` com prazo/notas; lista ganhou botão "Detalhes" e form de cancelamento com motivo.
+- Evidência: `npm.cmd test` **164/164** (20 arquivos; `work-order-service.test.ts` +4 e `work-orders.test.ts` +2), build 0, tsc 0.
+- Card: F3-14/#53 → DONE (libera F3-15/F3-16/F3-17 no lado de OS; devolução de estoque ao cancelar a venda fica no F4-18/#75).
+
 ### `6ce9c9a` — feat: store real clinical attachment content with upload, preview and backup (F3-09 anexos clínicos)
 
 - Nova tabela `attachments` no IndexedDB (schema `opticore-v1` **v11**, `database.ts`): conteúdo em base64 por id (`ClinicalAttachmentContent`), separado dos metadados.

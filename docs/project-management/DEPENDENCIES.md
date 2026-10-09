@@ -35,7 +35,7 @@ Anomalia inversa encontrada e mantida com ressalva: **F4-17 (DONE) depende de F4
 | Categoria | O que é | Cards |
 |---|---|---|
 | **Decisão externa pendente** | aguarda o usuário/jurídico/contador — não é código | F4-13, F8-03, F3-20 (corrigidos acima); F8-08, F8-16, F5-12..15, F2-17, F5-01, F6-01 (raiz das Fases 5 e 6) |
-| **Bloqueio técnico real** | dependência de código ainda não concluído | F3-17←F3-14; F8-06←F2-05; F4-14/15←F4-13; F7-19←F5-07 |
+| **Bloqueio técnico real** | dependência de código ainda não concluído | F8-06←F2-05; F4-14/15←F4-13; F7-19←F5-07 |
 | **Fase futura (escopo já planejado)** | bloqueada por estrutura do roadmap, raiz = decisão das fases 5/6 | F5-02..19 (após F5-01), F6-02..19 (após F6-01), F8-05/11/12/13/18 |
 | **Dependência concluída, status desatualizado** | verificação automática: **nenhuma** (0 BACKLOG/BLOCKED com deps todas DONE) | — |
 
@@ -75,7 +75,7 @@ F4-7 baixa transacional (FEITO)
 
 ```text
 F1-07 modelos de prescrição/OS (OBR — parte de OS já testada em 8a68d67)
-  └─ F3-14 OS (IN PROGRESS)
+  └─ F3-14 OS (FEITO 08/10 — `e56939e`, 164 testes)
        ├─ F3-15 laboratórios (OBR p/ produção; pré-req: F2-10 fornecedores)
        ├─ F3-16 acompanhamento de fabricação (OBR p/ prazo fino)
        ├─ F3-17 prazos e alertas (parcial — dashboard pronto)
