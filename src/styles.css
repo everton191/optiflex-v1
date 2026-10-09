@@ -107,6 +107,7 @@ textarea { min-height: 6rem; }
 .clinical-version summary { cursor: pointer; font-weight: 600; }
 .preserved-text { white-space: pre-wrap; overflow-wrap: anywhere; }
 .check-label { display: flex; align-items: flex-start; gap: var(--space-2); margin-block: var(--space-4); }
+.settings-form .check-label { margin-block: var(--space-2); font-weight: 400; }
 .clinical-workspace .settings-form { max-width: 52rem; }
 .cash-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-4); }
 .cash-state { display: inline-flex; align-items: center; width: max-content; border: 1px solid var(--color-border); border-radius: 99rem; padding: .4rem .7rem; background: var(--color-surface); color: var(--color-muted); font-size: .75rem; font-weight: 700; }

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { hasPermission } from "./access";
+import { hasPermission, sessionUserState } from "./access";
+import type { User } from "./access";
 
 describe("clinical professional permission model", () => {
   it("grants clinical workspace access without relying on a profession label", () => {
@@ -55,5 +56,21 @@ describe("cash permission matrix", () => {
     expect(hasPermission("SELLER", "cash.manage")).toBe(false);
     expect(hasPermission("OWNER", "cash.manage")).toBe(true);
     expect(hasPermission("STORE_MANAGER", "cash.manage")).toBe(true);
+  });
+});
+
+describe("inactive users do not enter", () => {
+  const users: User[] = [
+    { id: "user-1", name: "Ana", email: "ana@opticore.local", role: "SELLER", scope: "STORE", storeIds: ["store-centro"], active: false },
+    { id: "user-2", name: "Beto", email: "beto@opticore.local", role: "CASHIER", scope: "STORE", storeIds: ["store-centro"], active: true }
+  ];
+
+  it("blocks the session when its user is inactive", () => {
+    expect(sessionUserState(users, { id: "current", userName: "Ana", role: "SELLER" })).toBe("inactive");
+  });
+
+  it("allows active or unidentified sessions", () => {
+    expect(sessionUserState(users, { id: "current", userName: "Beto", role: "CASHIER" })).toBe("active");
+    expect(sessionUserState(users, { id: "current", userName: "Zeca", role: "RECEPTIONIST" })).toBe("unknown");
   });
 });

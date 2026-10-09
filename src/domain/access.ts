@@ -104,3 +104,11 @@ export const roleDefinitions: readonly RoleDefinition[] = [
 export function hasPermission(role: RoleKey, permission: Permission): boolean {
   return rolePermissions[role].includes(permission);
 }
+
+export type SessionUserState = "active" | "inactive" | "unknown";
+
+export function sessionUserState(users: readonly User[], session: LocalSession): SessionUserState {
+  const user = users.find((candidate) => candidate.name === session.userName);
+  if (!user) return "unknown";
+  return user.active ? "active" : "inactive";
+}

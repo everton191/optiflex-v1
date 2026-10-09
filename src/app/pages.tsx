@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom"
 import { useAppContext } from "./providers";
 import { Button, Card, Input } from "../design-system/components";
 import { hasPermission, roleDefinitions } from "../domain/access";
+import type { RoleKey, User } from "../domain/access";
 import type { Attendance, Customer } from "../domain/customer";
 import { ReceptionService } from "../domain/reception-service";
 import { BackupPanel } from "./BackupPanel";
@@ -47,9 +48,82 @@ export function SettingsPage() {
 }
 
 export function UsersPage() {
-  const { users, stores } = useAppContext();
+  const { users, stores, session, createUser, updateUser, setUserActive } = useAppContext();
+  const canManage = hasPermission(session.role, "users.manage");
+  const [formOpen, setFormOpen] = useState(false);
+  const [editing, setEditing] = useState<User>();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState<RoleKey>("RECEPTIONIST");
+  const [storeIds, setStoreIds] = useState<string[]>([]);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const pending = useRef(false);
   const storeName = (storeId: string) => stores.find((store) => store.id === storeId)?.name ?? "Sem loja";
-  return <div className="page"><p className="eyebrow">Administração</p><h1>Usuários</h1><p className="page-intro">Consulte quem utiliza o sistema e em quais lojas cada pessoa pode trabalhar.</p><div className="list-card">{users.map((user) => <article className="list-row" key={user.id}><div><strong>{user.name}</strong><span>{user.email}</span></div><div><span className="badge">{roleDefinitions.find((role) => role.key === user.role)?.label}</span><small>{scopeLabels[user.scope]} · {user.storeIds.map(storeName).join(", ")}</small></div></article>)}</div></div>;
+  const selectedRole = roleDefinitions.find((definition) => definition.key === role);
+
+  function resetForm(open: boolean) { setFormOpen(open); setEditing(undefined); setName(""); setEmail(""); setRole("RECEPTIONIST"); setStoreIds([]); }
+  function editUser(user: User) { setFormOpen(true); setEditing(user); setName(user.name); setEmail(user.email); setRole(user.role); setStoreIds([...user.storeIds]); }
+  function toggleStore(storeId: string) { setStoreIds((current) => current.includes(storeId) ? current.filter((id) => id !== storeId) : [...current, storeId]); }
+
+  async function run(action: () => Promise<string>, fallback: string) {
+    if (pending.current || !canManage) return;
+    pending.current = true; setMessage(""); setError("");
+    try { setMessage(await action()); } catch (reason) { setError(reason instanceof Error ? reason.message : fallback); } finally { pending.current = false; }
+  }
+
+  async function saveUser(event: React.FormEvent) {
+    event.preventDefault();
+    const input = { name, email, role, storeIds };
+    await run(async () => {
+      if (editing) { await updateUser(editing.id, input); resetForm(false); return "Usuário atualizado."; }
+      await createUser(input); resetForm(false); return "Usuário criado.";
+    }, "Não foi possível salvar o usuário.");
+  }
+
+  async function toggleActive(user: User) {
+    await run(async () => { await setUserActive(user.id, !user.active); return user.active ? "Usuário inativado." : "Usuário reativado."; }, "Não foi possível alterar o status do usuário.");
+  }
+
+  return <div className="page">
+    <div className="page-title">
+      <div><p className="eyebrow">Administração</p><h1>Usuários</h1><p className="page-intro">Cadastre quem usa o sistema, defina a função e as lojas em que cada pessoa pode trabalhar.</p></div>
+      {canManage && <Button type="button" onClick={() => resetForm(!formOpen || Boolean(editing))}>{formOpen && !editing ? "Fechar" : "Novo usuário"}</Button>}
+    </div>
+    {message && <p className="notice success" role="status">{message}</p>}
+    {error && <p className="notice error-text" role="alert">{error}</p>}
+
+    {canManage && formOpen && <form className="settings-form" onSubmit={saveUser}>
+      <label>Nome<Input value={name} onChange={(event) => setName(event.target.value)} required /></label>
+      <label>E-mail<Input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required /></label>
+      <label>Função<select value={role} onChange={(event) => setRole(event.target.value as RoleKey)}>{roleDefinitions.map((definition) => <option key={definition.key} value={definition.key}>{definition.label}</option>)}</select></label>
+      <div>
+        <p className="help-text">Lojas autorizadas{selectedRole?.scope === "STORE" ? " (obrigatório para esta função)" : ""}:</p>
+        {stores.map((store) => <label className="check-label" key={store.id}><input type="checkbox" checked={storeIds.includes(store.id)} onChange={() => toggleStore(store.id)} />{store.name}</label>)}
+      </div>
+      <div className="form-actions">
+        <Button type="submit">{editing ? "Salvar alterações" : "Criar usuário"}</Button>
+        <Button type="button" onClick={() => resetForm(false)}>Cancelar</Button>
+      </div>
+      <p className="help-text">A função define as permissões; as lojas definem onde a pessoa pode trabalhar.</p>
+    </form>}
+
+    <div className="list-card">{users.map((user) => {
+      const isSessionUser = user.name === session.userName;
+      return <article className="list-row" key={user.id}>
+        <div><strong>{user.name}</strong><span>{user.email}</span></div>
+        <div>
+          <span className="badge">{roleDefinitions.find((definition) => definition.key === user.role)?.label}</span>
+          <small>{scopeLabels[user.scope]} · {user.storeIds.map(storeName).join(", ") || "—"}</small>
+          <small>{user.active ? "Ativo" : "Inativo"}{isSessionUser ? " · sessão atual" : ""}</small>
+        </div>
+        {canManage && <div>
+          <Button type="button" onClick={() => editUser(user)}>Editar</Button>
+          <Button type="button" disabled={isSessionUser && user.active} onClick={() => void toggleActive(user)}>{user.active ? "Inativar" : "Reativar"}</Button>
+        </div>}
+      </article>;
+    })}</div>
+  </div>;
 }
 
 export function ProfilesPage() {
