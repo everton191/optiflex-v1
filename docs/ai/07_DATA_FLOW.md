@@ -66,7 +66,7 @@ Fila clínica
 → database.clinicalRecords
 ```
 
-Finalização exige prescrição não vazia. Anamnese, exame, solicitações e prescrição são campos de um único `ClinicalRecord`. Não há autosave; salvar depende do botão. Anexos armazenam somente metadados.
+Finalização exige prescrição não vazia. Anamnese, exame, solicitações e prescrição são campos de um único `ClinicalRecord`, salvos automaticamente (`ClinicalDraft`). Anexos guardam metadados e o conteúdo real em base64 na tabela `attachments` (F3-09).
 
 ## Venda e ordem de serviço
 

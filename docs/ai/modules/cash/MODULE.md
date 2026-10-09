@@ -35,7 +35,7 @@ Sem store/hook. Estado temporário e tabs usam `useState`.
 
 ## Models
 
-`CashSession` (com `expectedBalance`, `closingBalance`, `difference`, `closedBy`, `closingNote`), `CashEntry`; Sale/WorkOrder são dependências. `cashTotals` centraliza o cálculo por centavos.
+`CashSession` (com `expectedBalance`, `closingBalance`, `difference`, `closedBy`, `closingNote`), `CashEntry`; Sale/WorkOrder são dependências. `cashTotals` centraliza o cálculo por centavos (regra em `src/domain/money.ts`).
 
 ## Permissions
 

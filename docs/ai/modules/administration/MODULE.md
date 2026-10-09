@@ -24,7 +24,7 @@ Código distribuído entre `src/app/providers.tsx`, `src/app/pages.tsx`, `src/do
 
 ## Services
 
-`AdministrationService`: initialize, listar lojas/usuários, consultar/trocar loja.
+`AdministrationService`: initialize, listar lojas/usuários, consultar/trocar loja, criar/editar usuário (`UserInput`), ativar/inativar com proteção da sessão atual.
 
 ## Repositories
 
@@ -73,7 +73,7 @@ Não mudar schema ou seeds por ajuste visual. Preservar a experiência de falha 
 
 ### Alterar usuários
 
-→ UsersPage, User, repository e permissions.
+→ `UsersPage`, `UserInput`, `AdministrationService.createUser/updateUser/setUserActive`, `sessionUserState` (`access.ts`) e permissão `users.manage`. Usuário inativo não entra (`providers.tsx`).
 
 ## Related Modules
 

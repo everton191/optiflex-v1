@@ -37,7 +37,7 @@
 ## Important Files Right Now
 
 - `CashDeskPage` em `src/app/pages.tsx`.
-- `src/domain/cash-service.ts`, `src/domain/cash.ts` (`cashTotals`).
+- `src/domain/cash-service.ts`, `src/domain/cash.ts` (`cashTotals`) — centavos via `src/domain/money.ts` (F1-09).
 - `LocalCashRepository` (transações de abertura, recebimento e fechamento).
 - `Sale.paymentStatus` em `src/domain/sales.ts`.
 - `src/domain/access.ts`.

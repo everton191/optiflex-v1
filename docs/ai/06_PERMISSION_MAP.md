@@ -1,6 +1,6 @@
 # Permission Map
 
-Fonte canônica: `src/domain/access.ts`. Guards: `src/app/permissions.tsx`. Rotas: `src/app/router.tsx`. Menu por função: `src/shell/AppShell.tsx`.
+Fonte canônica: `src/domain/access.ts`. Escopo por registro: `src/domain/access-context.ts`. Guards: `src/app/permissions.tsx`. Rotas: `src/app/router.tsx`. Menu por função: `src/shell/AppShell.tsx`.
 
 ## Permissões
 
@@ -28,7 +28,15 @@ Fonte canônica: `src/domain/access.ts`. Guards: `src/app/permissions.tsx`. Rota
 | `inventory.read` | inventory | consultar estoque | role | `/estoque` |
 | `inventory.manage` | inventory | movimentar estoque | role | ações no `/estoque` |
 
-O escopo (`SELF`, `STORE`, `ORGANIZATION`, `NETWORK`) pertence à definição da role/usuário. Os repositories filtram principalmente por `storeId`; não existe enforcement completo de escopo dentro de cada repository.
+## Escopo por registro (F1-11)
+
+O escopo (`SELF`, `STORE`, `ORGANIZATION`, `NETWORK`) pertence à definição da role/usuário (`roleDefinitions`) e vira `AccessContext` da sessão ativa (`buildAccessContext` em `src/domain/access-context.ts`; contexto global montado/desmontado por `AppProviders` junto com sessão/usuários/loja atual).
+
+- `NETWORK`/`ORGANIZATION` (OWNER, NETWORK_ADMINISTRATOR, AUDITOR, FINANCE): qualquer loja.
+- `STORE` (gerente, recepção, clínico, vendedor, caixa, estoque): apenas as lojas em `user.storeIds`. O seletor de loja do topo lista só essas lojas, `selectStore` valida antes de trocar e o carregamento cai para a primeira loja acessível quando a atual não é permitida.
+- `SELF`: somente registros com `userId` do próprio usuário (nenhuma role usa hoje; função pronta e testada).
+- Registros sem `storeId` (clientes, configurações) permanecem compartilhados.
+- Enforcement nos repositories (`local-repositories.ts`): `assertStoreAccess` nas listagens por loja, `assertRecordAccess` nas escritas (atendimento, venda/confirm, OS, estoque/movimentos, caixa, prontuário) e filtro por loja em `listByCustomer`. Sem contexto ativo (testes, backup) não há restrição.
 
 ## Roles
 
@@ -45,9 +53,11 @@ O escopo (`SELF`, `STORE`, `ORGANIZATION`, `NETWORK`) pertence à definição da
 
 ## Guards
 
+- `RequireSession`: exige sessão ativa (e não inativa) em todo o app; sem sessão → `/login`, inativa → `/bloqueado`.
 - `RequirePermission`: guard de rota; aguarda `isReady` e redireciona para `/sem-acesso`.
-- `Can`: componente condicional disponível, atualmente sem uso fora da própria definição.
+- `Can`: componente condicional null-safe sem sessão.
 - `hasPermission`: usado pelo shell, dashboard e `CashDeskPage`.
+- Escopo de registro: `assertStoreAccess`/`assertRecordAccess` (repositories) + validação de troca de loja em `selectStore`.
 
 ## Lógica por role direta
 
@@ -55,6 +65,6 @@ Não foi encontrado `user.role === "admin"`. `CashDeskPage` usa combinações de
 
 ## Riscos
 
-- Algumas permissões de ação não têm guard interno dedicado (`attendance.create`, `stores.select`).
+- `attendance.create` não tem guard interno de permissão (o escopo de loja sim, via repository).
 - O form de venda carrega a lista de produtos para quem tem `sales.manage`, mesmo sem `inventory.read`; a tela `/estoque` continua protegida.
 - O frontend é a única barreira; não há backend para revalidar autorização.

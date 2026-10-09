@@ -35,7 +35,7 @@ Estado React local; sem store/hook dedicado.
 
 ## Models
 
-`Sale`, `SaleStatus`, `SalePaymentStatus`, `SaleItem`; helpers `itemsTotal` e `stockMovementsFor`.
+`Sale`, `SaleStatus`, `SalePaymentStatus`, `SaleItem`; helpers `itemsTotalCents`/`itemsTotal` (regra em `src/domain/money.ts`) e `stockMovementsFor`.
 
 ## Permissions
 
@@ -53,6 +53,7 @@ Customers, cash, work-orders, inventory (estoque) e currentStore.
 
 - UI/abas: `CashDeskPage` (form de venda e seletor de itens).
 - Regras: `sales-service.ts`.
+- Regra de dinheiro: `src/domain/money.ts` (compartilhado com cash; F1-09).
 - Tipos: `sales.ts` (`SaleItem`, `stockMovementsFor`).
 - Persistência: `LocalSaleRepository.confirm` (transação venda + estoque).
 - Backup: validação de `items` em `backup.ts`.

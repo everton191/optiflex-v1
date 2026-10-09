@@ -23,6 +23,10 @@ Antes de procurar arquivos:
 
 Ignore `node_modules`, `dist`, `build`, `coverage`, caches, arquivos gerados e lockfiles grandes, salvo quando a tarefa exigir.
 
+## Controle de execução (Kanban mestre)
+
+No início de cada sessão de trabalho, leia `docs/project-management/PROJECT_STATUS.md` (ponto de retomada) e consulte `docs/project-management/KANBAN.md` (Issues reais, status, prioridades e dependências). Nunca trabalhe em funcionalidade sem card correspondente; nunca marque DONE sem evidência de teste.
+
 ## Regras arquiteturais
 
 - Entrada e providers: `src/main.tsx` e `src/app/`.

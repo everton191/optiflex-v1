@@ -32,14 +32,16 @@
 ## Important Files Right Now
 
 - `CashDeskPage` em `src/app/pages.tsx` (form + `.sale-items-*`).
-- `src/domain/sales-service.ts` (validação de itens e `confirm`).
-- `src/domain/sales.ts` (`SaleItem`, `itemsTotal`, `stockMovementsFor`).
+- `src/domain/sales-service.ts` (validação de itens, de valores finitos e `confirm`).
+- `src/domain/sales.ts` (`SaleItem`, `itemsTotalCents`/`itemsTotal`, `stockMovementsFor`).
+- `src/domain/money.ts` (regra única de centavos — F1-09; compartilhada com cash).
 - `LocalSaleRepository.confirm` + `applyStockMovement` em `local-repositories.ts`.
 
 ## Recent Structural Changes
 
 - Fase E: venda → estoque atômica (confirmação + movimento `OUT` na mesma transação).
-- Testes: `src/domain/sales-service.test.ts` (7) e `src/infrastructure/storage/sale-stock.test.ts` (4, inclui concorrência).
+- F1-09: precisão monetária — `createQuote`/`confirm` rejeitam NaN/Infinity; total dos itens somado em centavos (`money.test.ts`).
+- Testes: `src/domain/sales-service.test.ts` (10) e `src/infrastructure/storage/sale-stock.test.ts` (4, inclui concorrência).
 
 ## Be Careful With
 
