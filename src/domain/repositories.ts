@@ -43,6 +43,9 @@ export interface ClinicalRepository {
   load(attendanceId: string, storeId: string): Promise<{ record: ClinicalRecord; customer: Customer }>;
   write(record: ClinicalRecord, storeId: string, author: string, action: "save" | "finalize" | "amend", reason?: string): Promise<ClinicalRecord>;
   history(attendanceId: string, storeId: string): Promise<ClinicalVersion[]>;
+  putAttachmentContent(attachmentId: string, content: string): Promise<void>;
+  getAttachmentContent(attachmentId: string): Promise<string | undefined>;
+  deleteAttachmentContent(attachmentId: string): Promise<void>;
 }
 
 export interface SaleRepository {

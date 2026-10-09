@@ -17,15 +17,38 @@ describe("encrypted backup and transactional restore", () => {
   it("roundtrips data, encrypts contents and does not export sessions", async () => {
     await database.customers.add({ id: "test", name: "Nome confidencial teste", createdAt: new Date().toISOString() });
     await database.sessions.put({ id: "current", userName: "Teste", role: "RECEPTIONIST" });
+    await database.attachments.put({ id: "att-1", content: "aGVsbG8=" });
     const encrypted = await service.create(password, "OWNER");
     expect(encrypted).not.toContain("Nome confidencial");
     const snapshot = await service.inspect(encrypted, password, "OWNER");
     expect(snapshot.tables.customers).toHaveLength(1);
     expect(snapshot.tables).not.toHaveProperty("sessions");
+    expect(snapshot.tables.attachments).toEqual([{ id: "att-1", content: "aGVsbG8=" }]);
     await database.customers.clear();
+    await database.attachments.clear();
     await service.restore(snapshot, "RESTAURAR", "OWNER");
     expect((await database.customers.get("test"))?.name).toBe("Nome confidencial teste");
     expect((await database.sessions.get("current"))?.role).toBe("RECEPTIONIST");
+    expect((await database.attachments.get("att-1"))?.content).toBe("aGVsbG8=");
+  });
+  it("keeps legacy backups readable and rejects corrupted attachment content", async () => {
+    const snapshot = await repository.snapshot();
+    const legacy = structuredClone(snapshot);
+    legacy.schema = 10;
+    const legacyTables = legacy as unknown as { tables: Record<string, unknown> };
+    delete legacyTables.tables.attachments;
+    expect(() => validateBackup(legacy)).not.toThrow();
+    expect(validateBackup(legacy).tables.attachments).toEqual([]);
+    const schemaTenWithTable = structuredClone(snapshot);
+    schemaTenWithTable.schema = 10;
+    expect(() => validateBackup(schemaTenWithTable)).toThrow("inválido");
+    const missingTable = structuredClone(snapshot);
+    const missingTables = missingTable as unknown as { tables: Record<string, unknown> };
+    delete missingTables.tables.attachments;
+    expect(() => validateBackup(missingTable)).toThrow("inválido");
+    const corrupted = structuredClone(snapshot);
+    corrupted.tables.attachments.push({ id: "att-bad", content: "conteúdo inválido!" });
+    expect(() => validateBackup(corrupted)).toThrow("inválido");
   });
   it("rejects wrong password and altered ciphertext", async () => {
     const encrypted = await service.create(password, "OWNER");

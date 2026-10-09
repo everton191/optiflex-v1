@@ -1,7 +1,7 @@
 import Dexie, { type EntityTable } from "dexie";
 import type { CurrentStoreContext, LocalSession, OrganizationSettings, Store, User } from "../../domain/access";
 import type { Attendance, Customer } from "../../domain/customer";
-import type { ClinicalRecord, ClinicalVersion } from "../../domain/clinical";
+import type { ClinicalAttachmentContent, ClinicalRecord, ClinicalVersion } from "../../domain/clinical";
 import type { Sale } from "../../domain/sales";
 import type { WorkOrder } from "../../domain/work-order";
 import type { InventoryItem, InventoryMovement } from "../../domain/inventory";
@@ -17,6 +17,7 @@ export class OpticoreDatabase extends Dexie {
   attendances!: EntityTable<Attendance, "id">;
   clinicalRecords!: EntityTable<ClinicalRecord, "attendanceId">;
   clinicalVersions!: EntityTable<ClinicalVersion, "id">;
+  attachments!: EntityTable<ClinicalAttachmentContent, "id">;
   sales!: EntityTable<Sale, "id">;
   workOrders!: EntityTable<WorkOrder, "id">;
   inventoryItems!: EntityTable<InventoryItem, "id">;
@@ -44,6 +45,7 @@ export class OpticoreDatabase extends Dexie {
         if (attendance && attendance.status !== "CANCELLED") await transaction.table("attendances").update(record.attendanceId, { status: "FINISHED" });
       }
     });
+    this.version(11).stores({ attachments: "id" });
   }
 }
 

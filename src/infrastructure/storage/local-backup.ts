@@ -6,7 +6,7 @@ export class LocalBackupRepository implements BackupRepository {
     const tables = backupTables.map((name) => database.table(name));
     return database.transaction("r", tables, async () => {
       const entries = await Promise.all(tables.map(async (table) => [table.name, await table.toArray()]));
-      return { format: "opticore", version: 1, schema: 10, createdAt: new Date().toISOString(), tables: Object.fromEntries(entries) as BackupSnapshot["tables"] };
+      return { format: "opticore", version: 1, schema: 11, createdAt: new Date().toISOString(), tables: Object.fromEntries(entries) as BackupSnapshot["tables"] };
     });
   }
   async restore(input: BackupSnapshot) {

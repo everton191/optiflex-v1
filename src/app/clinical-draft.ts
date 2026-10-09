@@ -1,4 +1,4 @@
-import type { ClinicalRecord } from "../domain/clinical";
+import type { ClinicalAttachment, ClinicalRecord } from "../domain/clinical";
 
 export class ClinicalDraft {
   record: ClinicalRecord;
@@ -14,6 +14,18 @@ export class ClinicalDraft {
     if (this.record.finalizedAt) return;
     this.record = { ...this.record, [field]: value }; this.generation++; this.dirty = true; this.notify();
     void this.flush().catch(() => { /* Error remains visible; never discard the draft. */ });
+  }
+  async attach(attachment: ClinicalAttachment): Promise<void> {
+    if (this.record.finalizedAt) throw new Error("Documento finalizado: crie uma correção para adicionar anexos.");
+    this.record = { ...this.record, attachments: [...this.record.attachments, attachment] };
+    this.generation++; this.dirty = true; this.notify();
+    return this.flush();
+  }
+  async detach(attachmentId: string): Promise<void> {
+    if (this.record.finalizedAt) throw new Error("Documento finalizado: crie uma correção para remover anexos.");
+    this.record = { ...this.record, attachments: this.record.attachments.filter((item) => item.id !== attachmentId) };
+    this.generation++; this.dirty = true; this.notify();
+    return this.flush();
   }
   flush(): Promise<void> {
     const operation = this.chain.then(async () => {

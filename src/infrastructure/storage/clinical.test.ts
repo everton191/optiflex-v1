@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { database } from "./database";
 import { LocalAdministrationRepository, LocalAttendanceRepository, LocalClinicalRepository, LocalCustomerRepository } from "./local-repositories";
 import { ClinicalService, type ClinicalContext } from "../../domain/clinical-service";
+import { ATTACHMENT_MAX_BYTES } from "../../domain/clinical";
 import { ReceptionService } from "../../domain/reception-service";
 import { ClinicalDraft } from "../../app/clinical-draft";
 
@@ -94,5 +95,57 @@ describe("clinical lifecycle", () => {
     expect(draft.dirty).toBe(true); expect(draft.record.anamnesis).toBe("Não perder");
     save.mockImplementation((next) => service.save(next, context));
     await draft.flush(); expect(draft.dirty).toBe(false);
+  });
+});
+
+describe("clinical attachments", () => {
+  const file = { name: "raio-x.png", mimeType: "image/png", size: 8, content: "aW1nLXBuZw==" };
+  it("stores attachment content that survives reopening", async () => {
+    const { record } = await service.load(attendanceId, context);
+    const attachment = await service.storeAttachment(file, "IMAGE", context);
+    expect(attachment.category).toBe("IMAGE");
+    await service.save({ ...record, attachments: [attachment] }, context);
+    expect(await service.readAttachmentContent(attachment.id, context)).toBe(file.content);
+    database.close(); await database.open();
+    expect((await service.load(attendanceId, context)).record.attachments.map((item) => item.id)).toEqual([attachment.id]);
+    expect(await service.readAttachmentContent(attachment.id, context)).toBe(file.content);
+  });
+  it("recuses invalid uploads before storing anything", async () => {
+    await expect(service.storeAttachment({ ...file, mimeType: "application/msword" }, "DOCUMENT", context)).rejects.toThrow("Tipo de arquivo não permitido");
+    await expect(service.storeAttachment({ ...file, size: ATTACHMENT_MAX_BYTES + 1 }, "DOCUMENT", context)).rejects.toThrow("5 MB");
+    await expect(service.storeAttachment(file, "OTHER" as never, context)).rejects.toThrow("Categoria de anexo inválida");
+    expect(await database.attachments.count()).toBe(0);
+  });
+  it("attaches, detaches and drops content through the draft", async () => {
+    const { record } = await service.load(attendanceId, context);
+    const draft = new ClinicalDraft(record, (next) => service.save(next, context), () => {});
+    const attachment = await service.storeAttachment(file, "EXAM", context);
+    await draft.attach(attachment);
+    expect(draft.dirty).toBe(false);
+    expect((await service.load(attendanceId, context)).record.attachments.map((item) => item.id)).toEqual([attachment.id]);
+    await draft.detach(attachment.id);
+    expect((await service.load(attendanceId, context)).record.attachments).toHaveLength(0);
+    await service.dropAttachmentContent(attachment.id, context);
+    expect(await service.readAttachmentContent(attachment.id, context)).toBeUndefined();
+  });
+  it("blocks attachment changes on finalized documents", async () => {
+    const { record } = await service.load(attendanceId, context);
+    const attachment = await service.storeAttachment(file, "DOCUMENT", context);
+    const saved = await service.save({ ...record, attachments: [attachment] }, context);
+    const finalized = await service.finalize({ ...saved, prescription: "Receita teste" }, context);
+    const draft = new ClinicalDraft(finalized, (next) => service.save(next, context), () => {});
+    await expect(draft.attach(attachment)).rejects.toThrow("correção");
+    await expect(draft.detach(attachment.id)).rejects.toThrow("correção");
+  });
+  it("keeps content referenced by finalized versions after a correction", async () => {
+    const { record } = await service.load(attendanceId, context);
+    const attachment = await service.storeAttachment(file, "EXAM", context);
+    const saved = await service.save({ ...record, attachments: [attachment] }, context);
+    const finalized = await service.finalize({ ...saved, prescription: "Original" }, context);
+    const amended = await service.amend(finalized, "Retirar anexo", context);
+    const updated = await service.save({ ...amended, attachments: [] }, context);
+    expect(updated.attachments).toHaveLength(0);
+    expect((await service.history(attendanceId, context))[0]?.attachments).toHaveLength(1);
+    expect(await service.readAttachmentContent(attachment.id, context)).toBe(file.content);
   });
 });

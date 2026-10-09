@@ -1,9 +1,10 @@
 import { rolePermissions, type RoleKey } from "./access";
 
 // Session is intentionally excluded: restoring business data must not import a login.
-export const backupTables = ["settings", "stores", "users", "currentStore", "customers", "attendances", "clinicalRecords", "clinicalVersions", "sales", "workOrders", "inventoryItems", "inventoryMovements", "cashSessions", "cashEntries"] as const;
+export const backupTables = ["settings", "stores", "users", "currentStore", "customers", "attendances", "clinicalRecords", "clinicalVersions", "attachments", "sales", "workOrders", "inventoryItems", "inventoryMovements", "cashSessions", "cashEntries"] as const;
 export type BackupTable = typeof backupTables[number];
-export interface BackupSnapshot { format: "opticore"; version: 1; schema: 10; createdAt: string; tables: Record<BackupTable, Record<string, unknown>[]>; }
+// Schema 10 predates the attachments content table; both remain importable.
+export interface BackupSnapshot { format: "opticore"; version: 1; schema: 10 | 11; createdAt: string; tables: Record<BackupTable, Record<string, unknown>[]>; }
 export interface BackupRepository { snapshot(): Promise<BackupSnapshot>; restore(snapshot: BackupSnapshot): Promise<void>; }
 export interface BackupCodec { encrypt(value: string, password: string): Promise<string>; decrypt(value: string, password: string): Promise<string>; }
 
@@ -11,16 +12,21 @@ const requiredStrings: Record<BackupTable, string[]> = {
   settings: ["id", "organizationName", "clinicalProfessionalLabel"], stores: ["id", "name"], users: ["id", "name", "email", "role", "scope"], currentStore: ["id", "storeId"],
   customers: ["id", "name", "createdAt"], attendances: ["id", "customerId", "storeId", "type", "status", "createdAt"],
   clinicalRecords: ["attendanceId", "anamnesis", "examination", "prescription", "requests", "updatedAt"], clinicalVersions: ["id", "attendanceId", "anamnesis", "examination", "prescription", "requests", "updatedAt", "finalizedAt"],
+  attachments: ["id", "content"],
   sales: ["id", "customerId", "storeId", "status", "description", "createdAt"], workOrders: ["id", "saleId", "storeId", "customerId", "status", "createdAt"],
   inventoryItems: ["id", "storeId", "name"], inventoryMovements: ["id", "itemId", "storeId", "type", "reason", "createdAt"], cashSessions: ["id", "storeId", "openedAt"], cashEntries: ["id", "sessionId", "storeId", "type", "createdAt"],
 };
 const object = (value: unknown): value is Record<string, unknown> => Boolean(value && typeof value === "object" && !Array.isArray(value));
 const invalid = () => new Error("Backup inválido ou incompatível. Nenhum dado foi substituído.");
 export function validateBackup(value: unknown): BackupSnapshot {
-  if (!object(value) || value.format !== "opticore" || value.version !== 1 || value.schema !== 10 || typeof value.createdAt !== "string" || !Number.isFinite(Date.parse(value.createdAt)) || !object(value.tables)) throw invalid();
-  if (Object.keys(value.tables).length !== backupTables.length) throw invalid();
+  if (!object(value) || value.format !== "opticore" || value.version !== 1 || (value.schema !== 10 && value.schema !== 11) || typeof value.createdAt !== "string" || !Number.isFinite(Date.parse(value.createdAt)) || !object(value.tables)) throw invalid();
+  const importedTables = { ...value.tables };
+  if (value.schema === 10) {
+    if (Object.keys(importedTables).length !== backupTables.length - 1 || "attachments" in importedTables) throw invalid();
+    importedTables.attachments = [];
+  } else if (Object.keys(importedTables).length !== backupTables.length || !("attachments" in importedTables)) throw invalid();
   for (const name of backupTables) {
-    const rows = value.tables[name];
+    const rows = importedTables[name];
     if (!Array.isArray(rows)) throw invalid();
     const keys = new Set<string>();
     for (const row of rows) {
@@ -45,9 +51,10 @@ export function validateBackup(value: unknown): BackupSnapshot {
         for (const field of ["revision", "version"]) if (row[field] !== undefined && (!Number.isSafeInteger(row[field]) || (row[field] as number) < (field === "version" ? 1 : 0))) throw invalid();
         for (const field of ["author", "amendmentReason", "finalizedAt"]) if (row[field] !== undefined && typeof row[field] !== "string") throw invalid();
       }
+      if (name === "attachments" && (typeof row.content !== "string" || !row.content || row.content.length % 4 !== 0 || !/^[A-Za-z0-9+/]+={0,2}$/.test(row.content))) throw invalid();
     }
   }
-  const snapshot = value as unknown as BackupSnapshot;
+  const snapshot = { ...value, tables: importedTables } as unknown as BackupSnapshot;
   const tables = snapshot.tables;
   const ids = (name: BackupTable) => new Set(tables[name].map((row) => row.id));
   const customers = ids("customers"), stores = ids("stores"), attendances = ids("attendances");

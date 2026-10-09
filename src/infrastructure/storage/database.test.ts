@@ -29,8 +29,8 @@ describe("local storage", () => {
       }
     } finally { legacy.close(); }
     await database.open();
-    expect(database.verno).toBe(10);
-    for (const table of database.tables) expect(await table.count()).toBe(table.name === "clinicalVersions" ? 0 : 1);
+    expect(database.verno).toBe(11);
+    for (const table of database.tables) expect(await table.count()).toBe(table.name === "clinicalVersions" || table.name === "attachments" ? 0 : 1);
     const repository = new LocalAdministrationRepository();
     expect((await repository.listStores())[0].name).toBe("Registro existente");
     expect((await repository.listUsers())[0].role).toBe("RECEPTIONIST");

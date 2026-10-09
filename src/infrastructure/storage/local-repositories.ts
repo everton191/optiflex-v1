@@ -132,6 +132,20 @@ export class LocalClinicalRepository implements ClinicalRepository {
       return database.clinicalVersions.where("attendanceId").equals(attendanceId).reverse().sortBy("version");
     });
   }
+  async putAttachmentContent(attachmentId: string, content: string): Promise<void> {
+    try {
+      await database.attachments.put({ id: attachmentId, content });
+    } catch (error) {
+      if (error instanceof Error && error.name === "QuotaExceededError") throw new Error("Espaço insuficiente no dispositivo para guardar o anexo. Remova anexos anteriores ou libere armazenamento.");
+      throw error;
+    }
+  }
+  async getAttachmentContent(attachmentId: string): Promise<string | undefined> {
+    return (await database.attachments.get(attachmentId))?.content;
+  }
+  async deleteAttachmentContent(attachmentId: string): Promise<void> {
+    await database.attachments.delete(attachmentId);
+  }
 }
 
 export class LocalSaleRepository implements SaleRepository {
