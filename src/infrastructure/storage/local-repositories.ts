@@ -1,4 +1,5 @@
 import type { CurrentStoreContext, LocalSession, OrganizationSettings, Store, User } from "../../domain/access";
+import { assertRecordAccess, assertStoreAccess, canAccessRecord, getActiveAccessContext } from "../../domain/access-context";
 import type { Attendance, Customer } from "../../domain/customer";
 import type { ClinicalRecord } from "../../domain/clinical";
 import type { Sale } from "../../domain/sales";
@@ -69,15 +70,21 @@ export class LocalCustomerRepository implements CustomerRepository {
 }
 
 export class LocalAttendanceRepository implements AttendanceRepository {
-  async listByStore(storeId: string): Promise<Attendance[]> { return database.attendances.where("storeId").equals(storeId).reverse().sortBy("createdAt"); }
-  async listByCustomer(customerId: string): Promise<Attendance[]> { return database.attendances.where("customerId").equals(customerId).reverse().sortBy("createdAt"); }
-  async save(attendance: Attendance): Promise<void> { await database.attendances.put(attendance); }
+  async listByStore(storeId: string): Promise<Attendance[]> { assertStoreAccess(storeId); return database.attendances.where("storeId").equals(storeId).reverse().sortBy("createdAt"); }
+  async listByCustomer(customerId: string): Promise<Attendance[]> { const rows = await database.attendances.where("customerId").equals(customerId).reverse().sortBy("createdAt"); return rows.filter((attendance) => canAccessRecordSafe(attendance)); }
+  async save(attendance: Attendance): Promise<void> { assertRecordAccess(attendance); await database.attendances.put(attendance); }
+}
+
+function canAccessRecordSafe(record: { storeId?: string; userId?: string }): boolean {
+  const context = getActiveAccessContext();
+  return context ? canAccessRecord(context, record) : true;
 }
 
 export class LocalClinicalRepository implements ClinicalRepository {
   private async attendance(attendanceId: string, storeId: string) {
     const attendance = await database.attendances.get(attendanceId);
     if (!attendance || attendance.storeId !== storeId) throw new Error("Atendimento não encontrado nesta loja.");
+    assertRecordAccess(attendance);
     if (attendance.status === "CANCELLED") throw new Error("Este atendimento foi cancelado.");
     return attendance;
   }
@@ -128,13 +135,15 @@ export class LocalClinicalRepository implements ClinicalRepository {
 }
 
 export class LocalSaleRepository implements SaleRepository {
-  async listByStore(storeId: string): Promise<Sale[]> { return database.sales.where("storeId").equals(storeId).reverse().sortBy("createdAt"); }
+  async listByStore(storeId: string): Promise<Sale[]> { assertStoreAccess(storeId); return database.sales.where("storeId").equals(storeId).reverse().sortBy("createdAt"); }
   async get(id: string): Promise<Sale | undefined> { return database.sales.get(id); }
-  async save(sale: Sale): Promise<void> { await database.sales.put(sale); }
+  async save(sale: Sale): Promise<void> { assertRecordAccess(sale); await database.sales.put(sale); }
   async confirm(sale: Sale, movements: readonly InventoryMovement[]): Promise<void> {
+    assertRecordAccess(sale);
     return database.transaction("rw", database.sales, database.inventoryItems, database.inventoryMovements, async () => {
       const current = await database.sales.get(sale.id);
       if (!current || current.storeId !== sale.storeId) throw new Error("Venda não encontrada nesta loja.");
+      assertRecordAccess(current);
       if (current.status !== "QUOTE") throw new Error("Somente orçamentos pendentes podem ser confirmados.");
       for (const movement of movements) {
         if (movement.storeId !== sale.storeId) throw new Error("Movimentação incompatível com a venda.");
@@ -146,9 +155,10 @@ export class LocalSaleRepository implements SaleRepository {
 }
 
 export class LocalWorkOrderRepository implements WorkOrderRepository {
-  async listByStore(storeId: string): Promise<WorkOrder[]> { return database.workOrders.where("storeId").equals(storeId).reverse().sortBy("createdAt"); }
+  async listByStore(storeId: string): Promise<WorkOrder[]> { assertStoreAccess(storeId); return database.workOrders.where("storeId").equals(storeId).reverse().sortBy("createdAt"); }
   async getBySale(saleId: string): Promise<WorkOrder | undefined> { return database.workOrders.where("saleId").equals(saleId).first(); }
   async create(order: WorkOrder): Promise<WorkOrder> {
+    assertRecordAccess(order);
     return database.transaction("rw", database.workOrders, async () => {
       const existing = await database.workOrders.where("saleId").equals(order.saleId).first();
       if (existing) return existing;
@@ -157,9 +167,11 @@ export class LocalWorkOrderRepository implements WorkOrderRepository {
     });
   }
   async update(order: WorkOrder, expectedStatus?: WorkOrderStatus): Promise<WorkOrder> {
+    assertRecordAccess(order);
     return database.transaction("rw", database.workOrders, async () => {
       const current = await database.workOrders.get(order.id);
       if (!current || current.storeId !== order.storeId) throw new Error("Ordem não encontrada nesta loja.");
+      assertRecordAccess(current);
       if (expectedStatus && current.status !== expectedStatus) throw new Error("A ordem foi alterada em outra sessão. Recarregue a lista.");
       const updated: WorkOrder = { ...current, ...order, createdAt: current.createdAt, saleId: current.saleId, customerId: current.customerId, storeId: current.storeId };
       await database.workOrders.put(updated);
@@ -181,36 +193,42 @@ async function applyStockMovement(movement: InventoryMovement): Promise<Inventor
 }
 
 export class LocalInventoryRepository implements InventoryRepository {
-  async listByStore(storeId: string): Promise<InventoryItem[]> { return database.inventoryItems.where("storeId").equals(storeId).sortBy("name"); }
-  async listMovements(storeId: string): Promise<InventoryMovement[]> { return database.inventoryMovements.where("storeId").equals(storeId).reverse().sortBy("createdAt"); }
+  async listByStore(storeId: string): Promise<InventoryItem[]> { assertStoreAccess(storeId); return database.inventoryItems.where("storeId").equals(storeId).sortBy("name"); }
+  async listMovements(storeId: string): Promise<InventoryMovement[]> { assertStoreAccess(storeId); return database.inventoryMovements.where("storeId").equals(storeId).reverse().sortBy("createdAt"); }
   async createItem(item: InventoryItem, initialMovement?: InventoryMovement): Promise<void> {
+    assertRecordAccess(item);
     return database.transaction("rw", database.inventoryItems, database.inventoryMovements, async () => {
       if (await database.inventoryItems.get(item.id)) throw new Error("Produto já cadastrado.");
       await database.inventoryItems.put(item);
       if (initialMovement) {
         if (initialMovement.itemId !== item.id || initialMovement.storeId !== item.storeId) throw new Error("Movimentação inicial incompatível com o produto.");
+        assertRecordAccess(initialMovement);
         await database.inventoryMovements.put(initialMovement);
       }
     });
   }
   async updateItem(item: InventoryItem): Promise<void> {
+    assertRecordAccess(item);
     return database.transaction("rw", database.inventoryItems, async () => {
       const current = await database.inventoryItems.get(item.id);
       if (!current || current.storeId !== item.storeId) throw new Error("Produto não encontrado nesta loja.");
+      assertRecordAccess(current);
       await database.inventoryItems.put({ ...item, quantity: current.quantity });
     });
   }
   async applyMovement(movement: InventoryMovement): Promise<InventoryItem> {
+    assertRecordAccess(movement);
     return database.transaction("rw", database.inventoryItems, database.inventoryMovements, async () => applyStockMovement(movement));
   }
 }
 
 export class LocalCashRepository implements CashRepository {
   private openSessionOf(storeId: string) { return database.cashSessions.where("storeId").equals(storeId).filter((session) => !session.closedAt).first(); }
-  async current(storeId: string): Promise<CashSession | undefined> { return this.openSessionOf(storeId); }
-  async listSessions(storeId: string): Promise<CashSession[]> { return database.cashSessions.where("storeId").equals(storeId).reverse().sortBy("openedAt"); }
-  async listEntries(storeId: string): Promise<CashEntry[]> { return database.cashEntries.where("storeId").equals(storeId).reverse().sortBy("createdAt"); }
+  async current(storeId: string): Promise<CashSession | undefined> { assertStoreAccess(storeId); return this.openSessionOf(storeId); }
+  async listSessions(storeId: string): Promise<CashSession[]> { assertStoreAccess(storeId); return database.cashSessions.where("storeId").equals(storeId).reverse().sortBy("openedAt"); }
+  async listEntries(storeId: string): Promise<CashEntry[]> { assertStoreAccess(storeId); return database.cashEntries.where("storeId").equals(storeId).reverse().sortBy("createdAt"); }
   async openSession(session: CashSession): Promise<CashSession> {
+    assertRecordAccess(session);
     return database.transaction("rw", database.cashSessions, async () => {
       if (await this.openSessionOf(session.storeId)) throw new Error("Já existe um caixa aberto nesta loja.");
       await database.cashSessions.add(session);
@@ -218,9 +236,11 @@ export class LocalCashRepository implements CashRepository {
     });
   }
   async recordReceipt(entry: CashEntry): Promise<CashEntry> {
+    assertRecordAccess(entry);
     return database.transaction("rw", database.cashSessions, database.cashEntries, database.sales, async () => {
       const session = await database.cashSessions.get(entry.sessionId);
       if (!session || session.storeId !== entry.storeId || session.closedAt) throw new Error("Abra o caixa antes de registrar recebimentos.");
+      assertRecordAccess(session);
       if (!entry.saleId) { await database.cashEntries.add(entry); return entry; }
       const sale = await database.sales.get(entry.saleId);
       if (!sale || sale.storeId !== entry.storeId) throw new Error("Venda não encontrada nesta loja.");
@@ -237,9 +257,11 @@ export class LocalCashRepository implements CashRepository {
     });
   }
   async closeSession(storeId: string, input: CashCloseInput): Promise<CashSession> {
+    assertStoreAccess(storeId);
     return database.transaction("rw", database.cashSessions, database.cashEntries, async () => {
       const session = await this.openSessionOf(storeId);
       if (!session) throw new Error("Abra o caixa antes de fechar.");
+      assertRecordAccess(session);
       const entries = await database.cashEntries.where("sessionId").equals(session.id).toArray();
       const totals = cashTotals(session.openingBalance, entries);
       const note = input.note?.trim();

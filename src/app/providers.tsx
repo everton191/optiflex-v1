@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { LocalSession, OrganizationSettings, Store, User } from "../domain/access";
 import { isSessionExpired } from "../domain/access";
+import { buildAccessContext, canAccessStore, setAccessContext } from "../domain/access-context";
 import { AdministrationService, type UserInput } from "../domain/administration-service";
 import { AuthenticationService } from "../domain/authentication-service";
 import { LocalAdministrationRepository, LocalSessionRepository, LocalSettingsRepository } from "../infrastructure/storage/local-repositories";
@@ -45,6 +46,11 @@ export function AppProviders({ children }: { children: ReactNode }) {
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
+    setAccessContext(session && currentStoreId && users.length ? buildAccessContext(session, users, currentStoreId) : null);
+    return () => setAccessContext(null);
+  }, [session, users, currentStoreId]);
+
+  useEffect(() => {
     let active = true;
     setLoadError(false);
     setIsReady(false);
@@ -54,11 +60,21 @@ export function AppProviders({ children }: { children: ReactNode }) {
         const [loadedSettings, loadedSession, loadedStores, loadedUsers, currentStore] = await Promise.all([
           settingsRepository.get(), sessionRepository.get(), administrationService.listStores(), administrationService.listUsers(), administrationService.currentStore()
         ]);
-        if (!loadedStores.some((store) => store.id === currentStore?.storeId && store.active)) throw new Error("Loja atual indisponível.");
-        if (!active) return;
         let validSession = loadedSession;
         if (validSession && isSessionExpired(validSession)) { await sessionRepository.clear(); validSession = null; }
-        setSettings(loadedSettings); setSession(validSession); setStores(loadedStores); setUsers(loadedUsers); setCurrentStoreId(currentStore.storeId);
+        if (!loadedStores.some((store) => store.id === currentStore?.storeId && store.active)) throw new Error("Loja atual indisponível.");
+        if (!active) return;
+        let storeId = currentStore.storeId;
+        if (validSession) {
+          const context = buildAccessContext(validSession, loadedUsers, storeId);
+          if (!canAccessStore(context, storeId)) {
+            const fallback = loadedStores.find((store) => store.active && canAccessStore(context, store.id));
+            if (!fallback) throw new Error("Nenhuma loja acessível para este usuário.");
+            await administrationService.selectStore(fallback.id);
+            storeId = fallback.id;
+          }
+        }
+        setSettings(loadedSettings); setSession(validSession); setStores(loadedStores); setUsers(loadedUsers); setCurrentStoreId(storeId);
         setIsReady(true);
       } catch (reason) {
         console.error("Não foi possível inicializar o armazenamento local.", reason);
@@ -73,7 +89,11 @@ export function AppProviders({ children }: { children: ReactNode }) {
     await settingsRepository.save(nextSettings);
     setSettings(nextSettings);
   }
-  async function selectStore(storeId: string) { if (navigationLocked) throw new Error("Salve as alterações antes de trocar de loja."); await administrationService.selectStore(storeId); setCurrentStoreId(storeId); }
+  async function selectStore(storeId: string) {
+    if (navigationLocked) throw new Error("Salve as alterações antes de trocar de loja.");
+    if (session && !canAccessStore(buildAccessContext(session, users, storeId), storeId)) throw new Error("Você não tem acesso a esta loja.");
+    await administrationService.selectStore(storeId); setCurrentStoreId(storeId);
+  }
   async function refreshUsers() { setUsers(await administrationService.listUsers()); }
   async function createUser(input: UserInput) { const user = await administrationService.createUser(input); await refreshUsers(); return user; }
   async function updateUser(id: string, input: UserInput) { const user = await administrationService.updateUser(id, input); await refreshUsers(); return user; }
