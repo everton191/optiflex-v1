@@ -255,7 +255,7 @@ export function ClinicalQueuePage() {
 }
 
 export { InventoryPage } from "./InventoryWorkspace";
-export { WorkOrdersPage } from "./WorkOrdersWorkspace";
+export { WorkOrdersPage, WorkOrderDetailPage } from "./WorkOrdersWorkspace";
 
 type CashDeskView = "sales" | "receipts" | "session";
 

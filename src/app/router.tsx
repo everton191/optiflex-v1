@@ -1,6 +1,6 @@
 import { createBrowserRouter, Navigate, RouterProvider } from "react-router-dom";
 import { RequirePermission, RequireSession } from "./permissions";
-import { AttendancePage, BlockedPage, CashDeskPage, ChangePasswordPage, ClinicalQueuePage, ClinicalWorkspacePage, CustomerNewPage, CustomerProfilePage, CustomersPage, DashboardPage, ForbiddenPage, InventoryPage, LoginPage, ProfilesPage, SettingsPage, UsersPage, WorkOrdersPage } from "./pages";
+import { AttendancePage, BlockedPage, CashDeskPage, ChangePasswordPage, ClinicalQueuePage, ClinicalWorkspacePage, CustomerNewPage, CustomerProfilePage, CustomersPage, DashboardPage, ForbiddenPage, InventoryPage, LoginPage, ProfilesPage, SettingsPage, UsersPage, WorkOrderDetailPage, WorkOrdersPage } from "./pages";
 import { AppShell } from "../shell/AppShell";
 
 const router = createBrowserRouter([
@@ -20,6 +20,7 @@ const router = createBrowserRouter([
       { path: "caixa", element: <RequirePermission permission="cash.read"><CashDeskPage /></RequirePermission> },
       { path: "estoque", element: <RequirePermission permission="inventory.read"><InventoryPage /></RequirePermission> },
       { path: "ordens-servico", element: <RequirePermission permission="sales.read"><WorkOrdersPage /></RequirePermission> },
+      { path: "ordens-servico/:orderId", element: <RequirePermission permission="sales.read"><WorkOrderDetailPage /></RequirePermission> },
       { path: "admin/usuarios", element: <RequirePermission permission="users.read"><UsersPage /></RequirePermission> },
       { path: "admin/perfis", element: <RequirePermission permission="roles.read"><ProfilesPage /></RequirePermission> },
       { path: "admin/configuracoes", element: <RequirePermission permission="settings.manage"><SettingsPage /></RequirePermission> },

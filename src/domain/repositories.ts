@@ -60,6 +60,7 @@ export interface WorkOrderRepository {
   getBySale(saleId: string): Promise<WorkOrder | undefined>;
   create(order: WorkOrder): Promise<WorkOrder>;
   update(order: WorkOrder, expectedStatus?: WorkOrderStatus): Promise<WorkOrder>;
+  recordInputs(order: WorkOrder, movements: readonly InventoryMovement[], expectedStatus: WorkOrderStatus): Promise<WorkOrder>;
 }
 
 export interface InventoryRepository {

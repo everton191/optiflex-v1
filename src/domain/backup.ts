@@ -1,4 +1,5 @@
 import { rolePermissions, type RoleKey } from "./access";
+import { workOrderEventLabels, workOrderStatusLabels } from "./work-order";
 
 // Session is intentionally excluded: restoring business data must not import a login.
 export const backupTables = ["settings", "stores", "users", "currentStore", "customers", "attendances", "clinicalRecords", "clinicalVersions", "attachments", "sales", "workOrders", "inventoryItems", "inventoryMovements", "cashSessions", "cashEntries"] as const;
@@ -52,6 +53,20 @@ export function validateBackup(value: unknown): BackupSnapshot {
         for (const field of ["author", "amendmentReason", "finalizedAt"]) if (row[field] !== undefined && typeof row[field] !== "string") throw invalid();
       }
       if (name === "attachments" && (typeof row.content !== "string" || !row.content || row.content.length % 4 !== 0 || !/^[A-Za-z0-9+/]+={0,2}$/.test(row.content))) throw invalid();
+      if (name === "workOrders") {
+        if (row.cancelReason !== undefined && (typeof row.cancelReason !== "string" || !row.cancelReason.trim())) throw invalid();
+        if (row.events !== undefined) {
+          if (!Array.isArray(row.events)) throw invalid();
+          const eventIds = new Set<string>();
+          for (const event of row.events) {
+            if (!object(event) || typeof event.id !== "string" || !event.id || eventIds.has(event.id) || typeof event.author !== "string" || typeof event.at !== "string" || !Number.isFinite(Date.parse(event.at))) throw invalid();
+            eventIds.add(event.id);
+            if (typeof event.type !== "string" || !Object.hasOwn(workOrderEventLabels, event.type)) throw invalid();
+            for (const field of ["from", "to"]) if (event[field] !== undefined && (typeof event[field] !== "string" || !Object.hasOwn(workOrderStatusLabels, event[field]))) throw invalid();
+            if (event.note !== undefined && typeof event.note !== "string") throw invalid();
+          }
+        }
+      }
     }
   }
   const snapshot = { ...value, tables: importedTables } as unknown as BackupSnapshot;

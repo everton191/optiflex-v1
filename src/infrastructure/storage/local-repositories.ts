@@ -192,6 +192,20 @@ export class LocalWorkOrderRepository implements WorkOrderRepository {
       return updated;
     });
   }
+  async recordInputs(order: WorkOrder, movements: readonly InventoryMovement[], expectedStatus: WorkOrderStatus): Promise<WorkOrder> {
+    assertRecordAccess(order);
+    return database.transaction("rw", database.workOrders, database.inventoryItems, database.inventoryMovements, async () => {
+      const current = await database.workOrders.get(order.id);
+      if (!current || current.storeId !== order.storeId) throw new Error("Ordem não encontrada nesta loja.");
+      assertRecordAccess(current);
+      if (current.status !== expectedStatus) throw new Error("A ordem foi alterada em outra sessão. Recarregue a lista.");
+      if (movements.some((movement) => movement.storeId !== order.storeId || movement.type !== "OUT")) throw new Error("Movimentação de insumo incompatível com a ordem.");
+      for (const movement of movements) await applyStockMovement(movement);
+      const updated: WorkOrder = { ...current, ...order, createdAt: current.createdAt, saleId: current.saleId, customerId: current.customerId, storeId: current.storeId };
+      await database.workOrders.put(updated);
+      return updated;
+    });
+  }
 }
 
 async function applyStockMovement(movement: InventoryMovement): Promise<InventoryItem> {
