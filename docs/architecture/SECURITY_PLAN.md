@@ -1,9 +1,9 @@
 # SECURITY PLAN — plano de segurança
 
-**Status:** base parcial existente (permissões + transações); lacunas P0 documentadas.
-Cartões: F1-10, F1-11, F7-02, F8-07, F8-08 + F5-02/04/05/11/18 (bloqueados com a Fase 5).
+**Status:** login local com sessão explícita entregue (F7-02); restam lacunas P0 de escopo por registro, anexos e erros globais.
+Cartões: F1-10, F1-11, F8-07, F8-08 + F5-02/04/05/11/18 (bloqueados com a Fase 5).
 
-Atualizado em: 07/10/2026 · Base: `d6ab1d4`.
+Atualizado em: 08/10/2026 · Base: `bae739b`.
 
 ## Ativos a proteger
 
@@ -12,13 +12,13 @@ Atualizado em: 07/10/2026 · Base: `d6ab1d4`.
 3. Integridade operacional (estoque, caixa — operação duplicada = prejuízo direto).
 4. Credenciais futuras (certificado fiscal A1, chaves de API — F6-10/F6-18).
 
-## Estado atual verificado (07/10/2026)
+## Estado atual verificado (08/10/2026)
 
 | Controle | Estado | Evidência/card |
 |---|---|---|
 | Matriz de 10 perfis + guards de rota (`Can`, `RequirePermission`) | PARCIAL | `src/domain/access.ts`, `access.test.ts` (F1-11) |
 | Escopo por registro (SELF/STORE/ORG/NETWORK) | AUSENTE (P0) | F1-11, F2-05 |
-| Identidade/sessão (login, sair, expiração) | AUSENTE (P0) — OWNER demo automático | F7-02 (READY, P0) |
+| Identidade/sessão (login, sair, expiração) | OK + testes — hash local, TTL 12 h, demo explícita | F7-02 (`bae739b`; `authentication-service.test.ts`, `access.test.ts`) |
 | Integridade transacional (venda/estoque/caixa/OS) | OK + testes | `sale-stock.test.ts`, `cash*.test.ts`, `work-orders.test.ts` |
 | Idempotência de recebimento | OK | `cash-service.test.ts` |
 | Backup/restauração local | PARCIAL | `backup.test.ts` (anexos pendentes: F3-09/F8-10) |
@@ -30,11 +30,21 @@ Atualizado em: 07/10/2026 · Base: `d6ab1d4`.
 
 ## Prioridades (ordem de ataque)
 
-1. **P0:** F7-02 login local → F1-11 escopo por registro → F3-09 conteúdo real de anexos → F1-12 erros globais.
+1. **P0:** F1-11 escopo por registro → F3-09 conteúdo real de anexos → F1-12 erros globais.
 2. **P0:** preservar atomicidade já construída (nenhuma alteração em `confirm`/`applyStockMovement` sem teste de concorrência).
 3. **P1:** F1-10 auditoria de alterações → F4-18 estornos auditados → F8-06 testes de permissões → F8-07 auditoria de segurança.
 4. **P1/Fase 5:** autenticação real, policies server-side, storage de anexos, logs por tenant.
 5. **P2:** F8-08 LGPD (jurídico), F6-18 cofre de segredos.
+
+## Identidade e sessão — F7-02 entregue (08/10/2026)
+
+- **Rotas:** `/login` (pública), `/bloqueado` (pública), `/trocar-senha` (autenticada). `RequireSession` envolve todo o app: sem sessão → `/login`; usuário inativo → `/bloqueado`.
+- **Senha local:** SHA-256 com salt por usuário (`src/domain/password.ts`), mínimo de 8 caracteres, guardada apenas em `User.passwordHash/passwordSalt` (IndexedDB). Falha de login responde sempre "E-mail ou senha inválidos." (anti-enumeração).
+- **Sessão:** `LocalSession.issuedAt` + TTL de 12 h (`SESSION_TTL_HOURS`). Sessão expirada é limpa no carregamento e leva a `/login?motivo=expirada`; `Sair` limpa a sessão persistida.
+- **Modo demonstração:** entrada explícita em `/login`, marcada com `demo: true` e selo "Demonstração" no AppShell; não substitui senha cadastrada.
+- **Sem OWNER automático:** `SessionRepository.get()` retorna `null` sem registro persistente (fim do `defaultSession`).
+- **Recuperação:** senha esquecida → administrador redefinida em Usuários → Editar → nova senha; primeira senha via `/trocar-senha` quando o usuário ainda não tem credencial.
+- **Futuro:** F5-02 (auth na nuvem) deve manter a mesma interface (`AuthenticationService`/`SessionRepository`).
 
 ## Regras permanentes
 

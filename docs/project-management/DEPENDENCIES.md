@@ -12,7 +12,7 @@ Detecção por SCC (Tarjan) sobre as colunas Deps do `KANBAN.md` (147 nós, 184 
 |---|---|---|---|
 | 1 | F1-06 ↔ F2-11 | modelo **antes** do catálogo: F2-11 depende de F1-06 | #14 |
 | 2 | F1-07 ↔ F3-06 ↔ F3-07 | modelos antes do uso clínico: F3-06/F3-07 dependem de F1-07 | #15 |
-| 3 | F1-11 ↔ F2-04 ↔ F7-02 | fila correta: **F2-04 → F7-02 → F1-11** (CRUD → login → escopo por registro) | #26, #117 |
+| 3 | F1-11 ↔ F2-04 ↔ F7-02 | fila correta: **F2-04 → F7-02 → F1-11** (CRUD → login → escopo por registro) — F2-04 e F7-02 feitos em 08/10 | #26, #117 |
 | 4 | F1-12 ↔ F7-11 | infraestrutura de erros antes dos indicadores: F7-11 depende de F1-12 | #20 |
 | 5 | F2-01 ↔ F2-03 | cadastro da empresa antes dos dados jurídicos: F2-03 depende de F2-01 | #23 |
 | 6 | F3-14 ↔ F3-15 | OS antes de laboratórios: F3-15 depende de F3-14 | #53 |
@@ -89,8 +89,8 @@ F3-13 confirmação de venda (FEITO) alimenta F3-14
 
 ```text
 F2-04 usuários CRUD (FEITO 08/10 — sem dependências; perfis pré-definidos)
-  └─ F7-02 login local (P0, READY)
-       └─ F1-11 permissões/escopo por registro (P0)
+  └─ F7-02 login local (P0, FEITO 08/10 — `bae739b`, 137 testes)
+       └─ F1-11 permissões/escopo por registro (P0, READY — próxima)
             ├─ F2-05 permissões por loja (OBR)
             └─ F8-06 testes de permissões (OBR p/ evidência)
 F1-05 organizationId nos registros (OBR p/ SaaS)
@@ -151,7 +151,7 @@ F3-09 conteúdo real de anexos (P0, READY)
 
 ## Regra de priorização
 
-1. Primeiro tarefas que **desbloqueiam várias outras** (F7-02 login → F1-11 escopo → F2-04/F2-05).
+1. Primeiro tarefas que **desbloqueiam várias outras** (F7-02 login feito → F1-11 escopo → F2-05/F8-06).
 2. Depois P0 de integridade/perda de dado (F3-09 anexos, F4-18 estornos).
 3. Nunca iniciar card com status `blocked` — resolver ou registrar a decisão em `DECISIONS.md` antes.
 4. Fases 5 e 6 só começam quando a decisão correspondente estiver registrada.

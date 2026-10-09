@@ -2,36 +2,42 @@
 
 ## Purpose
 
-Definir roles, scopes, permissions, guards de rota e visibilidade de navegação/ações.
+Definir roles, scopes, permissions, guards de rota, visibilidade de navegação/ações e a sessão local (login, demonstração, expiração, saída).
 
 ## Directory
 
 - Domínio: `src/domain/access.ts`.
+- Senha: `src/domain/password.ts` (hash SHA-256 + salt, validação).
+- Autenticação: `src/domain/authentication-service.ts` (`login`, `loginDemo`, `logout`, `changePassword`).
 - Guards: `src/app/permissions.tsx`.
 - Rotas: `src/app/router.tsx`.
 - Menu: `src/shell/AppShell.tsx`.
+- Páginas: `LoginPage`, `BlockedPage`, `ChangePasswordPage` em `src/app/pages.tsx`.
 
 ## Routes
 
-Afeta todas as rotas protegidas. `/sem-acesso` renderiza `ForbiddenPage`.
+`/login` e `/bloqueado` são públicas; `/trocar-senha` é autenticada. `RequireSession` envolve todo o app (sem sessão → `/login`; inativa → `/bloqueado`) e `RequirePermission` cobre as demais. `/sem-acesso` renderiza `ForbiddenPage`.
 
 ## Main Pages
 
+- `LoginPage` — e-mail/senha, modo demonstração explícito, aviso `?motivo=expirada`, limpar sessão guardada.
+- `BlockedPage` — usuário inativo; sair ou entrar com outra conta.
+- `ChangePasswordPage` — troca/primeira senha com confirmação.
 - `ProfilesPage` apresenta perfis em linguagem de negócio.
 - `ForbiddenPage` informa acesso negado.
 
 ## Components
 
-- `RequirePermission`.
-- `Can` (disponível, sem consumidor atual).
+- `RequireSession`, `RequirePermission`.
+- `Can` (null-safe sem sessão).
 
 ## Services / Repositories / Stores
 
-Não há AccessService. Sessão vem de `LocalSessionRepository` e `AppProviders`.
+`AuthenticationService` (sessão local) usa `SessionRepository` (`get(): Promise<LocalSession | null>`, `save`, `clear`) e `AdministrationRepository`. Sessão e consumidores passam por `AppProviders` (`session: LocalSession | null`, `useSession()`).
 
 ## Models
 
-`RoleKey`, `Permission`, `Scope`, `RoleDefinition`, `LocalSession`, `User`.
+`RoleKey`, `Permission`, `Scope`, `RoleDefinition`, `LocalSession` (`issuedAt`, `demo`), `User` (`passwordHash`, `passwordSalt`).
 
 ## Permissions
 
@@ -43,11 +49,11 @@ React Context e React Router nos guards; o domínio em si é puro.
 
 ## Public API
 
-`hasPermission`, `rolePermissions`, `roleDefinitions` e tipos exportados.
+`hasPermission`, `rolePermissions`, `roleDefinitions`, `isSessionExpired`, `sessionUserState`, `useSession` e tipos exportados.
 
 ## Shared Components
 
-`RequirePermission`, `Can`, `AppProviders`.
+`RequireSession`, `RequirePermission`, `Can`, `AppProviders`.
 
 ## Files Normally Modified
 
@@ -74,6 +80,10 @@ Não condicionar autorização ao rótulo profissional visível. A identidade t�
 ### Ocultar ação
 
 → `hasPermission` ou `Can`; o guard de rota continua necessário.
+
+### Trocar a primeira senha de um usuário sem credencial
+
+→ `/trocar-senha` exige sessão; sem `passwordHash` atual, só define a nova. Depois disso o login e-mail/senha passa a valer.
 
 ## Related Modules
 

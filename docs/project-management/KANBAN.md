@@ -52,11 +52,11 @@ Classificação de inventário (Etapa 4) no corpo de cada card:
 - **Tipo:** `tipo/feature`, `bug`, `refactor`, `security`, `infrastructure`, `ui-ux`, `test`, `documentation`, `compliance`.
 - **Épica:** `epic` (as 8 issues de fase).
 
-## Contagens (07/10/2026)
+## Contagens (08/10/2026)
 
 - Issues totais: **155** (8 épicas + 147 tarefas).
 - Tarefas por fase: F1=14 · F2=18 · F3=20 · F4=20 · F5=19 · F6=19 · F7=19 · F8=18.
-- Tarefas por status (revisado em 08/10/2026; F1-09 e F2-04 concluídas no mesmo dia): DONE=20 · IN PROGRESS=1 · READY=37 · TESTING=0 · CODE REVIEW=0 · BACKLOG=39 · BLOCKED=50.
+- Tarefas por status (revisado em 08/10/2026; F1-09, F2-04 e F7-02 concluídas no mesmo dia): DONE=21 · IN PROGRESS=1 · READY=36 · TESTING=0 · CODE REVIEW=0 · BACKLOG=39 · BLOCKED=50.
 - Bloqueios: **50 tarefas** bloqueadas — 47 por dependência de fase futura/externa + **3 reclassificadas em 08/10** (F4-13 #70, F8-03 #137, F3-20 #57: status desatualizado, decisão externa já registrada).
 - **Revisão de dependências 08/10/2026:** 7 ciclos detectados (SCC/Tarjan sobre este arquivo) e corrigidos em KANBAN + corpos das issues; **0 ciclos remanescentes**. Detalhe antes/depois em `DEPENDENCIES.md`.
 
@@ -222,7 +222,7 @@ Regra de ouro: **nunca mover para DONE sem evidência verificável** (comando de
 |---|---|---|---|---|---|
 | E7 | [ÉPICA FASE 7 — INTERFACE E EXPERIÊNCIA](https://github.com/everton191/optiflex-v1/issues/7) | fase 7 | READY | p2 | — |
 | F7-01 | [Design system consolidado](https://github.com/everton191/optiflex-v1/issues/116) | Ux | READY | p1 | — |
-| F7-02 | [Tela de login](https://github.com/everton191/optiflex-v1/issues/117) | Access | READY | p0 | F2-04 (usuários). Ciclo corrigido 08/10: F1-11 depende de F7-02. |
+| F7-02 | [Tela de login](https://github.com/everton191/optiflex-v1/issues/117) | Access | DONE | p0 | F2-04 (usuários). Ciclo corrigido 08/10: F1-11 depende de F7-02. Concluído 08/10/2026 (`bae739b`, 137 testes). |
 | F7-03 | [Dashboard por função e estados de painel](https://github.com/everton191/optiflex-v1/issues/118) | Dashboard | READY | p2 | F4-20, F1-11. |
 | F7-04 | [Navegação desktop](https://github.com/everton191/optiflex-v1/issues/119) | Ux | DONE | p2 | — |
 | F7-05 | [Navegação mobile](https://github.com/everton191/optiflex-v1/issues/120) | Ux | READY | p1 | F7-04. |
@@ -272,15 +272,15 @@ Ordem recomendada para a próxima sessão de desenvolvimento (status READY/IN PR
 | # | ID | Issue | Tarefa | Prioridade | Dependências | Justificativa |
 |---|---|---|---|---|---|---|
 | 1 | F3-14 | #53 | [Work-orders] Ordens de serviço (concluir) | P1 | F1-07 (parte de OS ok; F3-15 removida — ciclo) | É a única tarefa IN PROGRESS; continuação natural da linha de trabalho atual. |
-| 2 | F7-02 | #117 | [Access] Tela de login | P0 | F2-04 (feito; F1-11 removida — ciclo) | P0 da auditoria: encerra o acesso OWNER automático; CRUD de usuários (F2-04) já entregue. |
-| 3 | F1-11 | #19 | [Access] Permissões e autorização (escopo por registro) | P0 | F7-02 (fila correta após correção do ciclo) | P0: escopos SELF/STORE/ORG/NETWORK precisam filtrar registros. |
-| 4 | F3-09 | #48 | [Clinical] Anexos e documentos (conteúdo real) | P0 | F1-08 (feito) | P0: elimina perda clínica (metadados sem arquivo). |
-| 5 | F4-18 | #75 | [Cash] Estornos e cancelamentos | P1 | F4-7 (feito), F4-9 (feito), F1-10 | Devolve estoque/dinheiro com rastro; fecha risco P1 da auditoria. |
-| 6 | F4-16 | #73 | [Cash] Suprimento e sangria | P1 | F4-8 (feito) | UI de lançamento é rápida e fecha a conferência de caixa. |
-| 7 | F4-10 | #67 | [Cash] Formas de pagamento | P1 | F4-9 (feito), F1-08 | Pré-requisito de parciais, cartão e conciliação. |
-| 8 | F4-12 | #69 | [Cash] Pagamentos parciais | P1 | F4-10, F1-09 | Saldo pendente já existe; falta entrada de valor parcial. |
-| 9 | F2-06 | #28 | [Customers] Edição de clientes | P1 | F1-03 | Cadastro sem edição é lacuna visível na operação. |
-| 10 | F1-02 | #10 | [Infraestrutura] Definição de entidades e contratos | P1 | F1-09 (feito) | Desbloqueado pela conclusão de F1-09; contratos base citados por F3-10 e F4-11. |
+| 2 | F1-11 | #19 | [Access] Permissões e autorização (escopo por registro) | P0 | F7-02 (feito) | P0: escopos SELF/STORE/ORG/NETWORK precisam filtrar registros; login (F7-02) já entregue. |
+| 3 | F3-09 | #48 | [Clinical] Anexos e documentos (conteúdo real) | P0 | F1-08 (feito) | P0: elimina perda clínica (metadados sem arquivo). |
+| 4 | F4-18 | #75 | [Cash] Estornos e cancelamentos | P1 | F4-7 (feito), F4-9 (feito), F1-10 | Devolve estoque/dinheiro com rastro; fecha risco P1 da auditoria. |
+| 5 | F4-16 | #73 | [Cash] Suprimento e sangria | P1 | F4-8 (feito) | UI de lançamento é rápida e fecha a conferência de caixa. |
+| 6 | F4-10 | #67 | [Cash] Formas de pagamento | P1 | F4-9 (feito), F1-08 | Pré-requisito de parciais, cartão e conciliação. |
+| 7 | F4-12 | #69 | [Cash] Pagamentos parciais | P1 | F4-10, F1-09 | Saldo pendente já existe; falta entrada de valor parcial. |
+| 8 | F2-06 | #28 | [Customers] Edição de clientes | P1 | F1-03 | Cadastro sem edição é lacuna visível na operação. |
+| 9 | F1-02 | #10 | [Infraestrutura] Definição de entidades e contratos | P1 | F1-09 (feito) | Desbloqueado pela conclusão de F1-09; contratos base citados por F3-10 e F4-11. |
+| 10 | F3-01 | #40 | [Attendance] Agenda e recepção | P1 | F2-04 (feito) | Dependência (usuários) já entregue; base da fila de atendimento. |
 
 Os `#?` devem ser resolvidos pela tabela acima (coluna ID → link da issue). Os números já estão fixados nas tabelas das fases; para referência rápida: consulte `DEPENDENCIES.md`.
 

@@ -7,9 +7,10 @@ Nenhuma versão é liberada com apenas "build verde".
 
 - [ ] Branch e escopo revisados (`git log` da release, `git status` limpo).
 - [ ] Toda feature ligada a Issue com `status/done` e evidência de teste no card.
-- [ ] `npm.cmd test` → 100% verde (números atuais: 126/126 em `715e6e9`).
+- [ ] `npm.cmd test` → 100% verde (números atuais: 137/137 em `bae739b`).
 - [ ] `npm.cmd run build` → exit 0.
 - [ ] `npx.cmd tsc -b --pretty false` → exit 0.
+- [ ] Login/sessão intactos (`/login`, `Sair`, expiração de 12 h) após mudanças em `access`/`providers`/`router`.
 - [ ] Sem segredos/credenciais no repositório (varredura).
 - [ ] `PROJECT_STATUS.md` e `CHANGELOG_DEVELOPMENT.md` atualizados.
 - [ ] `docs/ai` (módulos afetados) atualizados; mudanças cosméticas dispensam mapas globais.

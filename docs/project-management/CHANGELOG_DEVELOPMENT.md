@@ -4,6 +4,17 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `bae739b` — feat: add local login, session guard and password change (F7-02 tela de login)
+
+- `src/domain/password.ts`: hash SHA-256 com salt por usuário (`generateSalt`, `hashPassword`, `verifyPassword`, `assertPasswordStrength` ≥ 8).
+- `AuthenticationService` (`authentication-service.ts`): `login` (mensagem única anti-enumeração; ativo verificado após a senha), `loginDemo` (`demo: true`), `logout` (limpa sessão), `changePassword` (confirma a atual quando já existe credencial; primeira senha sem atual).
+- `LocalSession.issuedAt` + TTL 12 h (`SESSION_TTL_HOURS`/`isSessionExpired`): expirada limpa no carregamento; `SessionRepository.get()` agora retorna `null` (fim do `defaultSession`/OWNER automático) e ganhou `clear()`.
+- Rotas `/login`, `/bloqueado`, `/trocar-senha`; `RequireSession` envolve todo o app; consumidores de sessão migraram para `useSession()`.
+- `UsersPage`: campo opcional de senha (criar/editar) + indicador "Senha definida/Sem senha local"; `User.passwordHash/passwordSalt` via `AdministrationService`.
+- AppShell: botão **Sair**, selo **Demonstração**, link **Trocar senha**; página de login com seção demo explícito.
+- Evidência: `npm.cmd test` **137/137** (17 arquivos; novos `authentication-service.test.ts` com 7 casos, `access.test.ts` +2, `administration-service.test.ts` +2), build 0, tsc 0.
+- Card: F7-02/#117 → DONE (libera F1-11/#19 na fila).
+
 ### `715e6e9` — feat: add user CRUD with roles, stores and active status (F2-04 usuários e funções)
 
 - `AdministrationService.createUser/updateUser/setUserActive`: validação de nome/e-mail/duplicidade (case-insensitive), escopo derivado do papel, lojas obrigatórias só para escopo de loja, proteção da sessão atual contra auto-inativação.
