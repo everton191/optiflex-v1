@@ -88,7 +88,7 @@ F3-13 confirmação de venda (FEITO) alimenta F3-14
 ### 4. Organização → usuários → permissões → isolamento SaaS
 
 ```text
-F2-04 usuários CRUD (sem dependências — perfis pré-definidos)
+F2-04 usuários CRUD (FEITO 08/10 — sem dependências; perfis pré-definidos)
   └─ F7-02 login local (P0, READY)
        └─ F1-11 permissões/escopo por registro (P0)
             ├─ F2-05 permissões por loja (OBR)

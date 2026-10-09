@@ -56,7 +56,7 @@ Classificação de inventário (Etapa 4) no corpo de cada card:
 
 - Issues totais: **155** (8 épicas + 147 tarefas).
 - Tarefas por fase: F1=14 · F2=18 · F3=20 · F4=20 · F5=19 · F6=19 · F7=19 · F8=18.
-- Tarefas por status (revisado em 08/10/2026; F1-09 concluída no mesmo dia): DONE=19 · IN PROGRESS=1 · READY=38 · TESTING=0 · CODE REVIEW=0 · BACKLOG=39 · BLOCKED=50.
+- Tarefas por status (revisado em 08/10/2026; F1-09 e F2-04 concluídas no mesmo dia): DONE=20 · IN PROGRESS=1 · READY=37 · TESTING=0 · CODE REVIEW=0 · BACKLOG=39 · BLOCKED=50.
 - Bloqueios: **50 tarefas** bloqueadas — 47 por dependência de fase futura/externa + **3 reclassificadas em 08/10** (F4-13 #70, F8-03 #137, F3-20 #57: status desatualizado, decisão externa já registrada).
 - **Revisão de dependências 08/10/2026:** 7 ciclos detectados (SCC/Tarjan sobre este arquivo) e corrigidos em KANBAN + corpos das issues; **0 ciclos remanescentes**. Detalhe antes/depois em `DEPENDENCIES.md`.
 
@@ -98,7 +98,7 @@ Regra de ouro: **nunca mover para DONE sem evidência verificável** (comando de
 | F2-01 | [Cadastro completo de empresas](https://github.com/everton191/optiflex-v1/issues/23) | Administration | BACKLOG | p1 | nenhuma. Ciclo corrigido 08/10: F2-03 depende de F2-01. |
 | F2-02 | [Matriz e filiais](https://github.com/everton191/optiflex-v1/issues/24) | Administration | READY | p1 | F1-11 (escopo). |
 | F2-03 | [Dados jurídicos e tributários da empresa](https://github.com/everton191/optiflex-v1/issues/25) | Administration | BACKLOG | p2 | F2-01; bloqueia F6-01/F6-02/F6-03. |
-| F2-04 | [Usuários e funções](https://github.com/everton191/optiflex-v1/issues/26) | Administration | READY | p1 | nenhuma (perfis pré-definidos). Ciclo corrigido 08/10: F7-02 depende de F2-04. |
+| F2-04 | [Usuários e funções](https://github.com/everton191/optiflex-v1/issues/26) | Administration | DONE | p1 | nenhuma (perfis pré-definidos). Ciclo corrigido 08/10: F7-02 depende de F2-04. Concluído 08/10/2026 (`715e6e9`, 126 testes). |
 | F2-05 | [Permissões por loja](https://github.com/everton191/optiflex-v1/issues/27) | Access | READY | p1 | F1-11, F2-04. |
 | F2-06 | [Clientes e contatos](https://github.com/everton191/optiflex-v1/issues/28) | Customers | READY | p1 | F1-03 (extração possível). |
 | F2-07 | [Validação de CPF/CNPJ](https://github.com/everton191/optiflex-v1/issues/29) | Customers | READY | p2 | F2-06. |
@@ -272,7 +272,7 @@ Ordem recomendada para a próxima sessão de desenvolvimento (status READY/IN PR
 | # | ID | Issue | Tarefa | Prioridade | Dependências | Justificativa |
 |---|---|---|---|---|---|---|
 | 1 | F3-14 | #53 | [Work-orders] Ordens de serviço (concluir) | P1 | F1-07 (parte de OS ok; F3-15 removida — ciclo) | É a única tarefa IN PROGRESS; continuação natural da linha de trabalho atual. |
-| 2 | F7-02 | #117 | [Access] Tela de login | P0 | F2-04 (F1-11 removida — ciclo) | P0 da auditoria: encerra o acesso OWNER automático. |
+| 2 | F7-02 | #117 | [Access] Tela de login | P0 | F2-04 (feito; F1-11 removida — ciclo) | P0 da auditoria: encerra o acesso OWNER automático; CRUD de usuários (F2-04) já entregue. |
 | 3 | F1-11 | #19 | [Access] Permissões e autorização (escopo por registro) | P0 | F7-02 (fila correta após correção do ciclo) | P0: escopos SELF/STORE/ORG/NETWORK precisam filtrar registros. |
 | 4 | F3-09 | #48 | [Clinical] Anexos e documentos (conteúdo real) | P0 | F1-08 (feito) | P0: elimina perda clínica (metadados sem arquivo). |
 | 5 | F4-18 | #75 | [Cash] Estornos e cancelamentos | P1 | F4-7 (feito), F4-9 (feito), F1-10 | Devolve estoque/dinheiro com rastro; fecha risco P1 da auditoria. |

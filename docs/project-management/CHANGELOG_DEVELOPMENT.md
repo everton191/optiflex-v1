@@ -4,6 +4,14 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `715e6e9` — feat: add user CRUD with roles, stores and active status (F2-04 usuários e funções)
+
+- `AdministrationService.createUser/updateUser/setUserActive`: validação de nome/e-mail/duplicidade (case-insensitive), escopo derivado do papel, lojas obrigatórias só para escopo de loja, proteção da sessão atual contra auto-inativação.
+- `sessionUserState` (`access.ts`): usuário inativo não entra — `providers.tsx` bloqueia a sessão com tela própria.
+- `UsersPage` com formulário criar/editar (nome, e-mail, função, lojas em checkboxes), botões Editar/Inativar/Reativar e selo Ativo/Inativo; ações atrás de `users.manage`.
+- Evidência: `npm.cmd test` **126/126** (16 arquivos; novos `administration-service.test.ts` com 9 casos, `access.test.ts` +2), build 0, tsc 0.
+- Card: F2-04/#26 → DONE (libera F7-02 na fila).
+
 ### `7dc1d7b` — feat: enforce single money rounding rule (F1-09 precisão monetária)
 
 - Novo `src/domain/money.ts`: regra única (`isMoney`, `requireMoney`, `toCents`, `fromCents`, `roundMoney`) — fronteira em reais finitos, cálculo em centavos inteiros.
