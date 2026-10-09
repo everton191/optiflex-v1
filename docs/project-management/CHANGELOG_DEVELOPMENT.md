@@ -4,6 +4,15 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `a2c1369` — feat: enforce record and store scope from the active session (F1-11 escopo por registro)
+
+- `src/domain/access-context.ts`: `AccessContext` (escopo da role + lojas do usuário), `buildAccessContext`, `canAccessStore`, `canAccessRecord`, contexto ativo global (`setAccessContext`) e guards `assertStoreAccess`/`assertRecordAccess`.
+- Enforcement nos repositories (`local-repositories.ts`): `assertStoreAccess` nas listagens por loja; `assertRecordAccess` nas escritas de atendimento, venda/confirm, OS, estoque/movimentos, caixa e prontuário; histórico do cliente (`listByCustomer`) filtrado pela loja acessível. Sem contexto ativo (testes/backup) não há restrição.
+- `AppProviders`: monta/desmonta o contexto junto com sessão/usuários/loja; `selectStore` valida o destino e o carregamento migra para a primeira loja acessível; `AppShell` lista no seletor só as lojas acessíveis (mensagem real de erro na troca).
+- Escopo `SELF` (somente registros do próprio usuário) implementado e testado, sem role em uso ainda; registros sem `storeId` (clientes/configurações) permanecem compartilhados.
+- Evidência: `npm.cmd test` **149/149** (19 arquivos; novos `domain/access-scope.test.ts` com 8 casos e `storage/access-scope.test.ts` com 4), build 0, tsc 0.
+- Card: F1-11/#19 → DONE (fecha o par identidade→autorização; libera F2-05 e F8-06).
+
 ### `bae739b` — feat: add local login, session guard and password change (F7-02 tela de login)
 
 - `src/domain/password.ts`: hash SHA-256 com salt por usuário (`generateSalt`, `hashPassword`, `verifyPassword`, `assertPasswordStrength` ≥ 8).

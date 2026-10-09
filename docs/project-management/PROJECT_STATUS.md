@@ -5,18 +5,18 @@
 
 ## Estado atual
 
-- **Data da última atualização:** 08/10/2026 (F1-09, F2-04 e F7-02 concluídas; revisão de publicação, dependências e bloqueios).
+- **Data da última atualização:** 08/10/2026 (F1-09, F2-04, F7-02 e F1-11 concluídas; revisão de publicação, dependências e bloqueios).
 - **Branch analisada:** `docs/master-kanban` (documentação/planejamento).
-- **Branch de desenvolvimento:** `feat/operational-flow-v2` (9 commits à frente de `v1`; merge-base `3510602`).
-- **Último commit (código):** `bae739b` — *feat: add local login, session guard and password change (refs #117)*.
-- **Último commit (documentação):** branch publicada de `634eb37` até o commit atual desta branch (`8047073` + esta atualização).
+- **Branch de desenvolvimento:** `feat/operational-flow-v2` (10 commits à frente de `v1`; merge-base `3510602`).
+- **Último commit (código):** `a2c1369` — *feat: enforce record and store scope from the active session (refs #19)*.
+- **Último commit (documentação):** branch publicada de `634eb37` até o commit atual desta branch (`b0c96cd` + esta atualização).
 - **Remote:** `https://github.com/everton191/optiflex-v1.git`.
 
 ### Publicação (executada em 08/10/2026, com autorização do usuário)
 
 - Varredura de sigilos **antes do push** (repo público): chaves/certificados, tokens cloud, segredos em literais, CPF/CNPJ, JWT, `.env`, binários e históricos = **limpo**; caminho pessoal generalizado (`c4192c2`); autor dos commits = e-mail noreply do GitHub.
 - Push normal (`-u`, **sem force-push**) das duas branches; **`v1` preservada** (`3510602` local = remoto) e **nenhum merge executado**.
-- SHAs no remoto: `feat/operational-flow-v2` = `bae739b` · `docs/master-kanban` = `8047073` + commits desta revisão.
+- SHAs no remoto: `feat/operational-flow-v2` = `a2c1369` · `docs/master-kanban` = `b0c96cd` + commits desta revisão.
 - Documentos do Kanban acessíveis via `raw.githubusercontent.com/.../docs/master-kanban/docs/project-management/`.
 - PR `docs/master-kanban` → `feat/operational-flow-v2` (somente documentação; ver relatório da sessão).
 
@@ -24,7 +24,7 @@
 
 1. **Dependências:** 7 ciclos detectados (SCC/Tarjan sobre `KANBAN.md`) → corrigidos em KANBAN + corpos de 8 issues → **0 ciclos** (147 nós, 184 arestas). Antes/depois: `DEPENDENCIES.md`.
 2. **Status reclassificado** (decisão já registrada, label desatualizada): F4-13 `#70`, F8-03 `#137`, F3-20 `#57` → BACKLOG→**BLOCKED**.
-3. **Status final das 147 tarefas (revisão):** DONE=18 · IN PROGRESS=1 · READY=39 · BACKLOG=39 · BLOCKED=50. **Após F1-09, F2-04 e F7-02 (mesma data):** DONE=21 · READY=36 (detalhe no `KANBAN.md`).
+3. **Status final das 147 tarefas (revisão):** DONE=18 · IN PROGRESS=1 · READY=39 · BACKLOG=39 · BLOCKED=50. **Após F1-09, F2-04, F7-02 e F1-11 (mesma data):** DONE=22 · READY=35 (detalhe no `KANBAN.md`).
 4. **18 tarefas DONE revalidadas:** todas com `IMPLEMENTED_AND_TESTED` + commit/teste no corpo (mapeamento no relatório da sessão); ressalvas em "Riscos".
 5. **Testes re-executados:** `npm.cmd test` **101/101** · `npm.cmd run build` **exit 0** · `npx.cmd tsc -b` **exit 0** (em `b8d1a84`, 08/10/2026).
 
@@ -32,7 +32,7 @@
 
 | Fase | Estado resumido |
 |---|---|
-| 1 — Arquitetura e Fundação | PARCIAL — base Page→Service→Repository sólida, 137 testes; precisão decimal concluída (F1-09); faltam erros globais e auditoria de alterações. |
+| 1 — Arquitetura e Fundação | PARCIAL — base Page→Service→Repository sólida, 149 testes; precisão decimal (F1-09) e escopo por registro (F1-11) concluídos; faltam erros globais e auditoria de alterações. |
 | 2 — Cadastros e Administração | PARCIAL — usuários com CRUD/lojas, ativação e senha local (F2-04/F7-02); clientes sem edição, lojas sem CRUD, sem catálogo completo. |
 | 3 — Operação da Ótica | PARCIAL (ativa) — OS em desenvolvimento, prescrição sem estrutura, anexos só metadados. |
 | 4 — Estoque e Financeiro | PARCIAL FORTE — estoque+caixa+dashboard entregues e testados; faltam parcelas (F4-13 agora BLOCKED por decisão P4)/sangria-UI/estornos. |
@@ -43,28 +43,29 @@
 
 ## Últimas tarefas concluídas (com evidência)
 
-1. `bae739b` — Login local, guarda de sessão e troca de senha (F7-02/#117) — `authentication-service.test.ts` (7) + `access.test.ts` (12) + `administration-service.test.ts` (11); 137/137.
-2. `715e6e9` — CRUD de usuários com função/lojas/ativação (F2-04/#26) — `administration-service.test.ts` + `access.test.ts`; 126/126.
-3. `7dc1d7b` — Precisão monetária única (F1-09/#17) — `money.test.ts` (10 casos) + reforços em `sales-service`/`cash-service`/`inventory`; 115/115.
-4. `d6ab1d4` — Venda → estoque atômica (F3-13/F4-7) — `sale-stock.test.ts`/`sales-service.test.ts`.
-5. `a1be9b5` — Dashboard com métricas reais (F4-20) — `dashboard.test.ts` 8 casos.
-6. `8a68d67` — Fluxo de OS com prazo/estados (F3-14 parcial) — `work-order*.test.ts` 15 casos.
-7. `3f2c0c1` — Estoque com cadastro/movimentação/histórico (F4-01..04) — `inventory*.test.ts` 17 casos.
-8. `cbcf80f` — Fechamento de caixa, recebimento idempotente e `paymentStatus` (F4-08/09/17) — `cash*.test.ts`.
-9. `634eb37`/`b8d1a84` — Kanban mestre + Issues (#1–#155) + árvore de documentação.
-10. 08/10/2026 — Revisão: 7 ciclos → 0, 3 reclassificações de status, revalidação dos 18 DONE (só documentação/Issues).
+1. `a2c1369` — Escopo por registro SELF/STORE/ORG/NETWORK (F1-11/#19) — `access-scope.test.ts` (8 casos) + `storage/access-scope.test.ts` (4); 149/149.
+2. `bae739b` — Login local, guarda de sessão e troca de senha (F7-02/#117) — `authentication-service.test.ts` (7) + `access.test.ts` (12) + `administration-service.test.ts` (11); 137/137.
+3. `715e6e9` — CRUD de usuários com função/lojas/ativação (F2-04/#26) — `administration-service.test.ts` + `access.test.ts`; 126/126.
+4. `7dc1d7b` — Precisão monetária única (F1-09/#17) — `money.test.ts` (10 casos) + reforços em `sales-service`/`cash-service`/`inventory`; 115/115.
+5. `d6ab1d4` — Venda → estoque atômica (F3-13/F4-7) — `sale-stock.test.ts`/`sales-service.test.ts`.
+6. `a1be9b5` — Dashboard com métricas reais (F4-20) — `dashboard.test.ts` 8 casos.
+7. `8a68d67` — Fluxo de OS com prazo/estados (F3-14 parcial) — `work-order*.test.ts` 15 casos.
+8. `3f2c0c1` — Estoque com cadastro/movimentação/histórico (F4-01..04) — `inventory*.test.ts` 17 casos.
+9. `cbcf80f` — Fechamento de caixa, recebimento idempotente e `paymentStatus` (F4-08/09/17) — `cash*.test.ts`.
+10. `634eb37`/`b8d1a84` — Kanban mestre + Issues (#1–#155) + árvore de documentação.
+11. 08/10/2026 — Revisão: 7 ciclos → 0, 3 reclassificações de status, revalidação dos 18 DONE (só documentação/Issues).
 
 ## Próxima execução — cinco tarefas (ordem respeitando dependências reais)
 
 | # | Card | Issue | Prio | Deps reais | Por quê |
 |---|---|---|---|---|---|
-| 1 | F1-11 escopo por registro | #19 | **P0** | F7-02 (concluído) | fecha o par identidade→autorização. |
-| 2 | F3-09 anexos clínicos | #48 | **P0** | F1-08 (concluído) | P0 de perda de dado; executável já. |
-| 3 | F1-02 entidades e contratos | #10 | P1 | F1-09 (concluído) | desbloqueado pela regra monetária; base citada por F3-10 e F4-11. |
-| 4 | F1-06 modelos de produto/venda | #14 | P1 | F4-09 (concluído) | raiz da árvore F2-11 → F3-11 (PDV) em `DEPENDENCIES.md`. |
-| 5 | F4-16 suprimento e sangria | #73 | P1 | F4-08 (concluído) | UI de lançamento fecha a conferência de caixa. |
+| 1 | F3-09 anexos clínicos | #48 | **P0** | F1-08 (concluído) | P0 de perda de dado; executável já (identidade/escopo entregues). |
+| 2 | F1-02 entidades e contratos | #10 | P1 | F1-09 (concluído) | desbloqueado pela regra monetária; base citada por F3-10 e F4-11. |
+| 3 | F1-06 modelos de produto/venda | #14 | P1 | F4-09 (concluído) | raiz da árvore F2-11 → F3-11 (PDV) em `DEPENDENCIES.md`. |
+| 4 | F4-16 suprimento e sangria | #73 | P1 | F4-08 (concluído) | UI de lançamento fecha a conferência de caixa. |
+| 5 | F2-05 permissões por loja | #27 | P1 | F1-11 e F2-04 (concluídos) | continuação direta do escopo por registro. |
 
-Reservas (se a fila avançar): F4-10 `#67` (F4-09/F1-08 feitos) e F2-06 `#28` (edição de clientes).
+Reservas (se a fila avançar): F4-10 `#67` (F4-09/F1-08 feitos), F2-06 `#28` (edição de clientes) e F8-07 `#141` (F7-02/F1-11 feitos).
 
 ## Bloqueios verdadeiros (aguardam decisão do usuário)
 
@@ -76,11 +77,11 @@ Reservas (se a fila avançar): F4-10 `#67` (F4-09/F1-08 feitos) e F2-06 `#28` (e
 2. **Idempotência de caixa** (F4-08/09/17): `cash-service.test.ts` obrigatório; F4-17 está DONE com F4-16 pendente (dependência opcional — sangria só afina totais).
 3. **Migrações** (F1-08/F8-09): `database.test.ts` cobre apenas v8→v9; caminhos anteriores sem cobertura.
 4. **F7-04 navegação desktop:** validação apenas manual (auditoria 1440px) — sem teste automatizado; mudanças de menu podem regredir em silêncio.
-5. **137 testes verdes ≠ validação operacional:** ainda sem e2e (P5), teste offline em aparelho, validação por perfil completo, multiempresa e fiscal.
+5. **149 testes verdes ≠ validação operacional:** ainda sem e2e (P5), teste offline em aparelho, validação por perfil completo, multiempresa e fiscal.
 
 ## Resultados dos testes disponíveis
 
-- `npm.cmd test` → **137/137** (17 arquivos) em 08/10/2026 sobre `bae739b`.
+- `npm.cmd test` → **149/149** (19 arquivos) em 08/10/2026 sobre `a2c1369`.
 - `npm.cmd run build` → exit 0 (PWA gerada).
 - `npx.cmd tsc -b --pretty false` → exit 0.
 - Não existe script `lint` (não declarar lint executado).
