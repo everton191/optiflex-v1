@@ -4,6 +4,16 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `6ce9c9a` — feat: store real clinical attachment content with upload, preview and backup (F3-09 anexos clínicos)
+
+- Nova tabela `attachments` no IndexedDB (schema `opticore-v1` **v11**, `database.ts`): conteúdo em base64 por id (`ClinicalAttachmentContent`), separado dos metadados.
+- Domínio (`clinical.ts`): `ClinicalAttachment.category` opcional (EXAM/IMAGE/DOCUMENT + rótulos), `ATTACHMENT_MAX_BYTES` (5 MB), `ATTACHMENT_ALLOWED_MIME_TYPES` (PDF/JPG/PNG) e `assertValidAttachment`/`assertValidAttachmentCategory` com mensagens claras.
+- `ClinicalService`: `storeAttachment` (valida, gera id e grava conteúdo), `readAttachmentContent` e `dropAttachmentContent`; `ClinicalDraft.attach`/`detach` integram anexos ao autosave (bloqueados em documento finalizado).
+- UI (`ClinicalWorkspace`): seção de anexos com upload (arquivo + categoria), lista com tamanho/data, prévia em nova aba (object URL revogada) e exclusão com `confirm()`; conteúdo só é apagado quando nenhuma versão finalizada ainda referencia o anexo.
+- Backup: tabela `attachments` entra em `backupTables`; snapshots novos com `schema: 11` e arquivos legados `schema: 10` (sem a tabela) continuam importáveis; conteúdo validado como base64.
+- Evidência: `npm.cmd test` **158/158** (20 arquivos; novos `domain/clinical-attachments.test.ts` com 3 casos, `clinical.test.ts` +5, `backup.test.ts` +1 e `database.test.ts` ajustado para verno 11), build 0, tsc 0.
+- Card: F3-09/#48 → DONE (fecha o P0 de perda de dado clínico; libera F5-11, F8-04, F8-08 e F8-10).
+
 ### `a2c1369` — feat: enforce record and store scope from the active session (F1-11 escopo por registro)
 
 - `src/domain/access-context.ts`: `AccessContext` (escopo da role + lojas do usuário), `buildAccessContext`, `canAccessStore`, `canAccessRecord`, contexto ativo global (`setAccessContext`) e guards `assertStoreAccess`/`assertRecordAccess`.

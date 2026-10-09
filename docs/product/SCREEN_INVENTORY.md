@@ -14,7 +14,7 @@ Atualizado em: 07/10/2026 (verificação de `router.tsx` no mesmo dia).
 | Perfil do cliente | abas resumo/clínico/óculos/compras/financeiro/garantias/documentos/histórico | AUSENTE | F2-09, F3-04, F3-20 |
 | Atendimento | `/atendimentos` | PARCIAL (fila WAITING) | F3-02, F3-03 |
 | Agenda | `/agenda`, `/agenda/dia`, `/agenda/semana` | AUSENTE | F3-01 |
-| Clínico | `/clinico`, `/clinico/atendimento/:id` | PARCIAL (sem sub-rotas/guia, sem autosave, anexos só metadados) | F3-06..09, F1-12 |
+| Clínico | `/clinico`, `/clinico/atendimento/:id` | PARCIAL (sem sub-rotas/guia; anexos com conteúdo real) | F3-06..08, F1-12 |
 | Prescrições/Exames | `/prescricoes*`, `/exames*` | AUSENTE | F3-05, F3-06 |
 | Comercial | `/caixa` (+ redirects `/vendas`, `/pagamentos`) | OK/parcial — abas Vendas/Recebimentos/Sessão + itens de estoque | F3-10, F3-11, F4-10..16 |
 | OS | `/ordens-servico` | PARCIAL — em desenvolvimento; sem detalhe por URL | F3-14 (IN PROGRESS) |
