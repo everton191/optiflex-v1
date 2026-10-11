@@ -2,9 +2,11 @@ import { toCents } from "./money";
 
 export type CashEntryType = "RECEIPT" | "WITHDRAWAL" | "DEPOSIT";
 export type CashMovementType = Exclude<CashEntryType, "RECEIPT">;
-export type PaymentMethod = "CASH" | "PIX" | "CARD";
+export type PaymentMethod = "CASH" | "PIX" | "CARD" | "DEBIT" | "CREDIT";
 
-export const paymentMethodLabels: Record<PaymentMethod, string> = { CASH: "Dinheiro", PIX: "PIX", CARD: "Cartão" };
+export const paymentMethodLabels: Record<PaymentMethod, string> = { CASH: "Dinheiro", PIX: "PIX", CARD: "Cartão", DEBIT: "Débito", CREDIT: "Crédito" };
+
+export const paymentMethodOptions: readonly PaymentMethod[] = ["CASH", "PIX", "DEBIT", "CREDIT"];
 
 export function assertValidPaymentMethod(method?: string): PaymentMethod | undefined {
   if (method === undefined) return undefined;
@@ -43,19 +45,27 @@ export interface CashTotals {
   deposits: number;
   withdrawals: number;
   expected: number;
+  byMethod: Record<PaymentMethod, number>;
 }
+
+const emptyMethodTotals = (): Record<PaymentMethod, number> => ({ CASH: 0, PIX: 0, CARD: 0, DEBIT: 0, CREDIT: 0 });
 
 export function cashTotals(openingBalance: number, entries: readonly CashEntry[]): CashTotals {
   let receipts = 0;
   let deposits = 0;
   let withdrawals = 0;
+  const byMethod = emptyMethodTotals();
   for (const entry of entries) {
     const amount = toCents(entry.amount);
-    if (entry.type === "RECEIPT") receipts += amount;
+    if (entry.type === "RECEIPT") {
+      receipts += amount;
+      byMethod[entry.paymentMethod ?? "CASH"] += amount;
+    }
     else if (entry.type === "DEPOSIT") deposits += amount;
     else withdrawals += amount;
   }
-  return { receipts: receipts / 100, deposits: deposits / 100, withdrawals: withdrawals / 100, expected: (toCents(openingBalance) + receipts + deposits - withdrawals) / 100 };
+  for (const method of Object.keys(byMethod) as PaymentMethod[]) byMethod[method] /= 100;
+  return { receipts: receipts / 100, deposits: deposits / 100, withdrawals: withdrawals / 100, expected: (toCents(openingBalance) + receipts + deposits - withdrawals) / 100, byMethod };
 }
 
 export function paidCents(entries: readonly CashEntry[], saleId: string): number {

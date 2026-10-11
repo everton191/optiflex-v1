@@ -18,8 +18,10 @@ export class CashService {
     return this.repository.openSession({ id: `cash-${crypto.randomUUID()}`, storeId, openingBalance, openedAt: new Date().toISOString() });
   }
 
-  async receive(storeId: string, saleId: string, amount: number, paymentMethod?: PaymentMethod): Promise<CashEntry> {
+  async receive(storeId: string, saleId: string, amount: number, paymentMethod: PaymentMethod): Promise<CashEntry> {
     this.store(storeId);
+    if (paymentMethod === undefined) throw new Error("Informe a forma de pagamento.");
+    assertValidPaymentMethod(paymentMethod);
     if (!isMoney(amount) || toCents(amount) <= 0) throw new Error("Informe um valor válido.");
     const method = assertValidPaymentMethod(paymentMethod);
     const session = await this.repository.current(storeId);

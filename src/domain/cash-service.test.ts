@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CashService } from "./cash-service";
+import { cashTotals } from "./cash";
 import type { CashEntry, CashSession } from "./cash";
 import type { Sale } from "./sales";
 
@@ -36,28 +37,30 @@ describe("cash opening", () => {
 
 describe("cash receipts", () => {
   it("rejects invalid amounts before touching the session", async () => {
-    await expect(service.receive("store-centro", "sale-1", 0)).rejects.toThrow("Informe um valor válido");
-    await expect(service.receive("store-centro", "sale-1", -10)).rejects.toThrow("Informe um valor válido");
-    await expect(service.receive("store-centro", "sale-1", Number.NaN)).rejects.toThrow("Informe um valor válido");
-    await expect(service.receive("store-centro", "sale-1", Number.POSITIVE_INFINITY)).rejects.toThrow("Informe um valor válido");
-    await expect(service.receive("store-centro", "sale-1", 0.001)).rejects.toThrow("Informe um valor válido");
+    await expect(service.receive("store-centro", "sale-1", 0, "CASH")).rejects.toThrow("Informe um valor válido");
+    await expect(service.receive("store-centro", "sale-1", -10, "CASH")).rejects.toThrow("Informe um valor válido");
+    await expect(service.receive("store-centro", "sale-1", Number.NaN, "CASH")).rejects.toThrow("Informe um valor válido");
+    await expect(service.receive("store-centro", "sale-1", Number.POSITIVE_INFINITY, "CASH")).rejects.toThrow("Informe um valor válido");
+    await expect(service.receive("store-centro", "sale-1", 0.001, "CASH")).rejects.toThrow("Informe um valor válido");
+    await expect(service.receive("store-centro", "sale-1", 10, undefined as never)).rejects.toThrow("Informe a forma de pagamento.");
+    expect(repository.recordReceipt).not.toHaveBeenCalled();
     expect(repository.current).not.toHaveBeenCalled();
   });
 
   it("requires an open cash session", async () => {
     repository.current.mockResolvedValue(undefined);
-    await expect(service.receive("store-centro", "sale-1", 100)).rejects.toThrow("Abra o caixa antes de registrar recebimentos.");
+    await expect(service.receive("store-centro", "sale-1", 100, "CASH")).rejects.toThrow("Abra o caixa antes de registrar recebimentos.");
     expect(repository.recordReceipt).not.toHaveBeenCalled();
   });
 
   it("accepts only confirmed sales of the same store", async () => {
     repository.current.mockResolvedValue(activeSession);
     sales.get.mockResolvedValue({ ...confirmedSale, storeId: "store-shopping" });
-    await expect(service.receive("store-centro", "sale-1", 100)).rejects.toThrow("Venda não encontrada nesta loja.");
+    await expect(service.receive("store-centro", "sale-1", 100, "CASH")).rejects.toThrow("Venda não encontrada nesta loja.");
     sales.get.mockResolvedValue({ ...confirmedSale, status: "QUOTE" });
-    await expect(service.receive("store-centro", "sale-1", 100)).rejects.toThrow("Somente vendas confirmadas");
+    await expect(service.receive("store-centro", "sale-1", 100, "CASH")).rejects.toThrow("Somente vendas confirmadas");
     sales.get.mockResolvedValue(undefined);
-    await expect(service.receive("store-centro", "missing", 100)).rejects.toThrow("Venda não encontrada nesta loja.");
+    await expect(service.receive("store-centro", "missing", 100, "CASH")).rejects.toThrow("Venda não encontrada nesta loja.");
     expect(repository.recordReceipt).not.toHaveBeenCalled();
   });
 
@@ -65,8 +68,8 @@ describe("cash receipts", () => {
     repository.current.mockResolvedValue(activeSession);
     sales.get.mockResolvedValue(confirmedSale);
     repository.recordReceipt.mockImplementation(async (entry: CashEntry) => entry);
-    const entry = await service.receive("store-centro", "sale-1", 300);
-    expect(entry).toMatchObject({ sessionId: "cash-1", storeId: "store-centro", saleId: "sale-1", type: "RECEIPT", amount: 300 });
+    const entry = await service.receive("store-centro", "sale-1", 300, "CASH");
+    expect(entry).toMatchObject({ sessionId: "cash-1", storeId: "store-centro", saleId: "sale-1", type: "RECEIPT", amount: 300, paymentMethod: "CASH" });
   });
 
   it("records the chosen payment method and rejects unknown ones", async () => {
@@ -75,18 +78,40 @@ describe("cash receipts", () => {
     repository.recordReceipt.mockImplementation(async (entry: CashEntry) => entry);
     const entry = await service.receive("store-centro", "sale-1", 300, "PIX");
     expect(entry).toMatchObject({ paymentMethod: "PIX" });
+    const debit = await service.receive("store-centro", "sale-1", 50, "DEBIT");
+    expect(debit).toMatchObject({ paymentMethod: "DEBIT" });
+    const credit = await service.receive("store-centro", "sale-1", 20, "CREDIT");
+    expect(credit).toMatchObject({ paymentMethod: "CREDIT" });
     await expect(service.receive("store-centro", "sale-1", 10, "DINHEIRO" as never)).rejects.toThrow("Forma de pagamento inválida.");
     await expect(service.receive("store-centro", "sale-1", 10, "BOLETO" as never)).rejects.toThrow("Forma de pagamento inválida.");
-    expect(repository.recordReceipt).toHaveBeenCalledOnce();
-    expect(repository.current).toHaveBeenCalledOnce();
+    expect(repository.recordReceipt).toHaveBeenCalledTimes(3);
+    expect(repository.current).toHaveBeenCalledTimes(3);
+  });
+});
+
+describe("per-method totals", () => {
+  const entry = (overrides: Partial<CashEntry>): CashEntry => ({ id: `cash-entry-${Math.random()}`, sessionId: "cash-1", storeId: "store-centro", type: "RECEIPT", amount: 0, createdAt: "2026-01-01T12:00:00.000Z", ...overrides });
+
+  it("sums receipts by method and counts legacy entries as cash", () => {
+    const totals = cashTotals(100, [
+      entry({ amount: 50, paymentMethod: "CASH" }),
+      entry({ amount: 30, paymentMethod: "PIX" }),
+      entry({ amount: 20 }),
+      entry({ amount: 40, paymentMethod: "CARD" }),
+      entry({ type: "DEPOSIT", amount: 10 }),
+      entry({ type: "WITHDRAWAL", amount: 5 })
+    ]);
+    expect(totals.byMethod).toEqual({ CASH: 70, PIX: 30, CARD: 40, DEBIT: 0, CREDIT: 0 });
+    expect(totals.receipts).toBe(140);
+    expect(totals.deposits).toBe(10);
+    expect(totals.withdrawals).toBe(5);
+    expect(totals.expected).toBe(245);
   });
 
-  it("keeps legacy receipts without a payment method", async () => {
-    repository.current.mockResolvedValue(activeSession);
-    sales.get.mockResolvedValue(confirmedSale);
-    repository.recordReceipt.mockImplementation(async (entry: CashEntry) => entry);
-    const entry = await service.receive("store-centro", "sale-1", 100);
-    expect(entry.paymentMethod).toBeUndefined();
+  it("uses cents precision for method totals", () => {
+    const totals = cashTotals(0, [entry({ amount: 0.1, paymentMethod: "PIX" }), entry({ amount: 0.2, paymentMethod: "PIX" })]);
+    expect(totals.byMethod.PIX).toBe(0.3);
+    expect(totals.receipts).toBe(0.3);
   });
 });
 
