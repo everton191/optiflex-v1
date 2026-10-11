@@ -35,7 +35,7 @@ Sem store/hook. Estado temporário e tabs usam `useState`.
 
 ## Models
 
-`CashSession` (com `expectedBalance`, `closingBalance`, `difference`, `closedBy`, `closingNote`), `CashEntry` (com `paymentMethod?`, `reason?`, `author?`), `CashEntryType` (`RECEIPT`/`WITHDRAWAL`/`DEPOSIT`/`REFUND`), `PaymentMethod` (`CASH`/`PIX`/`CARD` legado/`DEBIT`/`CREDIT`), `paymentMethodOptions` (opções de novos recebimentos), `CashMovementType` (`WITHDRAWAL`/`DEPOSIT`; `RECEIPT`/`REFUND` excluídos), `paymentMethodLabels`, `assertValidPaymentMethod`; Sale/WorkOrder são dependências. `cashTotals` centraliza o cálculo por centavos e expõe `byMethod` e `refunds` (regra em `src/domain/money.ts`).
+`CashSession` (com `expectedBalance`, `closingBalance`, `difference`, `closedBy`, `closingNote`), `CashEntry` (com `paymentMethod?`, `reason?`, `author?`), `CashEntryType` (`RECEIPT`/`WITHDRAWAL`/`DEPOSIT`/`REFUND`), `PaymentMethod` (`CASH`/`PIX`/`CARD` legado/`DEBIT`/`CREDIT`), `paymentMethodOptions` (opções de novos recebimentos), `CashMovementType` (`WITHDRAWAL`/`DEPOSIT`; `RECEIPT`/`REFUND` excluídos), `paymentMethodLabels`, `assertValidPaymentMethod`; `SalePaymentStatus` (`PENDING`/`PARTIAL`/`PAID`); Sale/WorkOrder são dependências. `cashTotals` centraliza o cálculo por centavos e expõe `byMethod` e `refunds` (regra em `src/domain/money.ts`).
 
 ## Permissions
 
@@ -69,7 +69,7 @@ Não recriar telas separadas de Venda/Recebimento. Não receber sem sessão aber
 
 ### Alterar recebimento
 
-→ CashDeskPage + CashService.receive (forma obrigatória) + CashRepository.recordReceipt + `Sale.paymentStatus` + `paymentMethodOptions`/`paymentMethodLabels` (F4-10: totais por forma em `cashTotals.byMethod`).
+→ CashDeskPage + CashService.receive (forma obrigatória; valor parcial com placeholder = saldo pendente) + CashRepository.recordReceipt (grava `PARTIAL`/`PAID`; valida `paid + amount > total` na transação) + `Sale.paymentStatus` + `paymentMethodOptions`/`paymentMethodLabels` (F4-10: totais por forma em `cashTotals.byMethod`).
 
 ### Alterar sangria/suprimento
 

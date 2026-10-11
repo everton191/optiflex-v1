@@ -4,6 +4,15 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `60e2ca4` — feat: partial payments with PARTIAL status and amount input (F4-12 pagamentos parciais)
+
+- `SalePaymentStatus` ganha `PARTIAL` (`PENDING`/`PARTIAL`/`PAID`); `LocalSaleRepository.recordReceipt` grava `PARTIAL` quando a soma dos RECEIPTs ainda não cobre o total e `PAID` quando cobre (validação `paid + amount > total` já existente na transação permanece a autoridade).
+- UI `/caixa` aba Recebimentos: input de valor por venda pendente (placeholder = saldo pendente; vazio = recebe o total); mensagem "Recebimento parcial registrado." quando o valor é menor que o pendente; badge "Pagamento parcial registrado" na linha da venda e "Parcial" na lista de vendas; venda cancelada parcialmente paga agora também informa estorno no caixa.
+- Backup aceita `PARTIAL` em `paymentStatus` (valores desconhecidos continuam rejeitados).
+- Sem bump de schema (`paymentStatus` é campo existente).
+- Evidência: `npm.cmd test` **195/195** (21 arquivos; `cash.test.ts` +1 durabilidade/reload + expectativas PENDING→PARTIAL, backup aceita PARTIAL), build 0, tsc 0.
+- Card: F4-12/#69 → DONE (saldo pendente correto após reload; status `PARTIAL`; juros/atraso fora de escopo — F4-13 BLOCKED por decisão P4).
+
 ### `9f0fdfc` — feat: sale cancellation with stock and cash refund (F4-18 estornos e cancelamentos)
 
 - `Sale` ganha `cancelReason?`/`cancelledAt?`/`cancelledBy?` (opcionais, sem bump de schema); `CashEntryType` inclui `REFUND` (excluído de `CashMovementType`); `CashTotals` ganha `refunds` (reduz o saldo esperado).

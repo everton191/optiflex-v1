@@ -56,7 +56,7 @@ Classificação de inventário (Etapa 4) no corpo de cada card:
 
 - Issues totais: **155** (8 épicas + 147 tarefas).
 - Tarefas por fase: F1=14 · F2=18 · F3=20 · F4=20 · F5=19 · F6=19 · F7=19 · F8=18.
-- Tarefas por status (revisado em 08/10/2026; F1-09, F2-04, F7-02, F1-11, F3-09, F3-14, F1-02, F1-06, F4-16, F2-05, F4-10 e F4-18 concluídas no mesmo dia): DONE=30 · IN PROGRESS=0 · READY=28 · TESTING=0 · CODE REVIEW=0 · BACKLOG=39 · BLOCKED=50.
+- Tarefas por status (revisado em 08/10/2026; F1-09, F2-04, F7-02, F1-11, F3-09, F3-14, F1-02, F1-06, F4-16, F2-05, F4-10, F4-18 e F4-12 concluídas no mesmo dia): DONE=31 · IN PROGRESS=0 · READY=27 · TESTING=0 · CODE REVIEW=0 · BACKLOG=39 · BLOCKED=50.
 - Bloqueios: **50 tarefas** bloqueadas — 47 por dependência de fase futura/externa + **3 reclassificadas em 08/10** (F4-13 #70, F8-03 #137, F3-20 #57: status desatualizado, decisão externa já registrada).
 - **Revisão de dependências 08/10/2026:** 7 ciclos detectados (SCC/Tarjan sobre este arquivo) e corrigidos em KANBAN + corpos das issues; **0 ciclos remanescentes**. Detalhe antes/depois em `DEPENDENCIES.md`.
 
@@ -156,7 +156,7 @@ Regra de ouro: **nunca mover para DONE sem evidência verificável** (comando de
 | F4-09 | [Recebimentos](https://github.com/everton191/optiflex-v1/issues/66) | Cash | DONE | p0 | — |
 | F4-10 | [Formas de pagamento](https://github.com/everton191/optiflex-v1/issues/67) | Cash | DONE | p1 | F4-9, F1-08 (feitos; entregue em `7f1d6e4` — forma obrigatória, `DEBIT`/`CREDIT`, `byMethod` no fechamento). |
 | F4-11 | [PIX, dinheiro e cartão](https://github.com/everton191/optiflex-v1/issues/68) | Cash | BACKLOG | p1 | F4-10, F1-09. |
-| F4-12 | [Pagamentos parciais](https://github.com/everton191/optiflex-v1/issues/69) | Cash | READY | p1 | F4-9, F4-10. |
+| F4-12 | [Pagamentos parciais](https://github.com/everton191/optiflex-v1/issues/69) | Cash | DONE | p1 | F4-9, F4-10 (feitos; entregue em `60e2ca4` — status `PARTIAL`, input de valor na aba Recebimentos, saldo durável). |
 | F4-13 | [Parcelamentos](https://github.com/everton191/optiflex-v1/issues/70) | Cash | BLOCKED | p1 | F4-12, F1-09, F1-10 + decisão P4 (juros/multas/prazo). |
 | F4-14 | [Crediário e carnês](https://github.com/everton191/optiflex-v1/issues/71) | Cash | BACKLOG | p2 | F4-13, F7-13. |
 | F4-15 | [Contas a receber](https://github.com/everton191/optiflex-v1/issues/72) | Cash | BACKLOG | p2 | F4-13. |
@@ -271,16 +271,16 @@ Ordem recomendada para a próxima sessão de desenvolvimento (status READY/IN PR
 
 | # | ID | Issue | Tarefa | Prioridade | Dependências | Justificativa |
 |---|---|---|---|---|---|---|
-| 1 | F4-12 | #69 | [Cash] Pagamentos parciais | P1 | F4-10 (feito), F1-09 | Saldo pendente já existe; falta entrada de valor parcial. |
-| 2 | F2-06 | #28 | [Customers] Edição de clientes | P1 | F1-03 | Cadastro sem edição é lacuna visível na operação. |
-| 3 | F3-01 | #40 | [Attendance] Agenda e recepção | P1 | F2-04 (feito) | Dependência (usuários) já entregue; base da fila de atendimento. |
-| 4 | F8-06 | #140 | [Access] Testes de permissões | P1 | F1-11 e F2-05 (feitos) | Suíte dedicada consolida matriz e guards; dependências recém-entregues. |
-| 5 | F8-07 | #141 | [Access] Auditoria de segurança | P1 | F7-02 e F1-11 (feitos) | Dependências entregues; fecha a lacuna de rastreio antes do piloto. |
-| 6 | F1-07 | #15 | [Infraestrutura] Modelos de prescrições e ordens de serviço | P1 | nenhuma | Sem pendências; desbloqueia a cadeia de prescrição estruturada (F3-07 → F3-06). |
-| 7 | F3-17 | #55 | [Work-orders] Prazos e alertas | P1 | F3-14 (feito) | Dependência recém-entregue (histórico/detalhe de OS); alertas usam o evento/dados de OS. |
-| 8 | F2-11 | #32 | [Inventory] Produtos: armações, lentes e acessórios | P1 | F1-06 (feito) | Catálogo libera a cadeia F2-14/F2-15/F6-04; base de preço/custo já em `InventoryItem`. |
-| 9 | F2-02 | #24 | [Administration] Matriz e filiais | P1 | F1-11 (feito) | Estrutura de matriz/filiais apoia usuários e lojas já administráveis. |
-| 10 | F3-02 | #41 | [Attendance] Cadastro de atendimento | P1 | F2-04 (feito) | Dependência (profissionais) entregue; é o passo seguinte da fila de atendimento. |
+| 1 | F2-06 | #28 | [Customers] Edição de clientes | P1 | F1-03 | Cadastro sem edição é lacuna visível na operação. |
+| 2 | F3-01 | #40 | [Attendance] Agenda e recepção | P1 | F2-04 (feito) | Dependência (usuários) já entregue; base da fila de atendimento. |
+| 3 | F8-06 | #140 | [Access] Testes de permissões | P1 | F1-11 e F2-05 (feitos) | Suíte dedicada consolida matriz e guards; dependências recém-entregues. |
+| 4 | F8-07 | #141 | [Access] Auditoria de segurança | P1 | F7-02 e F1-11 (feitos) | Dependências entregues; fecha a lacuna de rastreio antes do piloto. |
+| 5 | F1-07 | #15 | [Infraestrutura] Modelos de prescrições e ordens de serviço | P1 | nenhuma | Sem pendências; desbloqueia a cadeia de prescrição estruturada (F3-07 → F3-06). |
+| 6 | F3-17 | #55 | [Work-orders] Prazos e alertas | P1 | F3-14 (feito) | Dependência recém-entregue (histórico/detalhe de OS); alertas usam o evento/dados de OS. |
+| 7 | F2-11 | #32 | [Inventory] Produtos: armações, lentes e acessórios | P1 | F1-06 (feito) | Catálogo libera a cadeia F2-14/F2-15/F6-04; base de preço/custo já em `InventoryItem`. |
+| 8 | F2-02 | #24 | [Administration] Matriz e filiais | P1 | F1-11 (feito) | Estrutura de matriz/filiais apoia usuários e lojas já administráveis. |
+| 9 | F3-02 | #41 | [Attendance] Cadastro de atendimento | P1 | F2-04 (feito) | Dependência (profissionais) entregue; é o passo seguinte da fila de atendimento. |
+| 10 | F3-10 | #49 | [Sales] Orçamentos detalhados | P1 | F1-09 (feito) | Precisão monetária pronta; enriquece orçamento sem nova dependência. |
 
 Os `#?` devem ser resolvidos pela tabela acima (coluna ID → link da issue). Os números já estão fixados nas tabelas das fases; para referência rápida: consulte `DEPENDENCIES.md`.
 
