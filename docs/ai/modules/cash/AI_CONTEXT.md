@@ -8,6 +8,7 @@
 - Fechamento grava `expectedBalance`, `closingBalance`, `difference`, `closedBy` e `closingNote`.
 - Recebimento atualiza `Sale.paymentStatus` (`PENDING`/`PAID`) na mesma transação da entrada.
 - Extrato "Movimentos registrados" lista `CashEntry` por loja, sem estado em memória.
+- Forma de pagamento por recebimento (Dinheiro/PIX/Cartão) com select na aba Recebimentos (F1-06, `b0f72d1`).
 - Aba Vendas inclui seletor opcional de itens de estoque; a confirmação baixa o saldo em transação (Fase E).
 
 ## Current Decisions
@@ -19,19 +20,20 @@
 - Abertura é atômica: a segunda abertura na mesma loja é rejeitada mesmo em concorrência.
 - Abas e cards aparecem por permission, não por label de role.
 - `paymentStatus` é projeção atualizada em transação; a soma das entradas segue sendo a fonte de conferência.
+- `paymentMethod` é opcional (entradas legadas sem forma continuam válidas); valores fora de `paymentMethodLabels` são rejeitados por `assertValidPaymentMethod` e pelo backup.
 
 ## Known Problems
 
 - Sangria (`WITHDRAWAL`) e suprimento (`DEPOSIT`) têm modelo e cálculo prontos, mas não têm UI.
-- Não há formas de pagamento (dinheiro/PIX/cartão) nem estorno.
+- Estorno/cancelamento ainda não existem (F4-18).
 - Não há parcelas/carnê; pagamento parcial na tela recebe o saldo restante da venda.
 - Cancelamento de venda já recebida não é tratado.
 - `receivedSaleIds` foi removido; qualquer regressão deve ser verificada em `cash.test.ts`.
 
 ## Pending Work
 
-- UI de sangria/suprimento com motivo e autor.
-- Forma de pagamento por entrada e estorno controlado.
+- UI de sangria/suprimento com motivo e autor (F4-16).
+- Estorno controlado devolvendo estoque/dinheiro (F4-18).
 - Relatório/impressão do fechamento.
 
 ## Important Files Right Now
@@ -44,9 +46,10 @@
 
 ## Recent Structural Changes
 
+- F1-06 (`b0f72d1`): `PaymentMethod` + `CashEntry.paymentMethod`, select na aba Recebimentos, backup valida valores.
 - Fechamento de caixa com conferência contado/esperado/diferença.
 - Extrato durável de movimentos por loja.
-- Testes: `src/domain/cash-service.test.ts` (10) e `src/infrastructure/storage/cash.test.ts` (7).
+- Testes: `src/domain/cash-service.test.ts` (12) e `src/infrastructure/storage/cash.test.ts` (8).
 
 ## Be Careful With
 

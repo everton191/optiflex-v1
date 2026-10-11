@@ -44,7 +44,7 @@ Anomalia inversa encontrada e mantida com ressalva: **F4-17 (DONE) depende de F4
 ### 1. Catálogo → venda → estoque → fiscal
 
 ```text
-F1-06 modelos produto/pagamento (OBR)
+F1-06 modelos produto/pagamento (FEITO 08/10 — `b0f72d1`, 175 testes)
   └─ F2-11 catálogo de produtos (OBR)
        ├─ F2-14 códigos/preços/custos (OBR p/ margem)
        ├─ F3-11 PDV armações/lentes (OBR p/ Fluxo 2)

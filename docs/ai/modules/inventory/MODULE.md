@@ -14,7 +14,7 @@ Página em `src/app/InventoryWorkspace.tsx` (re-exportada em `src/app/pages.tsx`
 
 ## Main Pages
 
-`InventoryPage`: cadastro/edição de produtos, form de movimentação (IN/OUT/ADJUSTMENT), alertas de mínimo e histórico de movimentações.
+`InventoryPage`: cadastro/edição de produtos (com preço padrão e custo opcionais), form de movimentação (IN/OUT/ADJUSTMENT), alertas de mínimo e histórico de movimentações.
 
 ## Components
 
@@ -34,7 +34,7 @@ Sem store/hook; usa estado local e `currentStoreId`.
 
 ## Models
 
-`InventoryItem`, `InventoryMovement`, `InventoryMovementType`, `stockState`, `movementDelta`.
+`InventoryItem` (`defaultPrice?`, `cost?` em reais — F1-06), `InventoryMovement`, `InventoryMovementType`, `stockState`, `movementDelta`.
 
 ## Permissions
 
@@ -54,7 +54,7 @@ Contexto de loja, sessão (`session.userName` como autor) e Dexie.
 - Regras de saldo: `inventory-service.ts`.
 - Modelos: `inventory.ts`.
 - Persistência: `LocalInventoryRepository` e tabelas inventory.
-- Backup: campos `code`/`author` validados em `backup.ts`.
+- Backup: campos `code`/`author`/`defaultPrice`/`cost` validados em `backup.ts`.
 
 ## Avoid Modifying
 

@@ -2,7 +2,7 @@
 
 **Não duplica:** o estado real dos modelos vive em `src/domain/*.ts` e nos mapas `docs/ai/01–09` (especialmente `02_ARCHITECTURE.md` e `07_DATA_FLOW.md`). Este documento planeja a **evolução** e aponta os cards responsáveis.
 
-Atualizado em: 08/10/2026 · Base: `8fc64b0` (schema IndexedDB `opticore-v1` v11).
+Atualizado em: 08/10/2026 · Base: `b0f72d1` (schema IndexedDB `opticore-v1` v11).
 
 ## Estado atual (resumo)
 
@@ -12,8 +12,8 @@ Atualizado em: 08/10/2026 · Base: `8fc64b0` (schema IndexedDB `opticore-v1` v11
 | Clientes/atendimento | `Customer`, `Attendance` | histórico de alterações, agenda | F2-06, F2-09, F3-01 |
 | Clínico | `ClinicalRecord`, `ClinicalAttachment` (+`category`), `ClinicalAttachmentContent` (tabela `attachments`, v11) | `Prescription` versionada, refração estruturada | F1-07, F3-06, F3-07 |
 | Comercial | `Sale`, `SaleItem`, `SalePaymentStatus` | estados de orçamento, `paymentMethod`, desconto/aprovação | F3-10, F4-10, F3-12 |
-| Caixa | `CashSession`, `CashEntry`, `paidCents/cashTotals` | parcelas/carnê (`InstallmentPlan`), estorno | F4-13, F4-18 |
-| Estoque | `InventoryItem`, `InventoryMovement` | catálogo/variantes, reserva, transferência | F2-11, F4-05, F4-06 |
+| Caixa | `CashSession`, `CashEntry` (`paymentMethod?`), `PaymentMethod`, `paidCents/cashTotals` | parcelas/carnê (`InstallmentPlan`), estorno | F4-13, F4-18 |
+| Estoque | `InventoryItem` (`defaultPrice?`/`cost?`), `InventoryMovement` | catálogo/variantes, reserva, transferência | F2-11, F4-05, F4-06 |
 | OS | `WorkOrder` (`dueAt/notes/updatedAt/updatedBy/cancelReason/events`) | laboratório, acompanhamento de fabricação | F3-15, F3-16 |
 | Dashboard | seletores puros (`dashboard.ts`) | métricas por perfil | F7-03 |
 | Fiscal/SaaS | — (nada) | `FiscalDocument`, tenant/outbox | F6-05, F5-07 |
@@ -30,7 +30,7 @@ Atualizado em: 08/10/2026 · Base: `8fc64b0` (schema IndexedDB `opticore-v1` v11
 ## Entidades planejadas (resumo por prioridade)
 
 - **P0:** `AuditEntry` (F1-10), `Prescription` versionada (F1-07/F3-06). *Blob de `ClinicalAttachment` entregue em F3-09 (`6ce9c9a`, tabela `attachments` v11, conteúdo base64).*
-- **P1:** `PaymentMethod` em `CashEntry` (F4-10), `InstallmentPlan/Installment` (F4-13), `Product` catálogo (F2-11/F1-06), `AgendaEvent` (F3-01). *Histórico de OS entregue em F3-14 (`e56939e`, eventos embutidos em `WorkOrder.events`).*
+- **P1:** `InstallmentPlan/Installment` (F4-13), `Product` catálogo (F2-11 — base `defaultPrice`/`cost` em `InventoryItem`), `AgendaEvent` (F3-01). *Histórico de OS entregue em F3-14 (`e56939e`, eventos embutidos em `WorkOrder.events`); `PaymentMethod` entregue em F1-06 (`b0f72d1`, campo opcional em `CashEntry`).*
 - **P2:** transferência/ reserva de estoque (F4-06/F4-05), garantia/reparo (F3-20), notificações (F7-12).
 - **Fase 5/6 (bloqueadas):** tenant/outbox/sync (F5), `FiscalDocument` (F6-05).
 

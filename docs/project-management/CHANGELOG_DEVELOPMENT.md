@@ -4,6 +4,16 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `b0f72d1` — feat: add product price, cost and payment method to inventory and cash models (F1-06 modelos de produtos e pagamentos)
+
+- `InventoryItem` ganha `defaultPrice?`/`cost?` (reais, validados com `isMoney` no `InventoryService.create/update`); produto pode ter preço/custo padrão sem quebrar a venda manual (fluxo de venda intocado, testes de regressão verdes).
+- UI de estoque: campos "Preço padrão (R$)" e "Custo (R$)" no form de cadastro/edição e exibição na lista de produtos.
+- `PaymentMethod` (`CASH`/`PIX`/`CARD`) + `paymentMethodLabels` + `assertValidPaymentMethod`; `CashEntry.paymentMethod?` opcional (entradas legadas continuam válidas).
+- `CashService.receive(storeId, saleId, amount, paymentMethod?)` valida e persiste a forma; UI do `/caixa` ganha select "Forma de pagamento" por venda pendente (padrão Dinheiro) e exibe o método no extrato de movimentos.
+- Backup valida `paymentMethod` (deve estar em `paymentMethodLabels`) e `defaultPrice`/`cost` (números finitos ≥ 0); campos opcionais sem índice → schema permanece v11 (sem bump).
+- Evidência: `npm.cmd test` **175/175** (21 arquivos; `inventory-service.test.ts` +3, `cash-service.test.ts` +2, `cash.test.ts` +1, `inventory.test.ts` +1, `backup.test.ts` +1), build 0, tsc 0.
+- Card: F1-06/#14 → DONE (libera F2-11 catálogo; forma de pagamento pronta para F4-10/F4-18).
+
 ### `8fc64b0` — feat: cover organization settings contract with storage tests (F1-02 entidades e contratos)
 
 - Auditoria completa dos 10 contratos de `src/domain/repositories.ts`: todos têm implementação local (`Local*Repository`) e cobertura de teste; a UI (`src/app`) não acessa Dexie diretamente (0 usos de `db.`/`indexedDB`).

@@ -5,6 +5,7 @@
 - Models, repository e service implementados e testados (unit + storage).
 - Página completa em `InventoryWorkspace.tsx`: cadastro/edição, movimentação, histórico e alertas.
 - Service cria movimento inicial junto com o produto e valida saldo antes de gravar.
+- Preço padrão (`defaultPrice`) e custo (`cost`) opcionais em reais, validados com `isMoney` (F1-06, `b0f72d1`).
 
 ## Current Decisions
 
@@ -13,18 +14,19 @@
 - Saldo não é editável: a edição do produto preserva o `quantity` persistido.
 - `stockState`: OUT se `quantity <= 0`; LOW se `minimumQuantity > 0 && quantity <= minimumQuantity`.
 - Estoque é isolado por `storeId`; autor gravado em `InventoryMovement.author`.
-- Campos novos `code`/`author` são opcionais e sem índice → sem bump de versão Dexie.
+- Campos novos `code`/`author`/`defaultPrice`/`cost` são opcionais e sem índice → sem bump de versão Dexie.
+- Venda manual continua livre: `defaultPrice`/`cost` são referência de catálogo, não obrigam preço na venda.
 
 ## Known Problems
 
-- Ordens de serviço não consomem estoque.
 - Nenhum seed de produto.
 - Vendas sem itens (serviços) não geram movimento.
+- Catálogo completo (categoria/variantes) ainda não existe — F2-11.
 
 ## Pending Work
 
-- OS consumindo insumos ao concluir/entregar.
-- Cancelamento de venda devolvendo saldo.
+- Cancelamento de venda devolvendo saldo (F4-18).
+- Catálogo de produtos com categoria/variantes (F2-11).
 
 ## Important Files Right Now
 
@@ -35,6 +37,8 @@
 
 ## Recent Structural Changes
 
+- F1-06 (`b0f72d1`): `defaultPrice`/`cost` em `InventoryItem`, formulário e backup.
+- F3-14 (`e56939e`): OS consome insumos via `WorkOrderRepository.recordInputs` (movimentos OUT).
 - Fase E: baixa de estoque na confirmação de venda (`LocalSaleRepository.confirm` reutiliza `applyStockMovement`).
 - `InventoryPage` extraída de `pages.tsx` para `InventoryWorkspace.tsx`.
 - Contrato `InventoryRepository` trocado por `createItem`/`updateItem`/`applyMovement` transacionais.
@@ -47,4 +51,4 @@
 
 ## Next Likely Task
 
-Vincular ordens de serviço a movimentos de estoque (insumos) ou devolução no cancelamento de venda.
+Catálogo de produtos (F2-11) sobre `InventoryItem` com `defaultPrice`/`cost`, ou estornos/cancelamentos (F4-18) devolvendo saldo.

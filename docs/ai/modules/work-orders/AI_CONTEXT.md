@@ -52,4 +52,4 @@
 
 ## Next Likely Task
 
-Fila do KANBAN: F4-18 estornos/cancelamentos (devolve estoque) ou F1-06 modelos de produto/venda. (F1-02 entidades e contratos concluído em `8fc64b0`.)
+Fila do KANBAN: F4-18 estornos/cancelamentos (devolve estoque) ou F3-17 prazos e alertas. (F1-02 e F1-06 concluídos em `8fc64b0`/`b0f72d1`.)
