@@ -4,6 +4,15 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `7f1d6e4` — feat: require payment method on receipts and sum totals by method (F4-10 formas de pagamento)
+
+- `PaymentMethod` ganha `DEBIT`/`CREDIT` (rótulos Débito/Crédito); `CARD` permanece válido apenas como legado — novos recebimentos só oferecem `paymentMethodOptions` (`CASH`/`PIX`/`DEBIT`/`CREDIT`).
+- `CashService.receive` exige a forma ("Informe a forma de pagamento." sem método; inválidos continuam rejeitados por `assertValidPaymentMethod`); UI do select por venda pendente já enviava o método (padrão Dinheiro).
+- `cashTotals` expõe `byMethod: Record<PaymentMethod, number>` (recebimentos somados por forma em centavos; entradas legadas sem método contadas como Dinheiro); aba Sessão exibe o detalhamento por forma ao lado dos totais gerais.
+- Sem bump de schema (`paymentMethod` continua opcional no storage e no backup — "registro antigo aceito (default)"); carnê (F4-13) e misto (F4-12) permanecem com seus cards.
+- Evidência: `npm.cmd test` **183/183** (21 arquivos; `cash-service.test.ts` +2 de totais/exigência, chamadas do storage ajustadas com forma), build 0, tsc 0.
+- Card: F4-10/#67 → DONE (fechamento soma por forma; libera F4-12 parciais sobre formas já registradas).
+
 ### `1b3f757` — feat: enforce store-scoped permissions with live role sync and profile matrix (F2-05 permissões por loja)
 
 - `allPermissions` (lista canônica das 21 permissions) e `syncSessionRole` em `access.ts`: a sessão espelha a role mais recente do usuário sem reload.

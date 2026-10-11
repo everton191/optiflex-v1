@@ -8,7 +8,8 @@
 - Fechamento grava `expectedBalance`, `closingBalance`, `difference`, `closedBy` e `closingNote`.
 - Recebimento atualiza `Sale.paymentStatus` (`PENDING`/`PAID`) na mesma transação da entrada.
 - Extrato "Movimentos registrados" lista `CashEntry` por loja, sem estado em memória.
-- Forma de pagamento por recebimento (Dinheiro/PIX/Cartão) com select na aba Recebimentos (F1-06, `b0f72d1`).
+- Forma de pagamento obrigatória por recebimento (Dinheiro/PIX/Débito/Crédito; `CARD` legado) com select na aba Recebimentos (F1-06 + F4-10, `7f1d6e4`).
+- `cashTotals` expõe `byMethod` (recebimentos por forma, legados contados como Dinheiro); fechamento exibe o detalhamento por forma na aba Sessão.
 - Suprimento e sangria com motivo obrigatório e autor na aba Sessão (F4-16, `6a59f2b`).
 - Aba Vendas inclui seletor opcional de itens de estoque; a confirmação baixa o saldo em transação (Fase E).
 
@@ -21,7 +22,8 @@
 - Abertura é atômica: a segunda abertura na mesma loja é rejeitada mesmo em concorrência.
 - Abas e cards aparecem por permission, não por label de role.
 - `paymentStatus` é projeção atualizada em transação; a soma das entradas segue sendo a fonte de conferência.
-- `paymentMethod` é opcional (entradas legadas sem forma continuam válidas); valores fora de `paymentMethodLabels` são rejeitados por `assertValidPaymentMethod` e pelo backup.
+- `paymentMethod` é obrigatório em novos recebimentos (`CashService.receive` lança "Informe a forma de pagamento." sem método); entradas legadas sem forma continuam válidas no storage e são contadas como Dinheiro nos totais; valores fora de `paymentMethodLabels` são rejeitados por `assertValidPaymentMethod` e pelo backup.
+- `PaymentMethod` = `CASH`/`PIX`/`CARD`(legado)/`DEBIT`/`CREDIT`; novos recebimentos só oferecem `paymentMethodOptions` (sem `CARD`). Carnê (F4-13) e misto (F4-12) ficam para os cards próprios.
 - Sangria/suprimento usam `CashMovementType` (`RECEIPT` é rejeitado em `recordMovement`); motivo é obrigatório (trim); sangria maior que o saldo esperado é rejeitada na transação de `LocalCashRepository.recordMovement`.
 - `CashEntry.reason?`/`author?` são opcionais (sem bump de schema); backup valida `reason` (string não vazia quando presente) e `author` (string quando presente).
 
@@ -35,7 +37,7 @@
 ## Pending Work
 
 - Estorno controlado devolvendo estoque/dinheiro (F4-18).
-- Formas de pagamento por operação/regras por canal (F4-10).
+- Pagamentos parciais com método por parcela (F4-12).
 - Relatório/impressão do fechamento.
 
 ## Important Files Right Now
@@ -48,11 +50,12 @@
 
 ## Recent Structural Changes
 
+- F4-10 (`7f1d6e4`): `DEBIT`/`CREDIT` em `PaymentMethod`, `paymentMethodOptions`, `receive` exige forma, `cashTotals.byMethod`, detalhamento por forma no fechamento.
 - F4-16 (`6a59f2b`): `CashMovementType` + `CashEntry.reason?`/`author?`, `CashService.recordMovement`, `CashRepository.recordMovement` (transação com guarda de saldo), form na aba Sessão.
 - F1-06 (`b0f72d1`): `PaymentMethod` + `CashEntry.paymentMethod`, select na aba Recebimentos, backup valida valores.
 - Fechamento de caixa com conferência contado/esperado/diferença.
 - Extrato durável de movimentos por loja.
-- Testes: `src/domain/cash-service.test.ts` (14) e `src/infrastructure/storage/cash.test.ts` (9).
+- Testes: `src/domain/cash-service.test.ts` (15) e `src/infrastructure/storage/cash.test.ts` (9).
 
 ## Be Careful With
 
@@ -62,4 +65,4 @@
 
 ## Next Likely Task
 
-Formas de pagamento avançadas (F4-10) ou estornos/cancelamentos (F4-18).
+Estornos/cancelamentos (F4-18).
