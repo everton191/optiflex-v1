@@ -67,7 +67,7 @@ F4-7 baixa transacional (FEITO)
        │    │         └─ F4-15 contas a receber (OBR p/ gestão)
        │    └─ F4-19 relatórios financeiros (OBR p/ gestão)
        ├─ F4-16 suprimento/sangria (FEITO 08/10 — `6a59f2b`)
-       ├─ F4-18 estornos/cancelamentos (OBR p/ rastreabilidade)
+       ├─ F4-18 estornos/cancelamentos (FEITO 08/10 — `9f0fdfc`; devolve estoque/dinheiro, cria `REFUND`)
        └─ F4-17 fechamento de caixa (FEITO — consome F4-10/16)
 ```
 
@@ -152,6 +152,6 @@ F3-09 conteúdo real de anexos (P0, DONE — `6ce9c9a`)
 ## Regra de priorização
 
 1. Primeiro tarefas que **desbloqueiam várias outras** (F1-11 escopo feito → F2-05 permissões por loja feito → F8-06 testes de permissão).
-2. Depois P0 de integridade/perda de dado (F4-18 estornos; F3-09 anexos concluído).
+2. Depois P0 de integridade/perda de dado (F4-18 estornos concluído em `9f0fdfc`; F3-09 anexos concluído).
 3. Nunca iniciar card com status `blocked` — resolver ou registrar a decisão em `DECISIONS.md` antes.
 4. Fases 5 e 6 só começam quando a decisão correspondente estiver registrada.

@@ -23,7 +23,7 @@ UI em `CashDeskPage`; domínio em `sales.ts` e `sales-service.ts`; repository em
 
 ## Services
 
-`SalesService.list`, `createQuote` (calcula total e descrição a partir dos itens), `confirm` (transação que confirma a venda e baixa o estoque).
+`SalesService.list`, `createQuote` (calcula total e descrição a partir dos itens), `confirm` (transação que confirma a venda e baixa o estoque), `cancel` (motivo obrigatório; cotação via `save`, confirmada via `repository.cancel` devolvendo estoque e estornando caixa).
 
 ## Repositories
 
@@ -35,7 +35,7 @@ Estado React local; sem store/hook dedicado.
 
 ## Models
 
-`Sale`, `SaleStatus`, `SalePaymentStatus`, `SaleItem`; helpers `itemsTotalCents`/`itemsTotal` (regra em `src/domain/money.ts`) e `stockMovementsFor`.
+`Sale`, `SaleStatus`, `SalePaymentStatus`, `SaleItem` (com `cancelReason?`/`cancelledAt?`/`cancelledBy?`); helpers `itemsTotalCents`/`itemsTotal` (regra em `src/domain/money.ts`), `stockMovementsFor` e `refundStockMovementsFor`.
 
 ## Permissions
 
@@ -51,12 +51,12 @@ Customers, cash, work-orders, inventory (estoque) e currentStore.
 
 ## Files Normally Modified
 
-- UI/abas: `CashDeskPage` (form de venda e seletor de itens).
+- UI/abas: `CashDeskPage` (form de venda, seletor de itens e cancelamento).
 - Regras: `sales-service.ts`.
 - Regra de dinheiro: `src/domain/money.ts` (compartilhado com cash; F1-09).
-- Tipos: `sales.ts` (`SaleItem`, `stockMovementsFor`).
-- Persistência: `LocalSaleRepository.confirm` (transação venda + estoque).
-- Backup: validação de `items` em `backup.ts`.
+- Tipos: `sales.ts` (`SaleItem`, `stockMovementsFor`, `refundStockMovementsFor`).
+- Persistência: `LocalSaleRepository.confirm`/`cancel` (transação venda + estoque + caixa).
+- Backup: validação de `items` e campos de cancelamento em `backup.ts`.
 - Acesso: `access.ts` e `/caixa`.
 
 ## Avoid Modifying
@@ -72,6 +72,10 @@ Não recriar página `/vendas`; ela redireciona para o Caixa. Não confirmar ven
 ### Alterar confirmação
 
 → SalesService + `LocalSaleRepository.confirm` + status/ações da UI.
+
+### Alterar cancelamento/estorno
+
+→ SalesService.cancel + `LocalSaleRepository.cancel` (devolve estoque via `refundStockMovementsFor` e cria `REFUND` no caixa) + form `.cancel-sale-form` em CashDeskPage + backup (campos de cancelamento).
 
 ### Alterar itens ou baixa de estoque
 

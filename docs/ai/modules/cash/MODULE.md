@@ -35,7 +35,7 @@ Sem store/hook. Estado temporário e tabs usam `useState`.
 
 ## Models
 
-`CashSession` (com `expectedBalance`, `closingBalance`, `difference`, `closedBy`, `closingNote`), `CashEntry` (com `paymentMethod?`, `reason?`, `author?`), `PaymentMethod` (`CASH`/`PIX`/`CARD` legado/`DEBIT`/`CREDIT`), `paymentMethodOptions` (opções de novos recebimentos), `CashMovementType` (`WITHDRAWAL`/`DEPOSIT`), `paymentMethodLabels`, `assertValidPaymentMethod`; Sale/WorkOrder são dependências. `cashTotals` centraliza o cálculo por centavos e expõe `byMethod` (regra em `src/domain/money.ts`).
+`CashSession` (com `expectedBalance`, `closingBalance`, `difference`, `closedBy`, `closingNote`), `CashEntry` (com `paymentMethod?`, `reason?`, `author?`), `CashEntryType` (`RECEIPT`/`WITHDRAWAL`/`DEPOSIT`/`REFUND`), `PaymentMethod` (`CASH`/`PIX`/`CARD` legado/`DEBIT`/`CREDIT`), `paymentMethodOptions` (opções de novos recebimentos), `CashMovementType` (`WITHDRAWAL`/`DEPOSIT`; `RECEIPT`/`REFUND` excluídos), `paymentMethodLabels`, `assertValidPaymentMethod`; Sale/WorkOrder são dependências. `cashTotals` centraliza o cálculo por centavos e expõe `byMethod` e `refunds` (regra em `src/domain/money.ts`).
 
 ## Permissions
 
@@ -74,6 +74,10 @@ Não recriar telas separadas de Venda/Recebimento. Não receber sem sessão aber
 ### Alterar sangria/suprimento
 
 → CashDeskPage (aba Sessão) + CashService.recordMovement + CashRepository.recordMovement; motivo é obrigatório e sangria não pode exceder o saldo esperado (verificado na transação com `cashTotals`).
+
+### Alterar estorno (cancelamento de venda paga)
+
+→ `SalesService.cancel` + `LocalSaleRepository.cancel` (transação venda+estoque+caixa; cria `CashEntry.REFUND`); exige caixa aberto quando há recebimento; UI na aba Vendas (`.cancel-sale-form`).
 
 ### Alterar fechamento
 

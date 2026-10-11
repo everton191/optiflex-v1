@@ -4,6 +4,16 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `9f0fdfc` — feat: sale cancellation with stock and cash refund (F4-18 estornos e cancelamentos)
+
+- `Sale` ganha `cancelReason?`/`cancelledAt?`/`cancelledBy?` (opcionais, sem bump de schema); `CashEntryType` inclui `REFUND` (excluído de `CashMovementType`); `CashTotals` ganha `refunds` (reduz o saldo esperado).
+- `SalesService.cancel(sale, reason, author?)`: motivo obrigatório (trim), venda já cancelada rejeitada; cotação cancela via `save` (sem estoque/caixa); confirmada cancela via `SaleRepository.cancel(sale, movements)` com movimentos `IN` (`refundStockMovementsFor`, reason `Estorno: <descrição>`).
+- `LocalSaleRepository.cancel`: transação `rw [sales, inventoryItems, inventoryMovements, cashEntries, cashSessions]` — recheca status dentro da transação (concorrência: 1 ok / 1 rejeitado), aplica `IN` via `applyStockMovement`, grava venda CANCELLED com auditoria; se houve recebimento exige caixa aberto ("Abra o caixa antes de registrar o estorno.") e cria `CashEntry.REFUND` (valor = soma dos RECEIPTs, motivo/autor da venda, método copiado apenas quando há um único método).
+- UI `/caixa` aba Vendas: botão "Cancelar" + form `.cancel-sale-form` com motivo (`sales.manage`); exibe motivo em vendas canceladas; aba Sessão mostra "Estornos" quando maior que zero; `cashEntryLabels.REFUND = "Estorno"`.
+- Backup: valida `REFUND` no enum de `cashEntries` e campos de cancelamento de `sale` (motivo não vazio, data válida, autor string).
+- Evidência: `npm.cmd test` **194/194** (21 arquivos; `sales-service.test.ts` +4, `sale-stock.test.ts` +5, `cash.test.ts` +1, `backup.test.ts` +1), build 0, tsc 0.
+- Card: F4-18/#75 → DONE (devolve estoque/dinheiro com rastro; fecha risco P1 da auditoria; libera F6-15).
+
 ### `7f1d6e4` — feat: require payment method on receipts and sum totals by method (F4-10 formas de pagamento)
 
 - `PaymentMethod` ganha `DEBIT`/`CREDIT` (rótulos Débito/Crédito); `CARD` permanece válido apenas como legado — novos recebimentos só oferecem `paymentMethodOptions` (`CASH`/`PIX`/`DEBIT`/`CREDIT`).

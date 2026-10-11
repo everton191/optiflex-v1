@@ -7,7 +7,7 @@ Nenhuma versão é liberada com apenas "build verde".
 
 - [ ] Branch e escopo revisados (`git log` da release, `git status` limpo).
 - [ ] Toda feature ligada a Issue com `status/done` e evidência de teste no card.
-- [ ] `npm.cmd test` → 100% verde (números atuais: 183/183 em `7f1d6e4`).
+- [ ] `npm.cmd test` → 100% verde (números atuais: 194/194 em `9f0fdfc`).
 - [ ] `npm.cmd run build` → exit 0.
 - [ ] `npx.cmd tsc -b --pretty false` → exit 0.
 - [ ] Login/sessão intactos (`/login`, `Sair`, expiração de 12 h) após mudanças em `access`/`providers`/`router`.
@@ -30,6 +30,7 @@ Nenhuma versão é liberada com apenas "build verde".
 - [ ] Medidas chegam à OS.
 - [ ] Pagamento baixa estoque em transação única.
 - [ ] Uma única OS criada (mesmo com dois operadores).
+- [ ] Cancelamento de venda paga devolve estoque, registra `REFUND` no caixa e reduz o saldo esperado.
 
 ## 3. Fluxo 3 — atendimento → orçamento → sair → reabrir → concluir
 

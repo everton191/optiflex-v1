@@ -11,6 +11,7 @@
 - Forma de pagamento obrigatória por recebimento (Dinheiro/PIX/Débito/Crédito; `CARD` legado) com select na aba Recebimentos (F1-06 + F4-10, `7f1d6e4`).
 - `cashTotals` expõe `byMethod` (recebimentos por forma, legados contados como Dinheiro); fechamento exibe o detalhamento por forma na aba Sessão.
 - Suprimento e sangria com motivo obrigatório e autor na aba Sessão (F4-16, `6a59f2b`).
+- Estorno de venda cancelada via `CashEntryType.REFUND` com motivo/autor da venda; `cashTotals.refunds` reduz o saldo esperado e aparece na aba Sessão quando maior que zero (F4-18, `9f0fdfc`).
 - Aba Vendas inclui seletor opcional de itens de estoque; a confirmação baixa o saldo em transação (Fase E).
 
 ## Current Decisions
@@ -24,19 +25,17 @@
 - `paymentStatus` é projeção atualizada em transação; a soma das entradas segue sendo a fonte de conferência.
 - `paymentMethod` é obrigatório em novos recebimentos (`CashService.receive` lança "Informe a forma de pagamento." sem método); entradas legadas sem forma continuam válidas no storage e são contadas como Dinheiro nos totais; valores fora de `paymentMethodLabels` são rejeitados por `assertValidPaymentMethod` e pelo backup.
 - `PaymentMethod` = `CASH`/`PIX`/`CARD`(legado)/`DEBIT`/`CREDIT`; novos recebimentos só oferecem `paymentMethodOptions` (sem `CARD`). Carnê (F4-13) e misto (F4-12) ficam para os cards próprios.
-- Sangria/suprimento usam `CashMovementType` (`RECEIPT` é rejeitado em `recordMovement`); motivo é obrigatório (trim); sangria maior que o saldo esperado é rejeitada na transação de `LocalCashRepository.recordMovement`.
+- Sangria/suprimento usam `CashMovementType` (`RECEIPT` e `REFUND` são rejeitados em `recordMovement`); motivo é obrigatório (trim); sangria maior que o saldo esperado é rejeitada na transação de `LocalCashRepository.recordMovement`.
 - `CashEntry.reason?`/`author?` são opcionais (sem bump de schema); backup valida `reason` (string não vazia quando presente) e `author` (string quando presente).
+- `REFUND` é criado apenas por `LocalSaleRepository.cancel` dentro da transação de cancelamento; exige sessão de caixa aberta quando a venda tem recebimentos; entradas legadas sem forma são reembolsadas sem `paymentMethod` (método só é copiado quando há um único método de recebimento).
 
 ## Known Problems
 
-- Estorno/cancelamento ainda não existem (F4-18).
 - Não há parcelas/carnê; pagamento parcial na tela recebe o saldo restante da venda.
-- Cancelamento de venda já recebida não é tratado.
 - `receivedSaleIds` foi removido; qualquer regressão deve ser verificada em `cash.test.ts`.
 
 ## Pending Work
 
-- Estorno controlado devolvendo estoque/dinheiro (F4-18).
 - Pagamentos parciais com método por parcela (F4-12).
 - Relatório/impressão do fechamento.
 
@@ -50,6 +49,7 @@
 
 ## Recent Structural Changes
 
+- F4-18 (`9f0fdfc`): `CashEntryType.REFUND`, `CashTotals.refunds`, estorno criado por `LocalSaleRepository.cancel` (transação com venda+estoque+caixa), exibição de Estornos na aba Sessão, backup valida `REFUND`.
 - F4-10 (`7f1d6e4`): `DEBIT`/`CREDIT` em `PaymentMethod`, `paymentMethodOptions`, `receive` exige forma, `cashTotals.byMethod`, detalhamento por forma no fechamento.
 - F4-16 (`6a59f2b`): `CashMovementType` + `CashEntry.reason?`/`author?`, `CashService.recordMovement`, `CashRepository.recordMovement` (transação com guarda de saldo), form na aba Sessão.
 - F1-06 (`b0f72d1`): `PaymentMethod` + `CashEntry.paymentMethod`, select na aba Recebimentos, backup valida valores.
@@ -65,4 +65,4 @@
 
 ## Next Likely Task
 
-Estornos/cancelamentos (F4-18).
+Pagamentos parciais (F4-12).
