@@ -1,7 +1,7 @@
 import { toCents } from "./money";
 
-export type CashEntryType = "RECEIPT" | "WITHDRAWAL" | "DEPOSIT";
-export type CashMovementType = Exclude<CashEntryType, "RECEIPT">;
+export type CashEntryType = "RECEIPT" | "WITHDRAWAL" | "DEPOSIT" | "REFUND";
+export type CashMovementType = Exclude<CashEntryType, "RECEIPT" | "REFUND">;
 export type PaymentMethod = "CASH" | "PIX" | "CARD" | "DEBIT" | "CREDIT";
 
 export const paymentMethodLabels: Record<PaymentMethod, string> = { CASH: "Dinheiro", PIX: "PIX", CARD: "Cartão", DEBIT: "Débito", CREDIT: "Crédito" };
@@ -44,6 +44,7 @@ export interface CashTotals {
   receipts: number;
   deposits: number;
   withdrawals: number;
+  refunds: number;
   expected: number;
   byMethod: Record<PaymentMethod, number>;
 }
@@ -54,6 +55,7 @@ export function cashTotals(openingBalance: number, entries: readonly CashEntry[]
   let receipts = 0;
   let deposits = 0;
   let withdrawals = 0;
+  let refunds = 0;
   const byMethod = emptyMethodTotals();
   for (const entry of entries) {
     const amount = toCents(entry.amount);
@@ -62,10 +64,11 @@ export function cashTotals(openingBalance: number, entries: readonly CashEntry[]
       byMethod[entry.paymentMethod ?? "CASH"] += amount;
     }
     else if (entry.type === "DEPOSIT") deposits += amount;
+    else if (entry.type === "REFUND") refunds += amount;
     else withdrawals += amount;
   }
   for (const method of Object.keys(byMethod) as PaymentMethod[]) byMethod[method] /= 100;
-  return { receipts: receipts / 100, deposits: deposits / 100, withdrawals: withdrawals / 100, expected: (toCents(openingBalance) + receipts + deposits - withdrawals) / 100, byMethod };
+  return { receipts: receipts / 100, deposits: deposits / 100, withdrawals: withdrawals / 100, refunds: refunds / 100, expected: (toCents(openingBalance) + receipts + deposits - withdrawals - refunds) / 100, byMethod };
 }
 
 export function paidCents(entries: readonly CashEntry[], saleId: string): number {

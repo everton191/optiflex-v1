@@ -52,16 +52,19 @@ export function validateBackup(value: unknown): BackupSnapshot {
         for (const field of ["expectedBalance", "closingBalance"]) if (row[field] !== undefined && (typeof row[field] !== "number" || !Number.isFinite(row[field]) || (row[field] as number) < 0)) throw invalid();
         if (row.difference !== undefined && (typeof row.difference !== "number" || !Number.isFinite(row.difference))) throw invalid();
       }
-      for (const field of ["cpf", "phone", "birthDate", "email", "receptionNotes", "closedAt", "closedBy", "closingNote", "code", "author", "updatedAt", "updatedBy", "dueAt", "notes"]) if (row[field] !== undefined && typeof row[field] !== "string") throw invalid();
+      for (const field of ["cpf", "phone", "birthDate", "email", "receptionNotes", "closedAt", "closedBy", "closingNote", "code", "author", "updatedAt", "updatedBy", "dueAt", "notes", "cancelledBy"]) if (row[field] !== undefined && typeof row[field] !== "string") throw invalid();
       if (name === "clinicalRecords" || name === "clinicalVersions") {
         if (!Array.isArray(row.attachments) || row.attachments.some((item) => !object(item) || typeof item.id !== "string" || typeof item.name !== "string" || typeof item.mimeType !== "string" || typeof item.size !== "number" || typeof item.createdAt !== "string")) throw invalid();
         for (const field of ["revision", "version"]) if (row[field] !== undefined && (!Number.isSafeInteger(row[field]) || (row[field] as number) < (field === "version" ? 1 : 0))) throw invalid();
         for (const field of ["author", "amendmentReason", "finalizedAt"]) if (row[field] !== undefined && typeof row[field] !== "string") throw invalid();
       }
       if (name === "attachments" && (typeof row.content !== "string" || !row.content || row.content.length % 4 !== 0 || !/^[A-Za-z0-9+/]+={0,2}$/.test(row.content))) throw invalid();
-      if (name === "workOrders") {
+      if (name === "sales") {
         if (row.cancelReason !== undefined && (typeof row.cancelReason !== "string" || !row.cancelReason.trim())) throw invalid();
-        if (row.events !== undefined) {
+        if (row.cancelledAt !== undefined && (typeof row.cancelledAt !== "string" || !Number.isFinite(Date.parse(row.cancelledAt)))) throw invalid();
+      }
+      if (name === "workOrders") {
+        if (row.cancelReason !== undefined && (typeof row.cancelReason !== "string" || !row.cancelReason.trim())) throw invalid();        if (row.events !== undefined) {
           if (!Array.isArray(row.events)) throw invalid();
           const eventIds = new Set<string>();
           for (const event of row.events) {
@@ -97,7 +100,7 @@ export function validateBackup(value: unknown): BackupSnapshot {
     if (row.id !== `${row.attendanceId}:${row.version ?? 1}` || !Number.isFinite(Date.parse(row.finalizedAt as string))) throw invalid();
   }
   const enums: Partial<Record<BackupTable, [string, string[]]>> = {
-    attendances: ["status", ["DRAFT", "WAITING", "IN_PROGRESS", "FINISHED", "CANCELLED"]], sales: ["status", ["QUOTE", "CONFIRMED", "CANCELLED"]], workOrders: ["status", ["OPEN", "IN_PRODUCTION", "READY", "DELIVERED", "CANCELLED"]], inventoryMovements: ["type", ["IN", "OUT", "ADJUSTMENT"]], cashEntries: ["type", ["RECEIPT", "WITHDRAWAL", "DEPOSIT"]],
+    attendances: ["status", ["DRAFT", "WAITING", "IN_PROGRESS", "FINISHED", "CANCELLED"]], sales: ["status", ["QUOTE", "CONFIRMED", "CANCELLED"]], workOrders: ["status", ["OPEN", "IN_PRODUCTION", "READY", "DELIVERED", "CANCELLED"]], inventoryMovements: ["type", ["IN", "OUT", "ADJUSTMENT"]], cashEntries: ["type", ["RECEIPT", "WITHDRAWAL", "DEPOSIT", "REFUND"]],
   };
   for (const name of backupTables) {
     const rule = enums[name];

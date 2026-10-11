@@ -166,6 +166,32 @@ export class LocalSaleRepository implements SaleRepository {
       await database.sales.put({ ...current, status: "CONFIRMED" });
     });
   }
+  async cancel(sale: Sale, movements: readonly InventoryMovement[]): Promise<void> {
+    assertRecordAccess(sale);
+    return database.transaction("rw", database.sales, database.inventoryItems, database.inventoryMovements, database.cashEntries, database.cashSessions, async () => {
+      const current = await database.sales.get(sale.id);
+      if (!current || current.storeId !== sale.storeId) throw new Error("Venda não encontrada nesta loja.");
+      assertRecordAccess(current);
+      if (current.status === "CANCELLED") throw new Error("Esta venda já foi cancelada.");
+      if (current.status !== "CONFIRMED") throw new Error("Somente vendas confirmadas podem ser canceladas.");
+      const entries = await database.cashEntries.where("saleId").equals(current.id).toArray();
+      const paid = entries.reduce((total, entry) => entry.type === "RECEIPT" ? total + Math.round(entry.amount * 100) : total, 0);
+      let refund: CashEntry | undefined;
+      if (paid > 0) {
+        const session = await database.cashSessions.where("storeId").equals(current.storeId).filter((candidate) => !candidate.closedAt).first();
+        if (!session) throw new Error("Abra o caixa antes de registrar o estorno.");
+        assertRecordAccess(session);
+        const receiptMethods = [...new Set(entries.filter((entry) => entry.type === "RECEIPT" && entry.paymentMethod).map((entry) => entry.paymentMethod))];
+        refund = { id: `cash-entry-${crypto.randomUUID()}`, sessionId: session.id, storeId: current.storeId, saleId: current.id, type: "REFUND", amount: paid / 100, paymentMethod: receiptMethods.length === 1 ? receiptMethods[0] : undefined, reason: sale.cancelReason, author: sale.cancelledBy, createdAt: new Date().toISOString() };
+      }
+      for (const movement of movements) {
+        if (movement.storeId !== sale.storeId || movement.type !== "IN") throw new Error("Movimentação de estorno incompatível com a venda.");
+        await applyStockMovement(movement);
+      }
+      await database.sales.put({ ...current, status: "CANCELLED", cancelReason: sale.cancelReason, cancelledAt: sale.cancelledAt, cancelledBy: sale.cancelledBy });
+      if (refund) await database.cashEntries.add(refund);
+    });
+  }
 }
 
 export class LocalWorkOrderRepository implements WorkOrderRepository {

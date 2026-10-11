@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SalesService } from "./sales-service";
 import type { Sale, SaleItem } from "./sales";
 
-const repository = { listByStore: vi.fn(), get: vi.fn(), save: vi.fn(), confirm: vi.fn() };
+const repository = { listByStore: vi.fn(), get: vi.fn(), save: vi.fn(), confirm: vi.fn(), cancel: vi.fn() };
 const service = new SalesService(repository);
 const item = (inventoryItemId: string, quantity: number, unitPrice: number): SaleItem => ({ inventoryItemId, name: `Produto ${inventoryItemId}`, quantity, unitPrice });
 const quote = (overrides: Partial<Sale> = {}): Sale => ({ id: "sale-1", customerId: "customer-1", storeId: "store-centro", status: "QUOTE", paymentStatus: "PENDING", description: "Armação", total: 300, createdAt: "2026-01-01T10:00:00.000Z", ...overrides });
@@ -87,5 +87,41 @@ describe("confirmation with stock deduction", () => {
     await expect(service.confirm(quote({ items: [item("i1", -1, 10)] }))).rejects.toThrow("Valores da venda inválidos");
     await expect(service.confirm(quote({ items: [item("i1", 1, Number.NaN)] }))).rejects.toThrow("Valores da venda inválidos");
     expect(repository.confirm).not.toHaveBeenCalled();
+  });
+});
+
+describe("sale cancellation", () => {
+  it("requires a reason and rejects already cancelled sales", async () => {
+    await expect(service.cancel(quote(), "  ")).rejects.toThrow("Informe o motivo do cancelamento.");
+    await expect(service.cancel(quote({ status: "CANCELLED" }), "Desistiu")).rejects.toThrow("já foi cancelada");
+    expect(repository.save).not.toHaveBeenCalled();
+    expect(repository.cancel).not.toHaveBeenCalled();
+  });
+
+  it("cancels a quote without stock or cash movements", async () => {
+    repository.save.mockResolvedValue(undefined);
+    const cancelled = await service.cancel(quote(), "Desistiu", "Ana");
+    expect(cancelled).toMatchObject({ status: "CANCELLED", cancelReason: "Desistiu", cancelledBy: "Ana" });
+    expect(cancelled.cancelledAt).toBeTruthy();
+    expect(repository.save).toHaveBeenCalledOnce();
+    expect(repository.cancel).not.toHaveBeenCalled();
+  });
+
+  it("cancels a confirmed sale with incoming movements for the repository", async () => {
+    repository.cancel.mockResolvedValue(undefined);
+    const cancelled = await service.cancel(quote({ status: "CONFIRMED", items: [item("i1", 2, 50)] }), "Cliente devolveu", "Bia");
+    expect(cancelled.status).toBe("CANCELLED");
+    expect(repository.cancel).toHaveBeenCalledOnce();
+    const [passedSale, movements] = repository.cancel.mock.calls[0];
+    expect(passedSale).toMatchObject({ status: "CANCELLED", cancelReason: "Cliente devolveu", cancelledBy: "Bia" });
+    expect(movements).toHaveLength(1);
+    expect(movements[0]).toMatchObject({ itemId: "i1", storeId: "store-centro", type: "IN", quantity: 2, reason: "Estorno: Armação" });
+  });
+
+  it("cancels a paid service sale without stock movements", async () => {
+    repository.cancel.mockResolvedValue(undefined);
+    const cancelled = await service.cancel(quote({ status: "CONFIRMED" }), "Erro no valor");
+    expect(cancelled.paymentStatus).toBe("PENDING");
+    expect(repository.cancel.mock.calls[0][1]).toEqual([]);
   });
 });

@@ -145,4 +145,19 @@ describe("encrypted backup and transactional restore", () => {
     const badLink = structuredClone(snapshot); saleItems(badLink.tables.sales[0])[0].inventoryItemId = "missing-item";
     expect(() => validateBackup(badLink)).toThrow("inválido");
   });
+
+  it("accepts cancelled sales with audit fields and refund entries, rejecting invalid values", async () => {
+    const snapshot = await repository.snapshot();
+    snapshot.tables.customers.push({ id: "customer-cancel", name: "Cliente Cancel", createdAt: "2026-01-01T09:00:00.000Z" });
+    snapshot.tables.sales.push({ id: "sale-cancelled", customerId: "customer-cancel", storeId: "store-centro", status: "CANCELLED", description: "Armação", total: 300, createdAt: "2026-01-01T11:00:00.000Z", cancelReason: "Cliente devolveu", cancelledAt: "2026-01-01T15:00:00.000Z", cancelledBy: "Ana" });
+    snapshot.tables.cashSessions.push({ id: "cash-refund", storeId: "store-centro", openedAt: "2026-01-01T10:00:00.000Z", openingBalance: 0 });
+    snapshot.tables.cashEntries.push({ id: "entry-refund", sessionId: "cash-refund", storeId: "store-centro", saleId: "sale-cancelled", type: "REFUND", amount: 300, paymentMethod: "CASH", reason: "Cliente devolveu", author: "Ana", createdAt: "2026-01-01T15:00:00.000Z" });
+    expect(() => validateBackup(snapshot)).not.toThrow();
+    const blankReason = structuredClone(snapshot); blankReason.tables.sales[0].cancelReason = "   ";
+    expect(() => validateBackup(blankReason)).toThrow("inválido");
+    const badCancelledAt = structuredClone(snapshot); badCancelledAt.tables.sales[0].cancelledAt = "não é data" as never;
+    expect(() => validateBackup(badCancelledAt)).toThrow("inválido");
+    const badType = structuredClone(snapshot); badType.tables.cashEntries[0].type = "CHARGEBACK" as never;
+    expect(() => validateBackup(badType)).toThrow("inválido");
+  });
 });

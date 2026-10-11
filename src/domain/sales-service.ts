@@ -1,5 +1,5 @@
 import type { Sale, SaleItem } from "./sales";
-import { itemsTotalCents, stockMovementsFor } from "./sales";
+import { itemsTotalCents, refundStockMovementsFor, stockMovementsFor } from "./sales";
 import type { SaleRepository } from "./repositories";
 import { fromCents, requireMoney, toCents } from "./money";
 
@@ -35,5 +35,21 @@ export class SalesService {
     const movements = stockMovementsFor(sale);
     await this.repository.confirm({ ...sale, status: "CONFIRMED" }, movements);
     return { ...sale, status: "CONFIRMED" };
+  }
+
+  async cancel(sale: Sale, reason: string, author?: string): Promise<Sale> {
+    const motive = reason?.trim();
+    if (!motive) throw new Error("Informe o motivo do cancelamento.");
+    if (sale.status === "CANCELLED") throw new Error("Esta venda já foi cancelada.");
+    const cancelledAt = new Date().toISOString();
+    const cancelledBy = author?.trim() || undefined;
+    if (sale.status === "QUOTE") {
+      const cancelled: Sale = { ...sale, status: "CANCELLED", cancelReason: motive, cancelledAt, cancelledBy };
+      await this.repository.save(cancelled);
+      return cancelled;
+    }
+    const movements = refundStockMovementsFor(sale);
+    await this.repository.cancel({ ...sale, status: "CANCELLED", cancelReason: motive, cancelledAt, cancelledBy }, movements);
+    return { ...sale, status: "CANCELLED", cancelReason: motive, cancelledAt, cancelledBy };
   }
 }

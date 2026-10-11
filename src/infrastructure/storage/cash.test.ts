@@ -122,4 +122,11 @@ describe("cash session flow", () => {
     const closed = await service.close("store-centro", 120);
     expect(closed).toMatchObject({ expectedBalance: 120, difference: 0 });
   });
+
+  it("rejects receipt and refund as manual movements", async () => {
+    await database.open();
+    await service.open("store-centro", 100);
+    await expect(service.recordMovement("store-centro", "RECEIPT" as never, 10, "Recebido")).rejects.toThrow();
+    await expect(service.recordMovement("store-centro", "REFUND" as never, 10, "Estorno")).rejects.toThrow();
+  });
 });

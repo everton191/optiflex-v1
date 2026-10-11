@@ -20,6 +20,9 @@ export interface Sale {
   description: string;
   total: number;
   items?: SaleItem[];
+  cancelReason?: string;
+  cancelledAt?: string;
+  cancelledBy?: string;
   createdAt: string;
 }
 
@@ -39,6 +42,18 @@ export function stockMovementsFor(sale: Sale): InventoryMovement[] {
     type: "OUT" as const,
     quantity: item.quantity,
     reason: `Venda: ${sale.description}`,
+    createdAt: new Date().toISOString(),
+  }));
+}
+
+export function refundStockMovementsFor(sale: Sale): InventoryMovement[] {
+  return (sale.items ?? []).map((item) => ({
+    id: `movement-${crypto.randomUUID()}`,
+    itemId: item.inventoryItemId,
+    storeId: sale.storeId,
+    type: "IN" as const,
+    quantity: item.quantity,
+    reason: `Estorno: ${sale.description}`,
     createdAt: new Date().toISOString(),
   }));
 }

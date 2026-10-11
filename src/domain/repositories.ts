@@ -53,6 +53,7 @@ export interface SaleRepository {
   get(id: string): Promise<Sale | undefined>;
   save(sale: Sale): Promise<void>;
   confirm(sale: Sale, movements: readonly InventoryMovement[]): Promise<void>;
+  cancel(sale: Sale, movements: readonly InventoryMovement[]): Promise<void>;
 }
 
 export interface WorkOrderRepository {
