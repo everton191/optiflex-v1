@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAppContext, useSession } from "./providers";
 import { Button, Card, Input } from "../design-system/components";
-import { hasPermission, roleDefinitions, sessionUserState } from "../domain/access";
+import { allPermissions, hasPermission, roleDefinitions, sessionUserState } from "../domain/access";
 import type { RoleKey, User } from "../domain/access";
 import type { Attendance, Customer } from "../domain/customer";
 import { ReceptionService } from "../domain/reception-service";
@@ -131,8 +131,12 @@ export function UsersPage() {
   </div>;
 }
 
+function PermissionsMatrix() {
+  return <div className="matrix-wrap"><table className="permissions-matrix"><caption className="help-text">Matriz de permissões — • = permitido para o perfil.</caption><thead><tr><th scope="col">Permissão</th>{roleDefinitions.map((role) => <th scope="col" key={role.key}>{role.label}<br /><small>{scopeLabels[role.scope]}</small></th>)}</tr></thead><tbody>{allPermissions.map((permission) => <tr key={permission}><th scope="row">{permission}</th>{roleDefinitions.map((role) => <td key={role.key}>{hasPermission(role.key, permission) ? "•" : "·"}</td>)}</tr>)}</tbody></table></div>;
+}
+
 export function ProfilesPage() {
-  return <div className="page"><p className="eyebrow">Administração</p><h1>Perfis de acesso</h1><p className="page-intro">Cada perfil libera somente as áreas necessárias para o trabalho da pessoa.</p><div className="list-card">{roleDefinitions.map((role) => <article className="list-row role-row" key={role.key}><div><strong>{role.label}</strong><span>{roleDescriptions[role.key]}</span></div><small>{scopeLabels[role.scope]}</small></article>)}</div></div>;
+  return <div className="page"><p className="eyebrow">Administração</p><h1>Perfis de acesso</h1><p className="page-intro">Cada perfil libera somente as áreas necessárias para o trabalho da pessoa. A troca de função/lojas de um usuário em Usuários reflete no menu e nas rotas sem recarregar.</p><div className="list-card">{roleDefinitions.map((role) => <article className="list-row role-row" key={role.key}><div><strong>{role.label}</strong><span>{roleDescriptions[role.key]}</span></div><small>{scopeLabels[role.scope]}</small></article>)}</div><h2 className="section-title">Matriz de permissões</h2><PermissionsMatrix /></div>;
 }
 
 export function CustomersPage() {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { isSessionExpired, hasPermission, sessionUserState } from "./access";
-import type { User } from "./access";
+import { allPermissions, isSessionExpired, hasPermission, roleDefinitions, sessionUserState, syncSessionRole } from "./access";
+import type { LocalSession, User } from "./access";
 
 describe("clinical professional permission model", () => {
   it("grants clinical workspace access without relying on a profession label", () => {
@@ -72,6 +72,41 @@ describe("inactive users do not enter", () => {
   it("allows active or unidentified sessions", () => {
     expect(sessionUserState(users, { id: "current", userName: "Beto", role: "CASHIER" })).toBe("active");
     expect(sessionUserState(users, { id: "current", userName: "Zeca", role: "RECEPTIONIST" })).toBe("unknown");
+  });
+});
+
+describe("permission matrix integrity", () => {
+  it("grants OWNER every permission and keeps every role inside the known list", () => {
+    for (const permission of allPermissions) expect(hasPermission("OWNER", permission)).toBe(true);
+    for (const definition of roleDefinitions) {
+      for (const permission of definition.permissions) expect(allPermissions).toContain(permission);
+      expect(new Set(allPermissions.filter((permission) => hasPermission(definition.key, permission)))).toEqual(new Set(definition.permissions));
+    }
+  });
+
+  it("reduces FINANCE and AUDITOR to read-only operations", () => {
+    const writable = allPermissions.filter((permission) => permission.endsWith(".manage"));
+    expect(writable.length).toBeGreaterThan(0);
+    for (const permission of writable) {
+      expect(hasPermission("FINANCE", permission)).toBe(false);
+      expect(hasPermission("AUDITOR", permission)).toBe(false);
+    }
+  });
+});
+
+describe("syncSessionRole", () => {
+  const users: User[] = [{ id: "user-1", name: "Ana", email: "ana@opticore.local", role: "CASHIER", scope: "STORE", storeIds: ["store-centro"], active: true }];
+
+  it("adopts the latest role from the users list without reload", () => {
+    const session: LocalSession = { id: "current", userName: "Ana", role: "SELLER", issuedAt: "2026-10-08T10:00:00.000Z" };
+    expect(syncSessionRole(session, users)).toMatchObject({ userName: "Ana", role: "CASHIER", issuedAt: session.issuedAt });
+  });
+
+  it("keeps the session untouched when the role matches or the user is unknown", () => {
+    const same: LocalSession = { id: "current", userName: "Ana", role: "CASHIER" };
+    expect(syncSessionRole(same, users)).toBe(same);
+    const unknown: LocalSession = { id: "current", userName: "Zeca", role: "SELLER" };
+    expect(syncSessionRole(unknown, users)).toBe(unknown);
   });
 });
 

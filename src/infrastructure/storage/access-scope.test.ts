@@ -4,7 +4,7 @@ import { setAccessContext, type AccessContext } from "../../domain/access-contex
 import type { Attendance } from "../../domain/customer";
 import type { Sale } from "../../domain/sales";
 import { database } from "./database";
-import { LocalAttendanceRepository, LocalSaleRepository } from "./local-repositories";
+import { LocalAttendanceRepository, LocalCashRepository, LocalInventoryRepository, LocalSaleRepository } from "./local-repositories";
 
 const attendances = new LocalAttendanceRepository();
 const sales = new LocalSaleRepository();
@@ -24,6 +24,18 @@ describe("repository enforcement with an active access context", () => {
     await expect(sales.listByStore("store-shopping")).rejects.toThrow("Acesso negado");
     await expect(attendances.save(attendance("att-centro", "store-centro"))).resolves.toBeUndefined();
     await expect(attendances.listByStore("store-centro")).resolves.toHaveLength(1);
+  });
+
+  it("denies cash register and inventory access outside the profile's stores", async () => {
+    const cash = new LocalCashRepository();
+    const inventory = new LocalInventoryRepository();
+    await expect(cash.current("store-shopping")).rejects.toThrow("Acesso negado");
+    await expect(cash.listSessions("store-shopping")).rejects.toThrow("Acesso negado");
+    await expect(cash.listEntries("store-shopping")).rejects.toThrow("Acesso negado");
+    await expect(inventory.listByStore("store-shopping")).rejects.toThrow("Acesso negado");
+    await expect(inventory.listMovements("store-shopping")).rejects.toThrow("Acesso negado");
+    await expect(cash.current("store-centro")).resolves.toBeUndefined();
+    await expect(inventory.listByStore("store-centro")).resolves.toEqual([]);
   });
 
   it("filters the customer history to accessible stores", async () => {

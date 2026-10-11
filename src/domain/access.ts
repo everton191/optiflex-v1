@@ -79,6 +79,30 @@ export interface RoleDefinition {
   permissions: readonly Permission[];
 }
 
+export const allPermissions: readonly Permission[] = [
+  "dashboard.view",
+  "stores.read",
+  "stores.manage",
+  "stores.select",
+  "users.read",
+  "settings.manage",
+  "users.manage",
+  "roles.read",
+  "roles.manage",
+  "customers.read",
+  "customers.manage",
+  "attendance.read",
+  "attendance.create",
+  "attendance.queue.read",
+  "clinical.workspace.access",
+  "sales.read",
+  "sales.manage",
+  "cash.read",
+  "cash.manage",
+  "inventory.read",
+  "inventory.manage"
+];
+
 export const rolePermissions: Readonly<Record<RoleKey, readonly Permission[]>> = {
   OWNER: ["dashboard.view", "stores.read", "stores.manage", "stores.select", "users.read", "users.manage", "settings.manage", "roles.read", "roles.manage", "customers.read", "customers.manage", "attendance.read", "attendance.create", "attendance.queue.read", "clinical.workspace.access", "sales.read", "sales.manage", "cash.read", "cash.manage", "inventory.read", "inventory.manage"],
   NETWORK_ADMINISTRATOR: ["dashboard.view", "stores.read", "stores.manage", "stores.select", "users.read", "users.manage", "settings.manage", "roles.read", "roles.manage", "customers.read", "customers.manage", "attendance.read", "attendance.create", "attendance.queue.read", "sales.read", "sales.manage", "cash.read", "cash.manage", "inventory.read", "inventory.manage"],
@@ -107,6 +131,12 @@ export const roleDefinitions: readonly RoleDefinition[] = [
 
 export function hasPermission(role: RoleKey, permission: Permission): boolean {
   return rolePermissions[role].includes(permission);
+}
+
+export function syncSessionRole(session: LocalSession, users: readonly User[]): LocalSession {
+  const user = users.find((candidate) => candidate.name === session.userName);
+  if (!user || user.role === session.role) return session;
+  return { ...session, role: user.role };
 }
 
 export type SessionUserState = "active" | "inactive" | "unknown";

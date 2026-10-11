@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { LocalSession, OrganizationSettings, Store, User } from "../domain/access";
-import { isSessionExpired } from "../domain/access";
+import { isSessionExpired, syncSessionRole } from "../domain/access";
 import { buildAccessContext, canAccessStore, setAccessContext } from "../domain/access-context";
 import { AdministrationService, type UserInput } from "../domain/administration-service";
 import { AuthenticationService } from "../domain/authentication-service";
@@ -51,6 +51,16 @@ export function AppProviders({ children }: { children: ReactNode }) {
   }, [session, users, currentStoreId]);
 
   useEffect(() => {
+    if (!session || !users.length || !stores.length || !currentStoreId) return;
+    if (canAccessStore(buildAccessContext(session, users, currentStoreId), currentStoreId)) return;
+    const fallback = stores.find((store) => store.active && canAccessStore(buildAccessContext(session, users, store.id), store.id));
+    if (!fallback) return;
+    let active = true;
+    void administrationService.selectStore(fallback.id).then(() => { if (active) setCurrentStoreId(fallback.id); }).catch(() => { /* reavaliado quando users/session mudarem */ });
+    return () => { active = false; };
+  }, [session, users, stores, currentStoreId]);
+
+  useEffect(() => {
     let active = true;
     setLoadError(false);
     setIsReady(false);
@@ -94,7 +104,17 @@ export function AppProviders({ children }: { children: ReactNode }) {
     if (session && !canAccessStore(buildAccessContext(session, users, storeId), storeId)) throw new Error("Você não tem acesso a esta loja.");
     await administrationService.selectStore(storeId); setCurrentStoreId(storeId);
   }
-  async function refreshUsers() { setUsers(await administrationService.listUsers()); }
+  async function refreshUsers() {
+    const next = await administrationService.listUsers();
+    setUsers(next);
+    setSession((current) => {
+      if (!current) return current;
+      const synced = syncSessionRole(current, next);
+      if (synced === current) return current;
+      void sessionRepository.save(synced);
+      return synced;
+    });
+  }
   async function createUser(input: UserInput) { const user = await administrationService.createUser(input); await refreshUsers(); return user; }
   async function updateUser(id: string, input: UserInput) { const user = await administrationService.updateUser(id, input); await refreshUsers(); return user; }
   async function setUserActive(id: string, active: boolean) { const user = await administrationService.setUserActive(id, active, session?.userName); await refreshUsers(); return user; }
