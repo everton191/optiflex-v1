@@ -3,7 +3,7 @@ import { CashService } from "./cash-service";
 import type { CashEntry, CashSession } from "./cash";
 import type { Sale } from "./sales";
 
-const repository = { current: vi.fn(), listSessions: vi.fn(), listEntries: vi.fn(), openSession: vi.fn(), recordReceipt: vi.fn(), closeSession: vi.fn() };
+const repository = { current: vi.fn(), listSessions: vi.fn(), listEntries: vi.fn(), openSession: vi.fn(), recordReceipt: vi.fn(), recordMovement: vi.fn(), closeSession: vi.fn() };
 const sales = { get: vi.fn(), listByStore: vi.fn(), save: vi.fn(), confirm: vi.fn() };
 const service = new CashService(repository, sales);
 const activeSession: CashSession = { id: "cash-1", storeId: "store-centro", openedAt: "2026-01-01T10:00:00.000Z", openingBalance: 100 };
@@ -87,6 +87,32 @@ describe("cash receipts", () => {
     repository.recordReceipt.mockImplementation(async (entry: CashEntry) => entry);
     const entry = await service.receive("store-centro", "sale-1", 100);
     expect(entry.paymentMethod).toBeUndefined();
+  });
+});
+
+describe("cash movements", () => {
+  it("records a deposit and a withdrawal with reason and author", async () => {
+    repository.current.mockResolvedValue(activeSession);
+    repository.recordMovement.mockImplementation(async (entry: CashEntry) => entry);
+    const deposit = await service.recordMovement("store-centro", "DEPOSIT", 50, "  Troco do banco  ", "  Operadora  ");
+    expect(deposit).toMatchObject({ type: "DEPOSIT", amount: 50, reason: "Troco do banco", author: "Operadora", sessionId: "cash-1", storeId: "store-centro" });
+    const withdrawal = await service.recordMovement("store-centro", "WITHDRAWAL", 20, "Pagamento fornecedor");
+    expect(withdrawal).toMatchObject({ type: "WITHDRAWAL", reason: "Pagamento fornecedor" });
+    expect(withdrawal.author).toBeUndefined();
+    expect(repository.recordMovement).toHaveBeenCalledTimes(2);
+  });
+
+  it("rejects an invalid type, amount, reason or closed session", async () => {
+    await expect(service.recordMovement("store-centro", "RECEIPT" as never, 10, "Motivo")).rejects.toThrow("Tipo de movimentação inválido.");
+    await expect(service.recordMovement(" ", "WITHDRAWAL", 10, "Motivo")).rejects.toThrow("Selecione uma loja");
+    await expect(service.recordMovement("store-centro", "WITHDRAWAL", 0, "Motivo")).rejects.toThrow("Informe um valor válido.");
+    await expect(service.recordMovement("store-centro", "WITHDRAWAL", Number.NaN, "Motivo")).rejects.toThrow("Informe um valor válido.");
+    await expect(service.recordMovement("store-centro", "WITHDRAWAL", Number.POSITIVE_INFINITY, "Motivo")).rejects.toThrow("Informe um valor válido.");
+    await expect(service.recordMovement("store-centro", "WITHDRAWAL", 10, "   ")).rejects.toThrow("Informe o motivo da movimentação.");
+    expect(repository.current).not.toHaveBeenCalled();
+    repository.current.mockResolvedValue(undefined);
+    await expect(service.recordMovement("store-centro", "WITHDRAWAL", 10, "Motivo")).rejects.toThrow("Abra o caixa antes de registrar movimentações.");
+    expect(repository.recordMovement).not.toHaveBeenCalled();
   });
 });
 

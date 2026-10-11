@@ -1,6 +1,7 @@
 import { toCents } from "./money";
 
 export type CashEntryType = "RECEIPT" | "WITHDRAWAL" | "DEPOSIT";
+export type CashMovementType = Exclude<CashEntryType, "RECEIPT">;
 export type PaymentMethod = "CASH" | "PIX" | "CARD";
 
 export const paymentMethodLabels: Record<PaymentMethod, string> = { CASH: "Dinheiro", PIX: "PIX", CARD: "Cartão" };
@@ -32,6 +33,8 @@ export interface CashEntry {
   type: CashEntryType;
   amount: number;
   paymentMethod?: PaymentMethod;
+  reason?: string;
+  author?: string;
   createdAt: string;
 }
 

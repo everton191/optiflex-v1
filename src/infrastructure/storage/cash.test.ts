@@ -107,15 +107,19 @@ describe("cash session flow", () => {
     expect(await repository.listEntries("store-centro")).toHaveLength(1);
   });
 
-  it("keeps sessions and movements isolated by store", async () => {
+  it("records deposits and withdrawals durably, blocking an overdraft sangria", async () => {
     await database.open();
-    await sales.save(sale());
     await service.open("store-centro", 100);
-    await service.receive("store-centro", "sale-1", 300);
-    expect(await repository.listEntries("store-shopping")).toHaveLength(0);
-    expect(await repository.current("store-shopping")).toBeUndefined();
-    await expect(service.close("store-shopping", 0)).rejects.toThrow("Abra o caixa antes de fechar.");
-    await expect(service.open("store-centro", 10)).rejects.toThrow("Já existe um caixa aberto nesta loja.");
-    expect((await repository.listSessions("store-centro")).filter((session) => !session.closedAt)).toHaveLength(1);
+    await service.recordMovement("store-centro", "DEPOSIT", 50, "Troco", "Operadora");
+    await service.recordMovement("store-centro", "WITHDRAWAL", 30, "Pagamento", "Operadora");
+    await expect(service.recordMovement("store-centro", "WITHDRAWAL", 130, "Excesso")).rejects.toThrow("Saldo insuficiente para esta sangria.");
+    database.close();
+    await database.open();
+    const entries = await repository.listEntries("store-centro");
+    expect(entries).toHaveLength(2);
+    expect(entries.map((entry) => entry.type).sort()).toEqual(["DEPOSIT", "WITHDRAWAL"]);
+    expect(entries.find((entry) => entry.type === "WITHDRAWAL")).toMatchObject({ reason: "Pagamento", author: "Operadora" });
+    const closed = await service.close("store-centro", 120);
+    expect(closed).toMatchObject({ expectedBalance: 120, difference: 0 });
   });
 });

@@ -83,5 +83,6 @@ export interface CashRepository {
   listEntries(storeId: string): Promise<CashEntry[]>;
   openSession(session: CashSession): Promise<CashSession>;
   recordReceipt(entry: CashEntry): Promise<CashEntry>;
+  recordMovement(entry: CashEntry): Promise<CashEntry>;
   closeSession(storeId: string, input: CashCloseInput): Promise<CashSession>;
 }

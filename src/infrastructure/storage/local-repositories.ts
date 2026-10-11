@@ -284,6 +284,19 @@ export class LocalCashRepository implements CashRepository {
       return entry;
     });
   }
+  async recordMovement(entry: CashEntry): Promise<CashEntry> {
+    assertRecordAccess(entry);
+    return database.transaction("rw", database.cashSessions, database.cashEntries, async () => {
+      const session = await database.cashSessions.get(entry.sessionId);
+      if (!session || session.storeId !== entry.storeId || session.closedAt) throw new Error("Abra o caixa antes de registrar movimentações.");
+      assertRecordAccess(session);
+      const entries = await database.cashEntries.where("sessionId").equals(session.id).toArray();
+      const expected = cashTotals(session.openingBalance, entries).expected;
+      if (entry.type === "WITHDRAWAL" && Math.round(entry.amount * 100) > Math.round(expected * 100)) throw new Error("Saldo insuficiente para esta sangria.");
+      await database.cashEntries.add(entry);
+      return entry;
+    });
+  }
   async closeSession(storeId: string, input: CashCloseInput): Promise<CashSession> {
     assertStoreAccess(storeId);
     return database.transaction("rw", database.cashSessions, database.cashEntries, async () => {

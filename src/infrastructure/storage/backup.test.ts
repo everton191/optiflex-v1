@@ -123,6 +123,11 @@ describe("encrypted backup and transactional restore", () => {
     expect(() => validateBackup(badPrice)).toThrow("inválido");
     const badCost = structuredClone(snapshot); badCost.tables.inventoryItems[0].cost = Number.NaN;
     expect(() => validateBackup(badCost)).toThrow("inválido");
+    const withReason = structuredClone(snapshot);
+    withReason.tables.cashEntries[0] = { ...withReason.tables.cashEntries[0], type: "DEPOSIT" as never, reason: "Troco do banco", author: "Operadora" };
+    expect(() => validateBackup(withReason)).not.toThrow();
+    const badReason = structuredClone(withReason); badReason.tables.cashEntries[0].reason = "   ";
+    expect(() => validateBackup(badReason)).toThrow("inválido");
   });
 
   it("accepts sale stock items and rejects invalid quantities or broken links", async () => {
