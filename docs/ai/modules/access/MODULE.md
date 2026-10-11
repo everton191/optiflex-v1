@@ -23,7 +23,7 @@ Definir roles, scopes, permissions, guards de rota, visibilidade de navegação/
 - `LoginPage` — e-mail/senha, modo demonstração explícito, aviso `?motivo=expirada`, limpar sessão guardada.
 - `BlockedPage` — usuário inativo; sair ou entrar com outra conta.
 - `ChangePasswordPage` — troca/primeira senha com confirmação.
-- `ProfilesPage` apresenta perfis em linguagem de negócio.
+- `ProfilesPage` apresenta perfis em linguagem de negócio e a matriz permissão × perfil (F2-05).
 - `ForbiddenPage` informa acesso negado.
 
 ## Components
@@ -33,11 +33,11 @@ Definir roles, scopes, permissions, guards de rota, visibilidade de navegação/
 
 ## Services / Repositories / Stores
 
-`AuthenticationService` (sessão local) usa `SessionRepository` (`get(): Promise<LocalSession | null>`, `save`, `clear`) e `AdministrationRepository`. Sessão e consumidores passam por `AppProviders` (`session: LocalSession | null`, `useSession()`).
+`AuthenticationService` (sessão local) usa `SessionRepository` (`get(): Promise<LocalSession | null>`, `save`, `clear`) e `AdministrationRepository`. Sessão e consumidores passam por `AppProviders` (`session: LocalSession | null`, `useSession()`); `refreshUsers` sincroniza a role da sessão via `syncSessionRole` e o provider cai para loja acessível quando a atual deixa de ser permitida.
 
 ## Models
 
-`RoleKey`, `Permission`, `Scope`, `RoleDefinition`, `LocalSession` (`issuedAt`, `demo`), `User` (`passwordHash`, `passwordSalt`).
+`RoleKey`, `Permission`, `Scope`, `RoleDefinition`, `allPermissions`, `LocalSession` (`issuedAt`, `demo`), `User` (`passwordHash`, `passwordSalt`).
 
 ## Permissions
 

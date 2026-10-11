@@ -4,6 +4,15 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `1b3f757` — feat: enforce store-scoped permissions with live role sync and profile matrix (F2-05 permissões por loja)
+
+- `allPermissions` (lista canônica das 21 permissions) e `syncSessionRole` em `access.ts`: a sessão espelha a role mais recente do usuário sem reload.
+- `AppProviders`: `refreshUsers` reconcilia e persiste `LocalSession.role` (`sessionRepository.save`); efeito de fallback move a loja atual para a primeira loja ativa acessível quando `user.storeIds` deixa de cobri-la (persistido via `selectStore`).
+- `/admin/perfis` ganha matriz permissão × perfil (`PermissionsMatrix`, leitura) com escopo por role; roles customizáveis continuam fora de escopo.
+- Testes negativos por perfil: `access.test.ts` (integridade da matriz — OWNER com todas, toda role ⊆ `allPermissions`, FINANCE/AUDITOR read-only — e `syncSessionRole`) + `storage/access-scope.test.ts` (caixa e estoque negados fora das lojas do perfil via `assertStoreAccess`).
+- Evidência: `npm.cmd test` **182/182** (21 arquivos; `access.test.ts` +6, `storage/access-scope.test.ts` +1), build 0, tsc 0.
+- Card: F2-05/#27 → DONE (critérios: usuário da loja A não opera na loja B; mudança de permissão reflete em menu/rota sem reload; libera F8-06/F8-07).
+
 ### `6a59f2b` — feat: add cash deposit and withdrawal with reason in the session screen (F4-16 suprimento e sangria)
 
 - `CashMovementType` (`WITHDRAWAL`/`DEPOSIT`) e `CashEntry.reason?`/`author?` (opcionais, sem bump de schema); `CashService.recordMovement(storeId, type, amount, reason, author?)` valida tipo, valor e motivo obrigatório (trim).

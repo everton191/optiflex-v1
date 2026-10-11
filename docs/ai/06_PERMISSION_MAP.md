@@ -28,6 +28,13 @@ Fonte canônica: `src/domain/access.ts`. Escopo por registro: `src/domain/access
 | `inventory.read` | inventory | consultar estoque | role | `/estoque` |
 | `inventory.manage` | inventory | movimentar estoque | role | ações no `/estoque` |
 
+## Permissões por loja e administração (F2-05)
+
+- Matriz exibida em `/admin/perfis` (`PermissionsMatrix`): permissão × perfil com escopo, fonte `allPermissions` + `rolePermissions` em `access.ts`.
+- Sessão acompanha mudanças de função sem reload: `syncSessionRole` (em `access.ts`) reconcilia `LocalSession.role` com a role mais recente da lista de usuários; `AppProviders.refreshUsers` persiste a sessão sincronizada (`sessionRepository.save`), então menu, `RequirePermission` e `Can` reagem na hora.
+- Loja atual inacessível (storeIds removidos ou troca por admin): efeito em `AppProviders` cai para a primeira loja ativa acessível e persiste via `administrationService.selectStore`; sem loja acessível, os repositories negam (`assertStoreAccess`).
+- Testes negativos por perfil: `access.test.ts` (matriz FINANCE/AUDITOR read-only, integridade OWNER e toda role ⊆ `allPermissions`, `syncSessionRole`) e `storage/access-scope.test.ts` (caixa/estoque negados fora das lojas do perfil).
+
 ## Escopo por registro (F1-11)
 
 O escopo (`SELF`, `STORE`, `ORGANIZATION`, `NETWORK`) pertence à definição da role/usuário (`roleDefinitions`) e vira `AccessContext` da sessão ativa (`buildAccessContext` em `src/domain/access-context.ts`; contexto global montado/desmontado por `AppProviders` junto com sessão/usuários/loja atual).
@@ -54,10 +61,10 @@ O escopo (`SELF`, `STORE`, `ORGANIZATION`, `NETWORK`) pertence à definição da
 ## Guards
 
 - `RequireSession`: exige sessão ativa (e não inativa) em todo o app; sem sessão → `/login`, inativa → `/bloqueado`.
-- `RequirePermission`: guard de rota; aguarda `isReady` e redireciona para `/sem-acesso`.
+- `RequirePermission`: guard de rota; aguarda `isReady` e redireciona para `/sem-acesso`; reage a mudança de role sem reload (sessão sincronizada por `syncSessionRole`).
 - `Can`: componente condicional null-safe sem sessão.
 - `hasPermission`: usado pelo shell, dashboard e `CashDeskPage`.
-- Escopo de registro: `assertStoreAccess`/`assertRecordAccess` (repositories) + validação de troca de loja em `selectStore`.
+- Escopo de registro: `assertStoreAccess`/`assertRecordAccess` (repositories) + validação de troca de loja em `selectStore` + fallback automático para loja acessível no provider.
 
 ## Lógica por role direta
 

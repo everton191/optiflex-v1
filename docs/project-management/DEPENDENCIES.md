@@ -35,7 +35,7 @@ Anomalia inversa encontrada e mantida com ressalva: **F4-17 (DONE) depende de F4
 | Categoria | O que é | Cards |
 |---|---|---|
 | **Decisão externa pendente** | aguarda o usuário/jurídico/contador — não é código | F4-13, F8-03, F3-20 (corrigidos acima); F8-08, F8-16, F5-12..15, F2-17, F5-01, F6-01 (raiz das Fases 5 e 6) |
-| **Bloqueio técnico real** | dependência de código ainda não concluído | F8-06←F2-05; F4-14/15←F4-13; F7-19←F5-07 |
+| **Bloqueio técnico real** | dependência de código ainda não concluído | F4-14/15←F4-13; F7-19←F5-07 (F8-06←F2-05 resolvido — F2-05 feito em `1b3f757`) |
 | **Fase futura (escopo já planejado)** | bloqueada por estrutura do roadmap, raiz = decisão das fases 5/6 | F5-02..19 (após F5-01), F6-02..19 (após F6-01), F8-05/11/12/13/18 |
 | **Dependência concluída, status desatualizado** | verificação automática: **nenhuma** (0 BACKLOG/BLOCKED com deps todas DONE) | — |
 
@@ -91,7 +91,7 @@ F3-13 confirmação de venda (FEITO) alimenta F3-14
 F2-04 usuários CRUD (FEITO 08/10 — sem dependências; perfis pré-definidos)
   └─ F7-02 login local (P0, FEITO 08/10 — `bae739b`, 137 testes)
        └─ F1-11 permissões/escopo por registro (P0, FEITO 08/10 — `a2c1369`, 149 testes)
-            ├─ F2-05 permissões por loja (OBR)
+            ├─ F2-05 permissões por loja (FEITO 08/10 — `1b3f757`, 182 testes)
             └─ F8-06 testes de permissões (OBR p/ evidência)
 F1-05 organizationId nos registros (OBR p/ SaaS)
   └─ F5-01 backend (BLOQUEIO: decisão)
@@ -151,7 +151,7 @@ F3-09 conteúdo real de anexos (P0, DONE — `6ce9c9a`)
 
 ## Regra de priorização
 
-1. Primeiro tarefas que **desbloqueiam várias outras** (F1-11 escopo feito → F2-05 permissões por loja / F8-06 testes de permissão).
+1. Primeiro tarefas que **desbloqueiam várias outras** (F1-11 escopo feito → F2-05 permissões por loja feito → F8-06 testes de permissão).
 2. Depois P0 de integridade/perda de dado (F4-18 estornos; F3-09 anexos concluído).
 3. Nunca iniciar card com status `blocked` — resolver ou registrar a decisão em `DECISIONS.md` antes.
 4. Fases 5 e 6 só começam quando a decisão correspondente estiver registrada.
