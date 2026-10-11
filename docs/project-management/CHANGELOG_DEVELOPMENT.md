@@ -4,6 +4,15 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `8fc64b0` — feat: cover organization settings contract with storage tests (F1-02 entidades e contratos)
+
+- Auditoria completa dos 10 contratos de `src/domain/repositories.ts`: todos têm implementação local (`Local*Repository`) e cobertura de teste; a UI (`src/app`) não acessa Dexie diretamente (0 usos de `db.`/`indexedDB`).
+- Última lacuna fechada: `SettingsRepository` ganhou `src/infrastructure/storage/settings.test.ts` (+3 casos — padrões padrão, persistência após reabrir o banco, sobrescrita única em `current`).
+- Entidades ainda sem modelo (catálogo de produtos, agenda, garantias, fiscal, SaaS) permanecem com seus próprios cards, conforme o escopo "conforme as fases avançarem".
+- Regra documentada: `docs/ai/02_ARCHITECTURE.md` → "Regra F1-02" com mapeamento entidade → contrato → teste; `DATA_MODEL_PLAN.md` atualizado (base `8fc64b0`); correção de "nove versões" para "onze versões" (verno 11).
+- Evidência: `npm.cmd test` **167/167** (21 arquivos; novo `settings.test.ts` com 3 casos), build 0, tsc 0.
+- Card: F1-02/#10 → DONE (libera F1-10; fecha a revisão de contratos da Fase 1).
+
 ### `e56939e` — feat: add work order detail route, event history, audited cancellation and stock inputs (F3-14 OS)
 
 - Rota `/ordens-servico/:orderId` (guard `sales.read`) com `WorkOrderDetailPage`: situação completa, ações de transição/cancelamento/prazo, registro de insumos e histórico de eventos.

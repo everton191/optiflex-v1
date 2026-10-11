@@ -56,7 +56,7 @@ Classificação de inventário (Etapa 4) no corpo de cada card:
 
 - Issues totais: **155** (8 épicas + 147 tarefas).
 - Tarefas por fase: F1=14 · F2=18 · F3=20 · F4=20 · F5=19 · F6=19 · F7=19 · F8=18.
-- Tarefas por status (revisado em 08/10/2026; F1-09, F2-04, F7-02, F1-11, F3-09 e F3-14 concluídas no mesmo dia): DONE=24 · IN PROGRESS=0 · READY=34 · TESTING=0 · CODE REVIEW=0 · BACKLOG=39 · BLOCKED=50.
+- Tarefas por status (revisado em 08/10/2026; F1-09, F2-04, F7-02, F1-11, F3-09, F3-14 e F1-02 concluídas no mesmo dia): DONE=25 · IN PROGRESS=0 · READY=33 · TESTING=0 · CODE REVIEW=0 · BACKLOG=39 · BLOCKED=50.
 - Bloqueios: **50 tarefas** bloqueadas — 47 por dependência de fase futura/externa + **3 reclassificadas em 08/10** (F4-13 #70, F8-03 #137, F3-20 #57: status desatualizado, decisão externa já registrada).
 - **Revisão de dependências 08/10/2026:** 7 ciclos detectados (SCC/Tarjan sobre este arquivo) e corrigidos em KANBAN + corpos das issues; **0 ciclos remanescentes**. Detalhe antes/depois em `DEPENDENCIES.md`.
 
@@ -76,7 +76,7 @@ Regra de ouro: **nunca mover para DONE sem evidência verificável** (comando de
 |---|---|---|---|---|---|
 | E1 | [ÉPICA FASE 1 — ARQUITETURA E FUNDAÇÃO](https://github.com/everton191/optiflex-v1/issues/1) | fase 1 | IN PROGRESS | p1 | — |
 | F1-01 | [Auditoria da arquitetura existente](https://github.com/everton191/optiflex-v1/issues/9) | Infraestrutura | DONE | p1 | nenhuma. |
-| F1-02 | [Definição de entidades e contratos](https://github.com/everton191/optiflex-v1/issues/10) | Infraestrutura | READY | p1 | F1-09 (regra monetária ao definir valores). |
+| F1-02 | [Definição de entidades e contratos](https://github.com/everton191/optiflex-v1/issues/10) | Infraestrutura | DONE | p1 | F1-09 (regra monetária ao definir valores; concluída em `8fc64b0` — auditoria dos 10 contratos, `SettingsRepository` coberto, regra documentada em `02_ARCHITECTURE.md`). |
 | F1-03 | [Separação gradual de páginas por módulo](https://github.com/everton191/optiflex-v1/issues/11) | Infraestrutura | READY | p2 | nenhuma. |
 | F1-04 | [Organização de serviços e repositories](https://github.com/everton191/optiflex-v1/issues/12) | Infraestrutura | DONE | p1 | nenhuma. |
 | F1-05 | [Identificadores de organizações e filiais](https://github.com/everton191/optiflex-v1/issues/13) | Infraestrutura | READY | p1 | F1-08 (migração de schema). |
@@ -84,7 +84,7 @@ Regra de ouro: **nunca mover para DONE sem evidência verificável** (comando de
 | F1-07 | [Modelos de prescrições e ordens de serviço](https://github.com/everton191/optiflex-v1/issues/15) | Infraestrutura | READY | p1 | nenhuma. Ciclo corrigido 08/10: F3-06/F3-07 dependem de F1-07. |
 | F1-08 | [Estratégia de migração do IndexedDB](https://github.com/everton191/optiflex-v1/issues/16) | Infraestrutura | DONE | p1 | nenhuma. |
 | F1-09 | [Valores monetários e precisão decimal](https://github.com/everton191/optiflex-v1/issues/17) | Infraestrutura | DONE | p1 | nenhuma. Concluído 08/10/2026 (`7dc1d7b`, 115 testes). |
-| F1-10 | [Auditoria de alterações](https://github.com/everton191/optiflex-v1/issues/18) | Infraestrutura | BACKLOG | p1 | F1-02 (contrato), F2-05 (permissões por loja). |
+| F1-10 | [Auditoria de alterações](https://github.com/everton191/optiflex-v1/issues/18) | Infraestrutura | BACKLOG | p1 | F1-02 (feito), F2-05 (permissões por loja). |
 | F1-11 | [Permissões e autorização](https://github.com/everton191/optiflex-v1/issues/19) | Access | DONE | p0 | F7-02 (login local identidade). Concluído 08/10/2026 (`a2c1369`, 149 testes). |
 | F1-12 | [Tratamento global de erros](https://github.com/everton191/optiflex-v1/issues/20) | Infraestrutura | BACKLOG | p1 | nenhuma. Ciclo corrigido 08/10: F7-11 depende de F1-12. |
 | F1-13 | [Testes de domínio](https://github.com/everton191/optiflex-v1/issues/21) | Infraestrutura | DONE | p1 | nenhuma. |
@@ -276,11 +276,11 @@ Ordem recomendada para a próxima sessão de desenvolvimento (status READY/IN PR
 | 3 | F4-10 | #67 | [Cash] Formas de pagamento | P1 | F4-9 (feito), F1-08 | Pré-requisito de parciais, cartão e conciliação. |
 | 4 | F4-12 | #69 | [Cash] Pagamentos parciais | P1 | F4-10, F1-09 | Saldo pendente já existe; falta entrada de valor parcial. |
 | 5 | F2-06 | #28 | [Customers] Edição de clientes | P1 | F1-03 | Cadastro sem edição é lacuna visível na operação. |
-| 6 | F1-02 | #10 | [Infraestrutura] Definição de entidades e contratos | P1 | F1-09 (feito) | Desbloqueado pela conclusão de F1-09; contratos base citados por F3-10 e F4-11. |
-| 7 | F3-01 | #40 | [Attendance] Agenda e recepção | P1 | F2-04 (feito) | Dependência (usuários) já entregue; base da fila de atendimento. |
-| 8 | F2-05 | #27 | [Access] Permissões por loja | P1 | F1-11 e F2-04 (feitos) | Continuação direta do escopo por registro recém-entregue. |
-| 9 | F8-07 | #141 | [Access] Auditoria de segurança | P1 | F7-02 e F1-11 (feitos) | Dependências entregues; fecha a lacuna de rastreio antes do piloto. |
-| 10 | F1-07 | #15 | [Infraestrutura] Modelos de prescrições e ordens de serviço | P1 | nenhuma | Sem pendências; desbloqueia a cadeia de prescrição estruturada (F3-07 → F3-06). |
+| 6 | F3-01 | #40 | [Attendance] Agenda e recepção | P1 | F2-04 (feito) | Dependência (usuários) já entregue; base da fila de atendimento. |
+| 7 | F2-05 | #27 | [Access] Permissões por loja | P1 | F1-11 e F2-04 (feitos) | Continuação direta do escopo por registro recém-entregue. |
+| 8 | F8-07 | #141 | [Access] Auditoria de segurança | P1 | F7-02 e F1-11 (feitos) | Dependências entregues; fecha a lacuna de rastreio antes do piloto. |
+| 9 | F1-07 | #15 | [Infraestrutura] Modelos de prescrições e ordens de serviço | P1 | nenhuma | Sem pendências; desbloqueia a cadeia de prescrição estruturada (F3-07 → F3-06). |
+| 10 | F1-06 | #14 | [Infraestrutura] Modelos de produtos, itens de venda e pagamentos | P1 | F4-09 (feito) | Raiz da árvore F2-11 → F3-11 (PDV); desbloqueado pela regra monetária e por F1-02. |
 
 Os `#?` devem ser resolvidos pela tabela acima (coluna ID → link da issue). Os números já estão fixados nas tabelas das fases; para referência rápida: consulte `DEPENDENCIES.md`.
 

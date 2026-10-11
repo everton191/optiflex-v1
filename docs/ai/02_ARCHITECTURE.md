@@ -37,9 +37,24 @@ Dexie / IndexedDB
 
 Os arquivos `*-service.ts` aplicam validações e orquestram repositories. `repositories.ts` reúne todos os contratos. Modelos ficam em arquivos por assunto (`customer.ts`, `clinical.ts`, `sales.ts`, etc.).
 
+**Regra F1-02 (auditoria de 08/10/2026):** toda entidade nova nasce com (1) tipo em `src/domain/<assunto>.ts`, (2) contrato em `repositories.ts` quando houver persistência e (3) teste de domínio/serviço **antes** da UI. A UI não acessa Dexie diretamente (verificado em `src/app`: 0 usos de `db.`/`indexedDB`). Mapeamento entidade → contrato → teste (estado em `8fc64b0`):
+
+| Modelos | Contratos | Testes |
+|---|---|---|
+| `access.ts` (User, Store, OrganizationSettings, LocalSession, CurrentStoreContext) | Settings, Session, Administration | `access.test.ts`, `access-scope.test.ts`, `administration-service.test.ts`, `authentication-service.test.ts`, `storage/settings.test.ts` |
+| `customer.ts` (Customer, Attendance) | Customer, Attendance | `reception-service.test.ts` |
+| `clinical.ts` (ClinicalRecord, ClinicalVersion, ClinicalAttachment/Content) | Clinical | `storage/clinical.test.ts`, `clinical-attachments.test.ts` |
+| `sales.ts` (Sale) | Sale | `sales-service.test.ts`, `storage/sale-stock.test.ts` |
+| `work-order.ts` (WorkOrder, WorkOrderEvent) | WorkOrder | `work-order-service.test.ts`, `storage/work-orders.test.ts` |
+| `inventory.ts` (InventoryItem, InventoryMovement) | Inventory | `inventory-service.test.ts`, `storage/inventory.test.ts` |
+| `cash.ts` (CashSession, CashEntry) | Cash | `cash-service.test.ts`, `storage/cash.test.ts` |
+| `money.ts`, `dashboard.ts`, `password.ts`, `access-context.ts` | — (helpers/guards/métricas) | `money.test.ts`, `dashboard.test.ts`, testes de acesso acima |
+
+Entidades ainda sem modelo (produtos/catálogo, agenda, garantias, fiscal, SaaS) entram com seus próprios cards, conforme as fases avançarem.
+
 ### Infraestrutura
 
-`database.ts` declara nove versões do schema Dexie. A versão 9 acrescenta índices de nome em lojas e usuários, preservando as tabelas anteriores. `local-repositories.ts` implementa todos os contratos locais e contém seeds de configurações, lojas e usuários. `database.test.ts` verifica inicialização, migração e persistência com IndexedDB em memória exclusivo para testes.
+`database.ts` declara onze versões do schema Dexie (verno atual 11: a v11 acrescenta a tabela `attachments` de anexos clínicos; a v9 adicionou índices de nome em lojas e usuários). `local-repositories.ts` implementa todos os contratos locais e contém seeds de configurações, lojas e usuários. `database.test.ts` verifica inicialização, migração e persistência com IndexedDB em memória exclusivo para testes.
 
 ## Direção das dependências
 
