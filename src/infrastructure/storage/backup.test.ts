@@ -110,6 +110,21 @@ describe("encrypted backup and transactional restore", () => {
     const badCancelReason = structuredClone(snapshot); badCancelReason.tables.workOrders[1].cancelReason = "   ";
     expect(() => validateBackup(badCancelReason)).toThrow("inválido");
   });
+  it("accepts product price, cost and payment method, rejecting invalid values", async () => {
+    const snapshot = await repository.snapshot();
+    snapshot.tables.stores.push({ id: "store-x", name: "Loja X", active: true });
+    snapshot.tables.inventoryItems.push({ id: "item-x", storeId: "store-x", name: "Lente 1.60", quantity: 1, minimumQuantity: 0, defaultPrice: 100.5, cost: 40 });
+    snapshot.tables.cashSessions.push({ id: "cash-x", storeId: "store-x", openedAt: "2026-01-01T10:00:00.000Z", openingBalance: 0 });
+    snapshot.tables.cashEntries.push({ id: "entry-x", sessionId: "cash-x", storeId: "store-x", type: "RECEIPT", amount: 10, paymentMethod: "PIX", createdAt: "2026-01-01T11:00:00.000Z" });
+    expect(() => validateBackup(snapshot)).not.toThrow();
+    const badMethod = structuredClone(snapshot); badMethod.tables.cashEntries[0].paymentMethod = "BOLETO";
+    expect(() => validateBackup(badMethod)).toThrow("inválido");
+    const badPrice = structuredClone(snapshot); badPrice.tables.inventoryItems[0].defaultPrice = -1;
+    expect(() => validateBackup(badPrice)).toThrow("inválido");
+    const badCost = structuredClone(snapshot); badCost.tables.inventoryItems[0].cost = Number.NaN;
+    expect(() => validateBackup(badCost)).toThrow("inválido");
+  });
+
   it("accepts sale stock items and rejects invalid quantities or broken links", async () => {
     const snapshot = await repository.snapshot();
     snapshot.tables.customers.push({ id: "customer-items", name: "Cliente Itens", createdAt: "2026-01-01T09:00:00.000Z" });

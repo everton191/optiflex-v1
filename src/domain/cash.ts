@@ -1,6 +1,15 @@
 import { toCents } from "./money";
 
 export type CashEntryType = "RECEIPT" | "WITHDRAWAL" | "DEPOSIT";
+export type PaymentMethod = "CASH" | "PIX" | "CARD";
+
+export const paymentMethodLabels: Record<PaymentMethod, string> = { CASH: "Dinheiro", PIX: "PIX", CARD: "Cartão" };
+
+export function assertValidPaymentMethod(method?: string): PaymentMethod | undefined {
+  if (method === undefined) return undefined;
+  if (method in paymentMethodLabels) return method as PaymentMethod;
+  throw new Error("Forma de pagamento inválida.");
+}
 
 export interface CashSession {
   id: string;
@@ -22,6 +31,7 @@ export interface CashEntry {
   saleId?: string;
   type: CashEntryType;
   amount: number;
+  paymentMethod?: PaymentMethod;
   createdAt: string;
 }
 

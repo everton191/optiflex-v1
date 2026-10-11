@@ -78,6 +78,18 @@ describe("cash session flow", () => {
     expect(await repository.listEntries("store-shopping")).toHaveLength(0);
   });
 
+  it("records the payment method durably with the receipt", async () => {
+    await database.open();
+    await sales.save(sale());
+    await service.open("store-centro", 100);
+    await service.receive("store-centro", "sale-1", 300, "CARD");
+    await expect(service.receive("store-centro", "sale-1", 10, "BOLETO" as never)).rejects.toThrow("Forma de pagamento inválida.");
+    database.close();
+    await database.open();
+    const [entry] = await repository.listEntries("store-centro");
+    expect(entry).toMatchObject({ saleId: "sale-1", paymentMethod: "CARD" });
+  });
+
   it("closes with conference, blocks new movements and allows reopening", async () => {
     await database.open();
     await sales.save(sale());

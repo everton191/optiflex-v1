@@ -24,6 +24,14 @@ describe("inventory storage", () => {
     expect(await service.history("store-centro")).toHaveLength(1);
   });
 
+  it("persists the optional default price and cost with the product", async () => {
+    await database.open();
+    await service.create("store-centro", { name: "Lente 1.60", quantity: 2, minimumQuantity: 1, defaultPrice: 180.5, cost: 95 }, "Operador");
+    database.close();
+    await database.open();
+    expect((await service.list("store-centro"))[0]).toMatchObject({ name: "Lente 1.60", defaultPrice: 180.5, cost: 95 });
+  });
+
   it("applies a movement and refuses to leave a negative balance", async () => {
     await database.open();
     await service.create("store-centro", { name: "Armação", quantity: 10, minimumQuantity: 4 });

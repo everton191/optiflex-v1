@@ -1,4 +1,5 @@
 import { rolePermissions, type RoleKey } from "./access";
+import { paymentMethodLabels } from "./cash";
 import { workOrderEventLabels, workOrderStatusLabels } from "./work-order";
 
 // Session is intentionally excluded: restoring business data must not import a login.
@@ -41,6 +42,9 @@ export function validateBackup(value: unknown): BackupSnapshot {
       if (name === "users" && (!Array.isArray(row.storeIds) || row.storeIds.some((id) => typeof id !== "string"))) throw invalid();
       if (name === "users" && (!Object.hasOwn(rolePermissions, row.role as string) || !["SELF", "STORE", "ORGANIZATION", "NETWORK"].includes(row.scope as string))) throw invalid();
       if (name === "sales" && row.paymentStatus !== undefined && !["PENDING", "PAID"].includes(row.paymentStatus as string)) throw invalid();
+      if (name === "cashEntries" && row.paymentMethod !== undefined && !Object.hasOwn(paymentMethodLabels, row.paymentMethod as string)) throw invalid();
+      if (name === "inventoryItems" && row.defaultPrice !== undefined && (typeof row.defaultPrice !== "number" || !Number.isFinite(row.defaultPrice) || row.defaultPrice < 0)) throw invalid();
+      if (name === "inventoryItems" && row.cost !== undefined && (typeof row.cost !== "number" || !Number.isFinite(row.cost) || row.cost < 0)) throw invalid();
       if (name === "sales" && row.items !== undefined && (!Array.isArray(row.items) || row.items.some((item) => !object(item) || typeof item.inventoryItemId !== "string" || typeof item.name !== "string" || typeof item.quantity !== "number" || !Number.isFinite(item.quantity) || item.quantity <= 0 || typeof item.unitPrice !== "number" || !Number.isFinite(item.unitPrice) || item.unitPrice < 0))) throw invalid();
       if (name === "cashSessions") {
         for (const field of ["expectedBalance", "closingBalance"]) if (row[field] !== undefined && (typeof row[field] !== "number" || !Number.isFinite(row[field]) || (row[field] as number) < 0)) throw invalid();

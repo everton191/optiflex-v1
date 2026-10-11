@@ -1,5 +1,6 @@
 import type { CashRepository, SaleRepository } from "./repositories";
-import type { CashEntry, CashSession } from "./cash";
+import type { CashEntry, CashSession, PaymentMethod } from "./cash";
+import { assertValidPaymentMethod } from "./cash";
 import { isMoney, toCents } from "./money";
 
 export class CashService {
@@ -17,15 +18,16 @@ export class CashService {
     return this.repository.openSession({ id: `cash-${crypto.randomUUID()}`, storeId, openingBalance, openedAt: new Date().toISOString() });
   }
 
-  async receive(storeId: string, saleId: string, amount: number): Promise<CashEntry> {
+  async receive(storeId: string, saleId: string, amount: number, paymentMethod?: PaymentMethod): Promise<CashEntry> {
     this.store(storeId);
     if (!isMoney(amount) || toCents(amount) <= 0) throw new Error("Informe um valor válido.");
+    const method = assertValidPaymentMethod(paymentMethod);
     const session = await this.repository.current(storeId);
     if (!session) throw new Error("Abra o caixa antes de registrar recebimentos.");
     const sale = await this.sales.get(saleId);
     if (!sale || sale.storeId !== storeId) throw new Error("Venda não encontrada nesta loja.");
     if (sale.status !== "CONFIRMED") throw new Error("Somente vendas confirmadas podem ser recebidas.");
-    return this.repository.recordReceipt({ id: `cash-entry-${crypto.randomUUID()}`, sessionId: session.id, storeId, saleId, type: "RECEIPT", amount, createdAt: new Date().toISOString() });
+    return this.repository.recordReceipt({ id: `cash-entry-${crypto.randomUUID()}`, sessionId: session.id, storeId, saleId, type: "RECEIPT", amount, paymentMethod: method, createdAt: new Date().toISOString() });
   }
 
   async close(storeId: string, closingBalance: number, closedBy?: string, note?: string): Promise<CashSession> {

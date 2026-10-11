@@ -5,6 +5,8 @@ export interface InventoryItem {
   code?: string;
   quantity: number;
   minimumQuantity: number;
+  defaultPrice?: number;
+  cost?: number;
 }
 
 export type InventoryMovementType = "IN" | "OUT" | "ADJUSTMENT";

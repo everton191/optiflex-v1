@@ -68,6 +68,26 @@ describe("cash receipts", () => {
     const entry = await service.receive("store-centro", "sale-1", 300);
     expect(entry).toMatchObject({ sessionId: "cash-1", storeId: "store-centro", saleId: "sale-1", type: "RECEIPT", amount: 300 });
   });
+
+  it("records the chosen payment method and rejects unknown ones", async () => {
+    repository.current.mockResolvedValue(activeSession);
+    sales.get.mockResolvedValue(confirmedSale);
+    repository.recordReceipt.mockImplementation(async (entry: CashEntry) => entry);
+    const entry = await service.receive("store-centro", "sale-1", 300, "PIX");
+    expect(entry).toMatchObject({ paymentMethod: "PIX" });
+    await expect(service.receive("store-centro", "sale-1", 10, "DINHEIRO" as never)).rejects.toThrow("Forma de pagamento inválida.");
+    await expect(service.receive("store-centro", "sale-1", 10, "BOLETO" as never)).rejects.toThrow("Forma de pagamento inválida.");
+    expect(repository.recordReceipt).toHaveBeenCalledOnce();
+    expect(repository.current).toHaveBeenCalledOnce();
+  });
+
+  it("keeps legacy receipts without a payment method", async () => {
+    repository.current.mockResolvedValue(activeSession);
+    sales.get.mockResolvedValue(confirmedSale);
+    repository.recordReceipt.mockImplementation(async (entry: CashEntry) => entry);
+    const entry = await service.receive("store-centro", "sale-1", 100);
+    expect(entry.paymentMethod).toBeUndefined();
+  });
 });
 
 describe("cash closing", () => {

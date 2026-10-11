@@ -1,15 +1,24 @@
 import type { InventoryItem, InventoryMovement, InventoryMovementType } from "./inventory";
 import { movementDelta } from "./inventory";
 import type { InventoryRepository } from "./repositories";
+import { isMoney } from "./money";
 
 export interface InventoryItemInput {
   name: string;
   code?: string;
   quantity: number;
   minimumQuantity: number;
+  defaultPrice?: number;
+  cost?: number;
 }
 
 const valid = (value: number) => Number.isFinite(value) && value >= 0;
+
+function optionalMoney(value: number | undefined, field: "defaultPrice" | "cost"): number | undefined {
+  if (value === undefined) return undefined;
+  if (!isMoney(value) || value < 0) throw new Error(field === "defaultPrice" ? "Informe um preço padrão válido." : "Informe um custo válido.");
+  return value;
+}
 
 export class InventoryService {
   constructor(private readonly repository: InventoryRepository) {}
@@ -21,17 +30,17 @@ export class InventoryService {
     const name = input.name.trim();
     if (!name) throw new Error("Informe o nome do produto.");
     if (!valid(input.quantity) || !valid(input.minimumQuantity)) throw new Error("Informe saldo inicial e estoque mínimo válidos.");
-    const item: InventoryItem = { id: `item-${crypto.randomUUID()}`, storeId, name, code: input.code?.trim() || undefined, quantity: input.quantity, minimumQuantity: input.minimumQuantity };
+    const item: InventoryItem = { id: `item-${crypto.randomUUID()}`, storeId, name, code: input.code?.trim() || undefined, quantity: input.quantity, minimumQuantity: input.minimumQuantity, defaultPrice: optionalMoney(input.defaultPrice, "defaultPrice"), cost: optionalMoney(input.cost, "cost") };
     const initial: InventoryMovement | undefined = input.quantity > 0 ? { id: `movement-${crypto.randomUUID()}`, itemId: item.id, storeId, type: "IN", quantity: input.quantity, reason: "Estoque inicial", createdAt: new Date().toISOString(), author } : undefined;
     await this.repository.createItem(item, initial);
     return item;
   }
 
-  async update(item: InventoryItem, input: { name: string; code?: string; minimumQuantity: number }): Promise<InventoryItem> {
+  async update(item: InventoryItem, input: { name: string; code?: string; minimumQuantity: number; defaultPrice?: number; cost?: number }): Promise<InventoryItem> {
     const name = input.name.trim();
     if (!name) throw new Error("Informe o nome do produto.");
     if (!valid(input.minimumQuantity)) throw new Error("Informe um estoque mínimo válido.");
-    const updated: InventoryItem = { ...item, name, code: input.code?.trim() || undefined, minimumQuantity: input.minimumQuantity };
+    const updated: InventoryItem = { ...item, name, code: input.code?.trim() || undefined, minimumQuantity: input.minimumQuantity, defaultPrice: optionalMoney(input.defaultPrice, "defaultPrice"), cost: optionalMoney(input.cost, "cost") };
     await this.repository.updateItem(updated);
     return updated;
   }

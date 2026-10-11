@@ -29,6 +29,8 @@ export function InventoryPage() {
   const [code, setCode] = useState("");
   const [quantity, setQuantity] = useState("");
   const [minimum, setMinimum] = useState("");
+  const [defaultPrice, setDefaultPrice] = useState("");
+  const [cost, setCost] = useState("");
   const [moving, setMoving] = useState<InventoryItem>();
   const [moveType, setMoveType] = useState<InventoryMovementType>("IN");
   const [moveQuantity, setMoveQuantity] = useState("");
@@ -50,19 +52,20 @@ export function InventoryPage() {
     pending.current = true; setMessage(""); setError("");
     try { setMessage(await action()); await refresh(); } catch (reason) { setError(reason instanceof Error ? reason.message : fallback); } finally { pending.current = false; }
   }
-  function resetProductForm(open: boolean) { setFormOpen(open); setEditing(undefined); setName(""); setCode(""); setQuantity(""); setMinimum(""); }
-  function editProduct(item: InventoryItem) { setMoving(undefined); setFormOpen(true); setEditing(item); setName(item.name); setCode(item.code ?? ""); setQuantity(String(item.quantity)); setMinimum(String(item.minimumQuantity)); }
+  function resetProductForm(open: boolean) { setFormOpen(open); setEditing(undefined); setName(""); setCode(""); setQuantity(""); setMinimum(""); setDefaultPrice(""); setCost(""); }
+  function editProduct(item: InventoryItem) { setMoving(undefined); setFormOpen(true); setEditing(item); setName(item.name); setCode(item.code ?? ""); setQuantity(String(item.quantity)); setMinimum(String(item.minimumQuantity)); setDefaultPrice(item.defaultPrice !== undefined ? String(item.defaultPrice) : ""); setCost(item.cost !== undefined ? String(item.cost) : ""); }
   function resetMovement() { setMoving(undefined); setMoveType("IN"); setMoveQuantity(""); setMoveReason(""); }
 
   async function saveProduct(event: React.FormEvent) {
     event.preventDefault();
+    const prices = { defaultPrice: defaultPrice.trim() ? Number(defaultPrice) : undefined, cost: cost.trim() ? Number(cost) : undefined };
     await run(async () => {
       if (editing) {
-        await service.update(editing, { name, code, minimumQuantity: Number(minimum) });
+        await service.update(editing, { name, code, minimumQuantity: Number(minimum), ...prices });
         resetProductForm(false);
         return "Produto atualizado.";
       }
-      await service.create(currentStoreId, { name, code, quantity: Number(quantity || 0), minimumQuantity: Number(minimum || 0) }, session.userName);
+      await service.create(currentStoreId, { name, code, quantity: Number(quantity || 0), minimumQuantity: Number(minimum || 0), ...prices }, session.userName);
       resetProductForm(false);
       return "Produto cadastrado.";
     }, "Não foi possível salvar o produto.");
@@ -95,6 +98,8 @@ export function InventoryPage() {
       <label>Código<Input value={code} onChange={(event) => setCode(event.target.value)} placeholder="Opcional" /></label>
       {!editing && <label>Saldo inicial<Input type="number" min="0" step="1" value={quantity} onChange={(event) => setQuantity(event.target.value)} placeholder="0" /></label>}
       <label>Estoque mínimo<Input type="number" min="0" step="1" value={minimum} onChange={(event) => setMinimum(event.target.value)} placeholder="0" /></label>
+      <label>Preço padrão (R$)<Input type="number" min="0" step="0.01" value={defaultPrice} onChange={(event) => setDefaultPrice(event.target.value)} placeholder="Opcional" /></label>
+      <label>Custo (R$)<Input type="number" min="0" step="0.01" value={cost} onChange={(event) => setCost(event.target.value)} placeholder="Opcional" /></label>
       <div className="form-actions">
         <Button type="submit">{editing ? "Salvar alterações" : "Cadastrar produto"}</Button>
         <Button type="button" onClick={() => resetProductForm(false)}>Cancelar</Button>
@@ -117,7 +122,7 @@ export function InventoryPage() {
     <div className="list-card compact-list">{loading ? <p role="status" className="empty-state">Carregando estoque…</p> : items.length ? items.map((item) => {
       const state = stockState(item);
       return <article className="list-row" key={item.id}>
-        <div><strong>{item.name}</strong><span>{item.code ? `Código ${item.code} · ` : ""}Mínimo {item.minimumQuantity}</span></div>
+        <div><strong>{item.name}</strong><span>{item.code ? `Código ${item.code} · ` : ""}Mínimo {item.minimumQuantity}{item.defaultPrice !== undefined ? ` · Preço R$ ${item.defaultPrice.toFixed(2)}` : ""}{item.cost !== undefined ? ` · Custo R$ ${item.cost.toFixed(2)}` : ""}</span></div>
         <div>
           <span className={`badge ${stateClasses[state]}`}>{item.quantity} disponíveis · {stateLabels[state]}</span>
           {canManage && <Button type="button" onClick={() => { resetProductForm(false); setEditing(undefined); setMoving(item); setMoveType("IN"); setMoveQuantity(""); setMoveReason(""); }}>Movimentar</Button>}

@@ -32,6 +32,19 @@ describe("product registration", () => {
     expect(created).toMatchObject({ quantity: 0 });
     expect(repository.createItem.mock.calls[0][1]).toBeUndefined();
   });
+
+  it("stores an optional default price and cost without touching the balance", async () => {
+    repository.createItem.mockResolvedValue(undefined);
+    const created = await service.create("store-centro", { name: "Armação", quantity: 2, minimumQuantity: 1, defaultPrice: 250.5, cost: 120 });
+    expect(created).toMatchObject({ defaultPrice: 250.5, cost: 120, quantity: 2, minimumQuantity: 1 });
+  });
+
+  it("rejects an invalid default price or cost", async () => {
+    await expect(service.create("store-centro", { name: "Armação", quantity: 1, minimumQuantity: 1, defaultPrice: -1 })).rejects.toThrow("preço padrão válido");
+    await expect(service.create("store-centro", { name: "Armação", quantity: 1, minimumQuantity: 1, defaultPrice: Number.POSITIVE_INFINITY })).rejects.toThrow("preço padrão válido");
+    await expect(service.create("store-centro", { name: "Armação", quantity: 1, minimumQuantity: 1, cost: Number.NaN })).rejects.toThrow("custo válido");
+    expect(repository.createItem).not.toHaveBeenCalled();
+  });
 });
 
 describe("product editing", () => {
@@ -46,6 +59,17 @@ describe("product editing", () => {
     const updated = await service.update(item, { name: "  Armação nova  ", code: " AR-1 ", minimumQuantity: 6 });
     expect(updated).toMatchObject({ name: "Armação nova", code: "AR-1", minimumQuantity: 6, quantity: 10 });
     expect(repository.updateItem).toHaveBeenCalledOnce();
+  });
+
+  it("updates and clears the optional default price and cost", async () => {
+    repository.updateItem.mockResolvedValue(undefined);
+    const updated = await service.update(item, { name: "Armação", minimumQuantity: 3, defaultPrice: 99.9, cost: 40 });
+    expect(updated).toMatchObject({ defaultPrice: 99.9, cost: 40 });
+    const cleared = await service.update(updated, { name: "Armação", minimumQuantity: 3 });
+    expect(cleared.defaultPrice).toBeUndefined();
+    expect(cleared.cost).toBeUndefined();
+    await expect(service.update(item, { name: "Armação", minimumQuantity: 3, defaultPrice: -5 })).rejects.toThrow("preço padrão válido");
+    expect(repository.updateItem).toHaveBeenCalledTimes(2);
   });
 });
 
