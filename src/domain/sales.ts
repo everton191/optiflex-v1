@@ -2,7 +2,7 @@ import type { InventoryMovement } from "./inventory";
 import { fromCents, toCents } from "./money";
 
 export type SaleStatus = "QUOTE" | "CONFIRMED" | "CANCELLED";
-export type SalePaymentStatus = "PENDING" | "PAID";
+export type SalePaymentStatus = "PENDING" | "PARTIAL" | "PAID";
 
 export interface SaleItem {
   inventoryItemId: string;

@@ -46,7 +46,7 @@ describe("cash session flow", () => {
     await sales.save(sale({ total: 0.3 }));
     await service.open("store-centro", 0);
     await service.receive("store-centro", "sale-1", 0.1, "CASH");
-    expect(await sales.get("sale-1")).toMatchObject({ paymentStatus: "PENDING" });
+    expect(await sales.get("sale-1")).toMatchObject({ paymentStatus: "PARTIAL" });
     await service.receive("store-centro", "sale-1", 0.2, "CASH");
     expect(await sales.get("sale-1")).toMatchObject({ paymentStatus: "PAID" });
     expect(await repository.listEntries("store-centro")).toHaveLength(2);
@@ -57,11 +57,26 @@ describe("cash session flow", () => {
     await sales.save(sale());
     await service.open("store-centro", 0);
     await service.receive("store-centro", "sale-1", 100, "CASH");
-    expect(await sales.get("sale-1")).toMatchObject({ paymentStatus: "PENDING" });
+    expect(await sales.get("sale-1")).toMatchObject({ paymentStatus: "PARTIAL" });
     await expect(service.receive("store-centro", "sale-1", 250, "CASH")).rejects.toThrow("excede o saldo pendente");
     await service.receive("store-centro", "sale-1", 200, "CASH");
     expect(await sales.get("sale-1")).toMatchObject({ paymentStatus: "PAID" });
     expect(await repository.listEntries("store-centro")).toHaveLength(2);
+  });
+
+  it("keeps the partial balance durable after reopen and blocks further receipts once paid", async () => {
+    await database.open();
+    await sales.save(sale({ total: 300 }));
+    await service.open("store-centro", 0);
+    await service.receive("store-centro", "sale-1", 120, "PIX");
+    database.close();
+    await database.open();
+    expect(await sales.get("sale-1")).toMatchObject({ paymentStatus: "PARTIAL" });
+    const paidCents = (await repository.listEntries("store-centro")).reduce((total, entry) => total + Math.round(entry.amount * 100), 0);
+    expect(paidCents).toBe(12000);
+    await service.receive("store-centro", "sale-1", 180, "CASH");
+    expect(await sales.get("sale-1")).toMatchObject({ paymentStatus: "PAID" });
+    await expect(service.receive("store-centro", "sale-1", 0.01, "CASH")).rejects.toThrow("Esta venda já foi recebida.");
   });
 
   it("blocks receipts for other stores, unconfirmed sales and closed sessions", async () => {

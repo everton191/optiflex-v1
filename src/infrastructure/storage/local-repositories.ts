@@ -306,7 +306,7 @@ export class LocalCashRepository implements CashRepository {
       if (paid >= total) throw new Error("Esta venda já foi recebida.");
       if (paid + amount > total) throw new Error("O valor informado excede o saldo pendente da venda.");
       await database.cashEntries.add(entry);
-      await database.sales.put({ ...sale, paymentStatus: paid + amount >= total ? "PAID" : "PENDING" });
+      await database.sales.put({ ...sale, paymentStatus: paid + amount >= total ? "PAID" : "PARTIAL" });
       return entry;
     });
   }

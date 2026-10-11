@@ -89,6 +89,8 @@ describe("encrypted backup and transactional restore", () => {
     expect(() => validateBackup(uncounted)).toThrow("inválido");
     const payment = structuredClone(snapshot); payment.tables.sales[0].paymentStatus = "RECEIVED";
     expect(() => validateBackup(payment)).toThrow("inválido");
+    const partial = structuredClone(snapshot); partial.tables.sales[0].paymentStatus = "PARTIAL";
+    expect(() => validateBackup(partial)).not.toThrow();
   });
   it("accepts order scheduling fields and rejects invalid optional values", async () => {
     const snapshot = await repository.snapshot();
