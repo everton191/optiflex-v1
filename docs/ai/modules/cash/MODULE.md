@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Unificar vendas, recebimentos, abertura e fechamento de caixa em uma tela adaptada às permissions do usuário.
+Unificar vendas, recebimentos, abertura, suprimento/sangria e fechamento de caixa em uma tela adaptada às permissions do usuário.
 
 ## Directory
 
@@ -23,11 +23,11 @@ UI em `CashDeskPage` dentro de `src/app/pages.tsx`; domínio em `cash.ts` e `cas
 
 ## Services
 
-`CashService.open`, `receive(storeId, saleId, amount, paymentMethod?)` e `close`; a página também usa SalesService e WorkOrderService.
+`CashService.open`, `receive(storeId, saleId, amount, paymentMethod?)`, `recordMovement(storeId, type, amount, reason, author?)` e `close`; a página também usa SalesService e WorkOrderService.
 
 ## Repositories
 
-`CashRepository` / `LocalCashRepository`: `current`, `listSessions`, `listEntries`, `openSession`, `recordReceipt` e `closeSession`. Abertura, recebimento e fechamento são transacionais no IndexedDB.
+`CashRepository` / `LocalCashRepository`: `current`, `listSessions`, `listEntries`, `openSession`, `recordReceipt`, `recordMovement` e `closeSession`. Abertura, recebimento, movimentações (sangria/suprimento) e fechamento são transacionais no IndexedDB.
 
 ## Stores / Hooks
 
@@ -35,7 +35,7 @@ Sem store/hook. Estado temporário e tabs usam `useState`.
 
 ## Models
 
-`CashSession` (com `expectedBalance`, `closingBalance`, `difference`, `closedBy`, `closingNote`), `CashEntry` (com `paymentMethod?`), `PaymentMethod` (`CASH`/`PIX`/`CARD`), `paymentMethodLabels`, `assertValidPaymentMethod`; Sale/WorkOrder são dependências. `cashTotals` centraliza o cálculo por centavos (regra em `src/domain/money.ts`).
+`CashSession` (com `expectedBalance`, `closingBalance`, `difference`, `closedBy`, `closingNote`), `CashEntry` (com `paymentMethod?`, `reason?`, `author?`), `PaymentMethod` (`CASH`/`PIX`/`CARD`), `CashMovementType` (`WITHDRAWAL`/`DEPOSIT`), `paymentMethodLabels`, `assertValidPaymentMethod`; Sale/WorkOrder são dependências. `cashTotals` centraliza o cálculo por centavos (regra em `src/domain/money.ts`).
 
 ## Permissions
 
@@ -59,7 +59,7 @@ Sales, customers, work-orders, currentStore e access.
 
 ## Avoid Modifying
 
-Não recriar telas separadas de Venda/Recebimento. Não receber sem sessão aberta. Não confiar em bloqueio de botão como idempotência: a garantia é a transação de `recordReceipt`/`closeSession`.
+Não recriar telas separadas de Venda/Recebimento. Não receber sem sessão aberta. Não confiar em bloqueio de botão como idempotência: a garantia é a transação de `recordReceipt`/`recordMovement`/`closeSession`.
 
 ## Common Tasks
 
@@ -70,6 +70,10 @@ Não recriar telas separadas de Venda/Recebimento. Não receber sem sessão aber
 ### Alterar recebimento
 
 → CashDeskPage + CashService.receive + CashRepository.recordReceipt + `Sale.paymentStatus` + forma de pagamento (`paymentMethod`).
+
+### Alterar sangria/suprimento
+
+→ CashDeskPage (aba Sessão) + CashService.recordMovement + CashRepository.recordMovement; motivo é obrigatório e sangria não pode exceder o saldo esperado (verificado na transação com `cashTotals`).
 
 ### Alterar fechamento
 

@@ -4,6 +4,15 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `6a59f2b` — feat: add cash deposit and withdrawal with reason in the session screen (F4-16 suprimento e sangria)
+
+- `CashMovementType` (`WITHDRAWAL`/`DEPOSIT`) e `CashEntry.reason?`/`author?` (opcionais, sem bump de schema); `CashService.recordMovement(storeId, type, amount, reason, author?)` valida tipo, valor e motivo obrigatório (trim).
+- `CashRepository.recordMovement` + `LocalCashRepository`: transação `rw [cashSessions, cashEntries]` que exige sessão aberta e rejeita sangria acima do saldo esperado (`cashTotals`) — regra atomicamente garantida no IndexedDB.
+- UI `/caixa` aba Sessão: form de Suprimento/Sangria (tipo, valor, motivo) para `cash.manage`, visível com sessão aberta; extrato exibe motivo e autor; totais do fechamento (Suprimentos/Sangrias/Esperado) refletem automaticamente via `cashTotals`.
+- Backup valida `reason` (string não vazia quando presente) e `author` (string quando presente) em `cashEntries`.
+- Evidência: `npm.cmd test` **177/177** (21 arquivos; `cash-service.test.ts` +2, `cash.test.ts` +1, `backup.test.ts` estendido), build 0, tsc 0.
+- Card: F4-16/#73 → DONE (fecha a ressalva da dependência opcional de F4-17; sangria/suprimento alimentam o fechamento pela UI).
+
 ### `b0f72d1` — feat: add product price, cost and payment method to inventory and cash models (F1-06 modelos de produtos e pagamentos)
 
 - `InventoryItem` ganha `defaultPrice?`/`cost?` (reais, validados com `isMoney` no `InventoryService.create/update`); produto pode ter preço/custo padrão sem quebrar a venda manual (fluxo de venda intocado, testes de regressão verdes).

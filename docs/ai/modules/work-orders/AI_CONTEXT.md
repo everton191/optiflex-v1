@@ -52,4 +52,4 @@
 
 ## Next Likely Task
 
-Fila do KANBAN: F4-18 estornos/cancelamentos (devolve estoque) ou F3-17 prazos e alertas. (F1-02 e F1-06 concluídos em `8fc64b0`/`b0f72d1`.)
+Fila do KANBAN: F4-18 estornos/cancelamentos (devolve estoque) ou F3-17 prazos e alertas. (F1-02, F1-06 e F4-16 concluídos em `8fc64b0`/`b0f72d1`/`6a59f2b`.)

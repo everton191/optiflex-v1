@@ -28,7 +28,7 @@ Corpos das issues e colunas do `KANBAN.md` sincronizados; verificação final: *
 | F8-03 testes e2e | #137 | BACKLOG → **BLOCKED** | decisão P5 (ferramenta) |
 | F3-20 garantias | #57 | BACKLOG → **BLOCKED** | decisão P7 (política de garantia) |
 
-Anomalia inversa encontrada e mantida com ressalva: **F4-17 (DONE) depende de F4-16 (não concluído)** — a dependência é opcional (sangria/suprimento *afina* os totais; o fechamento foi implementado e testado em `cbcf80f`). Registrar em F4-16 que ela alimenta o F4-17.
+Anomalia inversa encontrada e mantida com ressalva: **F4-17 (DONE) depende de F4-16 (entregue em `6a59f2b`)** — a dependência era opcional (sangria/suprimento *afina* os totais; o fechamento foi implementado e testado em `cbcf80f`). Resolvida em 08/10/2026: F4-16 agora alimenta o F4-17 pela UI de lançamento.
 
 ## Classificação dos bloqueios (08/10/2026)
 
@@ -66,7 +66,7 @@ F4-7 baixa transacional (FEITO)
        │    │         ├─ F4-14 crediário/carnê (OPC)
        │    │         └─ F4-15 contas a receber (OBR p/ gestão)
        │    └─ F4-19 relatórios financeiros (OBR p/ gestão)
-       ├─ F4-16 suprimento/sangria (independente)
+       ├─ F4-16 suprimento/sangria (FEITO 08/10 — `6a59f2b`)
        ├─ F4-18 estornos/cancelamentos (OBR p/ rastreabilidade)
        └─ F4-17 fechamento de caixa (FEITO — consome F4-10/16)
 ```
@@ -132,7 +132,7 @@ F3-09 conteúdo real de anexos (P0, DONE — `6ce9c9a`)
 
 ## Dependências que NÃO são obrigatórias (podem seguir em paralelo)
 
-- F4-16 suprimento/sangria (só depende da abertura, feita).
+- F4-16 suprimento/sangria (FEITO 08/10 — só dependia da abertura, feita).
 - F2-06 edição de clientes (F1-03 é opcional/estilo).
 - F7-05 navegação mobile, F7-11 estados de UI (independentes do domínio).
 - F4-05 reserva de itens e F4-06 transferência (esperam prioridade, não bloqueiam o núcleo).
