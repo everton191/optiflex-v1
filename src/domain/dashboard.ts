@@ -59,6 +59,13 @@ export function openOrders(orders: readonly WorkOrder[]): WorkOrder[] {
   return orders.filter((order) => order.status !== "DELIVERED" && order.status !== "CANCELLED");
 }
 
+export function isOverdueOrder(order: WorkOrder, now: Date = new Date()): boolean {
+  if (!order.dueAt) return false;
+  const due = Date.parse(order.dueAt);
+  if (!Number.isFinite(due)) return false;
+  return due < now.getTime() && order.status !== "DELIVERED" && order.status !== "CANCELLED";
+}
+
 export function overdueOrders(orders: readonly WorkOrder[], now: Date = new Date()): WorkOrder[] {
-  return orders.filter((order) => order.dueAt && Date.parse(order.dueAt) < now.getTime() && order.status !== "DELIVERED" && order.status !== "CANCELLED");
+  return orders.filter((order) => isOverdueOrder(order, now));
 }

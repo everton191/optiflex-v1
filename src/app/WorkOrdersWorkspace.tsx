@@ -7,6 +7,7 @@ import type { InventoryItem } from "../domain/inventory";
 import type { Sale } from "../domain/sales";
 import type { WorkOrder, WorkOrderStatus } from "../domain/work-order";
 import { canTransition, workOrderEventLabels, workOrderStatusLabels, workOrderTransitions } from "../domain/work-order";
+import { isOverdueOrder, overdueOrders } from "../domain/dashboard";
 import { ReceptionService } from "../domain/reception-service";
 import { SalesService } from "../domain/sales-service";
 import { InventoryService } from "../domain/inventory-service";
@@ -25,9 +26,9 @@ const transitionLabels: Record<WorkOrderStatus, string> = {
   DELIVERED: "Entregar",
   CANCELLED: "Cancelar",
 };
-type Filter = "ALL" | WorkOrderStatus;
-const filters: readonly Filter[] = ["ALL", "OPEN", "IN_PRODUCTION", "READY", "DELIVERED", "CANCELLED"];
-const isOverdue = (order: WorkOrder) => Boolean(order.dueAt) && Date.parse(order.dueAt as string) < Date.now() && order.status !== "DELIVERED" && order.status !== "CANCELLED";
+type Filter = "ALL" | "ATRASADAS" | WorkOrderStatus;
+const filters: readonly Filter[] = ["ALL", "ATRASADAS", "OPEN", "IN_PRODUCTION", "READY", "DELIVERED", "CANCELLED"];
+const filterLabels: Record<Filter, string> = { ALL: "Todas", ATRASADAS: "Atrasadas", OPEN: workOrderStatusLabels.OPEN, IN_PRODUCTION: workOrderStatusLabels.IN_PRODUCTION, READY: workOrderStatusLabels.READY, DELIVERED: workOrderStatusLabels.DELIVERED, CANCELLED: workOrderStatusLabels.CANCELLED };
 const orderCode = (order: WorkOrder) => order.id.slice(-6).toUpperCase();
 
 export function WorkOrdersPage() {
@@ -98,8 +99,8 @@ export function WorkOrdersPage() {
     }, "Não foi possível cancelar a ordem.");
   }
 
-  const counts = (value: Filter) => value === "ALL" ? orders.length : orders.filter((order) => order.status === value).length;
-  const visible = filter === "ALL" ? orders : orders.filter((order) => order.status === filter);
+  const counts = (value: Filter) => value === "ALL" ? orders.length : value === "ATRASADAS" ? overdueOrders(orders).length : orders.filter((order) => order.status === value).length;
+  const visible = filter === "ALL" ? orders : filter === "ATRASADAS" ? overdueOrders(orders) : orders.filter((order) => order.status === filter);
   const withoutOrder = sales.filter((sale) => sale.status === "CONFIRMED" && !orders.some((order) => order.saleId === sale.id));
 
   return <div className="page work-orders-page">
@@ -110,7 +111,7 @@ export function WorkOrdersPage() {
     {error && <p className="notice error-text" role="alert">{error} <Button type="button" onClick={retry}>Tentar novamente</Button></p>}
 
     <div className="status-filters" role="tablist" aria-label="Filtrar ordens por status">
-      {filters.map((value) => <button type="button" role="tab" key={value} aria-selected={filter === value} className={filter === value ? "active" : ""} onClick={() => setFilter(value)}>{value === "ALL" ? "Todas" : workOrderStatusLabels[value]} <span>{counts(value)}</span></button>)}
+      {filters.map((value) => <button type="button" role="tab" key={value} aria-selected={filter === value} className={filter === value ? "active" : ""} onClick={() => setFilter(value)}>{filterLabels[value]} <span>{counts(value)}</span></button>)}
     </div>
 
     {canManage && withoutOrder.length > 0 && <section aria-label="Vendas sem ordem">
@@ -121,7 +122,7 @@ export function WorkOrdersPage() {
       </article>)}</div>
     </section>}
 
-    <h2 className="section-title">{filter === "ALL" ? "Todas as ordens" : workOrderStatusLabels[filter as WorkOrderStatus]}</h2>
+    <h2 className="section-title">{filterLabels[filter] === "Todas" ? "Todas as ordens" : filter === "ATRASADAS" ? "Ordens com prazo vencido" : workOrderStatusLabels[filter as WorkOrderStatus]}</h2>
     <div className="list-card compact-list">
       {loading ? <p className="empty-state" role="status">Carregando ordens…</p> : visible.length ? visible.map((order) => {
         const sale = saleOf(order.saleId);
@@ -130,12 +131,13 @@ export function WorkOrdersPage() {
             <strong>{customerName(order.customerId)}</strong>
             <span>{sale?.description ?? "Venda"} · {orderCode(order)} · Criada em {new Date(order.createdAt).toLocaleDateString("pt-BR")}</span>
             {order.updatedAt && <span>Última alteração: {workOrderStatusLabels[order.status].toLowerCase()} em {new Date(order.updatedAt).toLocaleString("pt-BR")}{order.updatedBy ? ` por ${order.updatedBy}` : ""}</span>}
-            <span className={isOverdue(order) ? "error-text" : "help-text"}>{order.dueAt ? `Prazo: ${new Date(order.dueAt).toLocaleDateString("pt-BR")}${isOverdue(order) ? " · atrasada" : ""}` : "Sem prazo definido"}</span>
+            <span className={isOverdueOrder(order) ? "error-text" : "help-text"}>{order.dueAt ? `Prazo: ${new Date(order.dueAt).toLocaleDateString("pt-BR")}${isOverdueOrder(order) ? " · atrasada" : ""}` : "Sem prazo definido"}</span>
             {order.notes && <span className="help-text work-order-notes">{order.notes}</span>}
             {order.cancelReason && <span className="error-text">Cancelada: {order.cancelReason}</span>}
           </div>
           <div className="work-order-actions">
             <span className="badge">{workOrderStatusLabels[order.status]}</span>
+            {isOverdueOrder(order) && <span className="badge is-out" role="status">Atrasada</span>}
             {canManage && workOrderTransitions[order.status].filter((status) => status !== "CANCELLED").map((status) => <Button type="button" key={status} onClick={() => void transition(order, status)}>{transitionLabels[status]}</Button>)}
             {canManage && canTransition(order.status, "CANCELLED") && <Button type="button" onClick={() => cancelling?.id === order.id ? closeCancel() : openCancel(order)}>{cancelling?.id === order.id ? "Fechar" : "Cancelar"}</Button>}
             {canManage && <Button type="button" onClick={() => editing?.id === order.id ? closeSchedule() : openSchedule(order)}>{editing?.id === order.id ? "Fechar" : "Prazo/notas"}</Button>}
@@ -243,9 +245,9 @@ export function WorkOrderDetailPage() {
 
     <section className="card">
       <h2>Situação</h2>
-      <p><span className="badge">{workOrderStatusLabels[order.status]}</span></p>
+      <p><span className="badge">{workOrderStatusLabels[order.status]}</span> {isOverdueOrder(order) && <span className="badge is-out" role="status">Atrasada</span>}</p>
       {order.updatedAt && <p className="help-text">Última alteração: {workOrderStatusLabels[order.status].toLowerCase()} em {new Date(order.updatedAt).toLocaleString("pt-BR")}{order.updatedBy ? ` por ${order.updatedBy}` : ""}</p>}
-      <p className={isOverdue(order) ? "error-text" : "help-text"}>{order.dueAt ? `Prazo: ${new Date(order.dueAt).toLocaleDateString("pt-BR")}${isOverdue(order) ? " · atrasada" : ""}` : "Sem prazo definido"}</p>
+      <p className={isOverdueOrder(order) ? "error-text" : "help-text"}>{order.dueAt ? `Prazo: ${new Date(order.dueAt).toLocaleDateString("pt-BR")}${isOverdueOrder(order) ? " · atrasada" : ""}` : "Sem prazo definido"}</p>
       {order.notes && <p className="help-text">{order.notes}</p>}
       {order.cancelReason && <p className="error-text">Motivo do cancelamento: {order.cancelReason}</p>}
       <p className="help-text">Criada em {new Date(order.createdAt).toLocaleString("pt-BR")}{sale ? ` · Venda R$ ${sale.total.toFixed(2)}` : ""}</p>

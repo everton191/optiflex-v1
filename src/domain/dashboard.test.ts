@@ -3,7 +3,7 @@ import type { Attendance } from "./customer";
 import type { CashEntry } from "./cash";
 import type { Sale } from "./sales";
 import type { WorkOrder } from "./work-order";
-import { chartHeights, isToday, openOrders, overdueOrders, pendingQuotes, receiptsTodayCents, salesByDay, salesTodayCents, stockAlerts, waitingQueue } from "./dashboard";
+import { chartHeights, isOverdueOrder, isToday, openOrders, overdueOrders, pendingQuotes, receiptsTodayCents, salesByDay, salesTodayCents, stockAlerts, waitingQueue } from "./dashboard";
 
 const local = (year: number, month: number, day: number, hour = 12) => new Date(year, month - 1, day, hour).toISOString();
 const now = new Date(2026, 2, 10, 15);
@@ -52,6 +52,18 @@ describe("queue and alerts", () => {
     ];
     expect(openOrders(orders).map((order) => order.id)).toEqual(["os-1", "os-2", "os-3"]);
     expect(overdueOrders(orders, now).map((order) => order.id)).toEqual(["os-2"]);
+  });
+
+  it("checks a single due date against now, ignoring invalid dates and finished orders", () => {
+    const overdue = (dueAt?: string, status: WorkOrder["status"] = "OPEN"): WorkOrder => ({ id: "os-x", saleId: "s", customerId: "c", storeId: "s", status, createdAt: local(2026, 3, 1, 10), dueAt });
+    expect(isOverdueOrder(overdue(local(2026, 3, 10, 9)), now)).toBe(true);
+    expect(isOverdueOrder(overdue(local(2026, 3, 10, 16)), now)).toBe(false);
+    expect(isOverdueOrder(overdue(local(2026, 3, 10, 15)), now)).toBe(false);
+    expect(isOverdueOrder(overdue(undefined), now)).toBe(false);
+    expect(isOverdueOrder(overdue("não-é-data"), now)).toBe(false);
+    expect(isOverdueOrder(overdue(local(2026, 3, 5, 12), "DELIVERED"), now)).toBe(false);
+    expect(isOverdueOrder(overdue(local(2026, 3, 5, 12), "CANCELLED"), now)).toBe(false);
+    expect(isOverdueOrder(overdue(local(2026, 3, 5, 12), "READY"), now)).toBe(true);
   });
 });
 
