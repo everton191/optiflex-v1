@@ -4,6 +4,15 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `c45a6bf` + docs — Fila de atendimento completa com filtros, espera e transições (F3-03)
+
+- `src/domain/customer.ts`: `AttendanceStatus` + `NO_SHOW` ("Faltou", só nasce de `WAITING` e é estado fechado); `attendanceTransitions.WAITING` = `IN_PROGRESS`/`CANCELLED`/`NO_SHOW`; novos `activeQueueStatuses`/`isActiveQueueStatus` (fila ativa = `WAITING`+`IN_PROGRESS`) e `waitingMinutes(atendimento, now)` (minutos inteiros de espera apenas para `WAITING`; inválida/futura → 0).
+- `src/domain/dashboard.ts`: `waitingQueue` passa a usar `isActiveQueueStatus` — fonte única da fila ativa (comportamento idêntico; agora `NO_SHOW`/`CANCELLED` garantidos fora).
+- `src/app/pages.tsx` (`AttendanceQueue`): chips `.status-filters` Todos/Aguardando/Em atendimento com contagem; linha exibe tipo, status, responsável (profissional ou "Sem responsável"), espera formatada ("menos de 1 min"/"12 min"/"1h 5min") com relógio de 30s e badge "Urgente"; ações por permissão (`attendance.create`): Iniciar, Faltou, Finalizar, Cancelar + link "Ver detalhe" — estado final sai da fila na hora; perfil clínico continua linkando o prontuário.
+- `src/domain/backup.ts`: enum de status de attendance aceita `NO_SHOW`.
+- Testes: novo `src/domain/customer.test.ts` (4 casos: membros da fila, cálculo de espera, timestamps inválidos, guarda de transições), `reception-service.test.ts` +1 (falta fecha o atendimento e o estado é imutável), `dashboard.test.ts` estendido (CANCELLED/NO_SHOW fora da fila), `backup.test.ts` (+NO_SHOW válido, status desconhecido inválido); **252/252** (28 arquivos), build 0, tsc 0.
+- Card: F3-03/#42 → DONE (critérios: transições testadas e estado final sai da fila; tempo de espera calculado por registro).
+
 ### `8daab89` + docs — Cadastro completo de atendimento com detalhe e transições (F3-02)
 
 - `src/domain/customer.ts`: `Attendance` + `professionalId?`/`priority?` (`NORMAL`/`URGENT`, padrão `NORMAL` em novo registro), `AttendancePriority`, `isAttendancePriority` e `attendanceTransitions` (DRAFT→WAITING/CANCELLED, WAITING→IN_PROGRESS/CANCELLED, IN_PROGRESS→FINISHED/CANCELLED; fechados não reabrem).

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Criar atendimentos para clientes e manter a fila da loja usada pela recepção e pela área clínica; a agenda (dia/semana) alimenta a fila com eventos convertidos em atendimento.
+Criar atendimentos para clientes e manter a fila da loja usada pela recepção e pela área clínica; a agenda (dia/semana) alimenta a fila com eventos convertidos em atendimento. A fila exibe estados ativos (aguardando/em atendimento) com filtros, tempo de espera por registro, prioridade, responsável e transições por permissão.
 
 ## Directory
 
@@ -22,7 +22,7 @@ UI em `src/app/pages.tsx`; tipos em `src/domain/customer.ts` e `src/domain/agend
 
 ## Components
 
-Select HTML, `Button` e classes de lista.
+Select HTML, `Button`, classes de lista e filtros `.status-filters` (chips Todos/Aguardando/Em atendimento com contagem).
 
 ## Services
 
@@ -38,7 +38,7 @@ Sem store/hook dedicado. Usa `currentStoreId` do App Context e estado React loca
 
 ## Models
 
-`Attendance`, `AttendanceStatus`, `AttendanceType`, `AttendancePriority`, `attendanceTransitions`; `AgendaEvent`, `AgendaEventType`, `AgendaEventStatus`.
+`Attendance`, `AttendanceStatus` (inclui `NO_SHOW`), `AttendanceType`, `AttendancePriority`, `attendanceTransitions`, `activeQueueStatuses`/`isActiveQueueStatus`, `waitingMinutes`; `AgendaEvent`, `AgendaEventType`, `AgendaEventStatus`.
 
 ## Permissions
 
@@ -68,7 +68,7 @@ Não duplicar cliente/loja na attendance. Não acessar Dexie na página.
 
 ### Alterar fila
 
-→ AttendancePage + listByStore + status.
+→ `AttendanceQueue` em `AttendancePage` + `isActiveQueueStatus`/`waitingMinutes` em `customer.ts` + `transitionAttendance`. Estados finais saem da fila; ações exigem `attendance.create`.
 
 ### Criar atendimento completo (tipo, profissional, prioridade, notas)
 
