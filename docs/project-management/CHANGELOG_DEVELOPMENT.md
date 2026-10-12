@@ -4,6 +4,14 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `94b9d50` — feat: route guard matrix tests and shared route permission map (F8-06 testes de permissões)
+
+- Novo `src/app/route-guards.ts`: mapa único rota→permissão (16 rotas guardadas, incluindo `/agenda`); `router.tsx` agora gera as rotas protegidas a partir desse mapa (elimina divergência entre router e testes).
+- Novo `src/domain/permission-routes.test.ts` (7 casos): matriz rota×perfil para os dez perfis (OWNER completo, NET_ADMIN sem clínico, RECEPÇÃO sem caixa/estoque/admin, CLÍNICO sem caixa/vendas/admin, VENDEDOR sem caixa/gerenciamento/clínico, CAIXA sem vendas/gerenciamento/clínico, ESTOQUE isolado, FINANCEIRO/AUDITOR leitura); negativos de ação de vendedor/clínico/caixa; escopo de loja/registro para os dez perfis via `buildAccessContext`.
+- Documentação: `docs/ai/06_PERMISSION_MAP.md` com a seção de testes e a referência ao mapa único.
+- Evidência: `npm.cmd test` **215/215** (24 arquivos), build 0, tsc 0.
+- Card: F8-06/#140 → DONE (rota, ação e registro cobertos para os dez perfis; negativos automatizados; libera F8-07).
+
 ### `679951f` — feat: agenda day/week views with event to attendance conversion (F3-01 agenda e recepção)
 
 - Novo domínio `src/domain/agenda.ts`: `AgendaEvent` (loja, cliente, profissional opcional, tipo consulta/retorno/entrega/ajuste/cobrança, status, `startsAt` ISO, observações, vínculo `attendanceId`), labels e helpers `dayRange`/`weekRange` em hora local (semana começa na segunda).

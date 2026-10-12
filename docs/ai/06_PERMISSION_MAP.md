@@ -1,6 +1,6 @@
 # Permission Map
 
-Fonte canônica: `src/domain/access.ts`. Escopo por registro: `src/domain/access-context.ts`. Guards: `src/app/permissions.tsx`. Rotas: `src/app/router.tsx`. Menu por função: `src/shell/AppShell.tsx`.
+Fonte canônica: `src/domain/access.ts`. Escopo por registro: `src/domain/access-context.ts`. Guards: `src/app/permissions.tsx`. Rotas: `src/app/router.tsx` (gerado a partir de `src/app/route-guards.ts`, mapa rota→permissão único, F8-06). Menu por função: `src/shell/AppShell.tsx`.
 
 ## Permissões
 
@@ -69,6 +69,12 @@ O escopo (`SELF`, `STORE`, `ORGANIZATION`, `NETWORK`) pertence à definição da
 ## Lógica por role direta
 
 Não foi encontrado `user.role === "admin"`. `CashDeskPage` usa combinações de permissions, não comparações de role. Labels e descrições usam chaves de role somente para lookup.
+
+## Testes de permissão (F8-06, `94b9d50`)
+
+- `src/domain/permission-routes.test.ts`: matriz rota×perfil para os dez perfis contra `routeGuards` (16 rotas, incluindo `/agenda`); negativos de ação para vendedor/clínico/caixa; escopo de loja/registro para os dez perfis via `buildAccessContext`.
+- `src/domain/access.test.ts`: matriz de permissões por role, integridade (OWNER completo, FINANCE/AUDITOR read-only), sync de sessão e expiração.
+- `src/domain/access-scope.test.ts` + `src/infrastructure/storage/access-scope.test.ts`: escopo SELF/STORE/ORG/NETWORK e enforcement nos repositories (escrita, listagem e histórico do cliente).
 
 ## Riscos
 
