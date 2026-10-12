@@ -108,7 +108,7 @@ export function validateBackup(value: unknown): BackupSnapshot {
     if (row.id !== `${row.attendanceId}:${row.version ?? 1}` || !Number.isFinite(Date.parse(row.finalizedAt as string))) throw invalid();
   }
   const enums: Partial<Record<BackupTable, [string, string[]]>> = {
-    attendances: ["status", ["DRAFT", "WAITING", "IN_PROGRESS", "FINISHED", "CANCELLED"]], agendaEvents: ["status", ["SCHEDULED", "COMPLETED", "CANCELLED"]], sales: ["status", ["QUOTE", "CONFIRMED", "CANCELLED"]], workOrders: ["status", ["OPEN", "IN_PRODUCTION", "READY", "DELIVERED", "CANCELLED"]], inventoryMovements: ["type", ["IN", "OUT", "ADJUSTMENT"]], cashEntries: ["type", ["RECEIPT", "WITHDRAWAL", "DEPOSIT", "REFUND"]],
+    attendances: ["status", ["DRAFT", "WAITING", "IN_PROGRESS", "FINISHED", "CANCELLED", "NO_SHOW"]], agendaEvents: ["status", ["SCHEDULED", "COMPLETED", "CANCELLED"]], sales: ["status", ["QUOTE", "CONFIRMED", "CANCELLED"]], workOrders: ["status", ["OPEN", "IN_PRODUCTION", "READY", "DELIVERED", "CANCELLED"]], inventoryMovements: ["type", ["IN", "OUT", "ADJUSTMENT"]], cashEntries: ["type", ["RECEIPT", "WITHDRAWAL", "DEPOSIT", "REFUND"]],
   };
   for (const name of backupTables) {
     const rule = enums[name];

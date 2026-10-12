@@ -61,6 +61,15 @@ describe("attendance lookup and transitions", () => {
     const finished = await service.transitionAttendance("attendance-1", "FINISHED");
     expect(finished.status).toBe("FINISHED");
   });
+  it("marks a waiting attendance as no-show and closes it", async () => {
+    const stored = { id: "attendance-1", customerId: "customer", storeId: "store", type: "CONSULTATION", status: "WAITING", createdAt: "2026-10-08T10:00:00.000Z" };
+    attendances.get.mockResolvedValue(stored);
+    const missed = await service.transitionAttendance("attendance-1", "NO_SHOW");
+    expect(missed.status).toBe("NO_SHOW");
+    expect(attendances.save).toHaveBeenCalledWith({ ...stored, status: "NO_SHOW" });
+    attendances.get.mockResolvedValue(missed);
+    await expect(service.transitionAttendance("attendance-1", "WAITING")).rejects.toThrow("não permite esta transição");
+  });
   it("blocks invalid transitions such as reopening a closed attendance", async () => {
     const finished = { id: "attendance-1", customerId: "customer", storeId: "store", type: "CONSULTATION", status: "FINISHED", createdAt: "2026-10-08T10:00:00.000Z" };
     attendances.get.mockResolvedValue(finished);

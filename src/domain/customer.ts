@@ -8,7 +8,7 @@ export interface Customer {
   createdAt: string;
 }
 
-export type AttendanceStatus = "DRAFT" | "WAITING" | "IN_PROGRESS" | "FINISHED" | "CANCELLED";
+export type AttendanceStatus = "DRAFT" | "WAITING" | "IN_PROGRESS" | "FINISHED" | "CANCELLED" | "NO_SHOW";
 export type AttendanceType = "CONSULTATION" | "RETURN" | "ADJUSTMENT" | "ASSESSMENT";
 export type AttendancePriority = "NORMAL" | "URGENT";
 
@@ -31,8 +31,22 @@ export interface Attendance {
 
 export const attendanceTransitions: Record<AttendanceStatus, readonly AttendanceStatus[]> = {
   DRAFT: ["WAITING", "CANCELLED"],
-  WAITING: ["IN_PROGRESS", "CANCELLED"],
+  WAITING: ["IN_PROGRESS", "CANCELLED", "NO_SHOW"],
   IN_PROGRESS: ["FINISHED", "CANCELLED"],
   FINISHED: [],
-  CANCELLED: []
+  CANCELLED: [],
+  NO_SHOW: []
 };
+
+export const activeQueueStatuses: readonly AttendanceStatus[] = ["WAITING", "IN_PROGRESS"];
+
+export function isActiveQueueStatus(status: AttendanceStatus): boolean {
+  return activeQueueStatuses.includes(status);
+}
+
+export function waitingMinutes(attendance: Pick<Attendance, "status" | "createdAt">, now: Date): number {
+  if (attendance.status !== "WAITING") return 0;
+  const createdAt = Date.parse(attendance.createdAt);
+  if (Number.isNaN(createdAt)) return 0;
+  return Math.max(0, Math.floor((now.getTime() - createdAt) / 60_000));
+}

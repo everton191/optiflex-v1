@@ -183,6 +183,10 @@ describe("encrypted backup and transactional restore", () => {
     snapshot.tables.customers.push({ id: "customer-attendance", name: "Cliente Atendimento", createdAt: "2026-01-01T09:00:00.000Z" });
     snapshot.tables.attendances.push({ id: "attendance-full", customerId: "customer-attendance", storeId: "store-centro", type: "ADJUSTMENT", status: "WAITING", professionalId: "user-clinical", priority: "URGENT", receptionNotes: "observação da recepção", createdAt: "2026-01-01T10:00:00.000Z" });
     expect(() => validateBackup(snapshot)).not.toThrow();
+    const noShow = structuredClone(snapshot); noShow.tables.attendances[0].status = "NO_SHOW" as never;
+    expect(() => validateBackup(noShow)).not.toThrow();
+    const badStatus = structuredClone(snapshot); badStatus.tables.attendances[0].status = "SKIPPED" as never;
+    expect(() => validateBackup(badStatus)).toThrow("inválido");
     const badPriority = structuredClone(snapshot); badPriority.tables.attendances[0].priority = "RESCUE" as never;
     expect(() => validateBackup(badPriority)).toThrow("inválido");
     const wrongType = structuredClone(snapshot); wrongType.tables.attendances[0].type = "WALK_IN" as never;

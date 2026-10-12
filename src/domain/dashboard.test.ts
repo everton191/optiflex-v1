@@ -33,8 +33,8 @@ describe("today metrics", () => {
 describe("queue and alerts", () => {
   const attendance = (id: string, status: Attendance["status"]): Attendance => ({ id, customerId: "customer-1", storeId: "store-centro", type: "CONSULTATION", status, createdAt: local(2026, 3, 10, 9) });
   it("counts only waiting or in-progress attendances", () => {
-    const queue = [attendance("a1", "WAITING"), attendance("a2", "IN_PROGRESS"), attendance("a3", "FINISHED"), attendance("a4", "DRAFT")];
-    expect(waitingQueue(queue)).toHaveLength(2);
+    const queue = [attendance("a1", "WAITING"), attendance("a2", "IN_PROGRESS"), attendance("a3", "FINISHED"), attendance("a4", "DRAFT"), attendance("a5", "CANCELLED"), attendance("a6", "NO_SHOW")];
+    expect(waitingQueue(queue).map((item) => item.id)).toEqual(["a1", "a2"]);
   });
 
   it("flags stock below the minimum or out of stock", () => {

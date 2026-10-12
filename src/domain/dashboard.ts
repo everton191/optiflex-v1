@@ -1,4 +1,4 @@
-import type { Attendance } from "./customer";
+import { isActiveQueueStatus, type Attendance } from "./customer";
 import type { CashEntry } from "./cash";
 import type { InventoryItem } from "./inventory";
 import { stockState } from "./inventory";
@@ -29,7 +29,7 @@ export function receiptsTodayCents(entries: readonly CashEntry[], now: Date = ne
 }
 
 export function waitingQueue(attendances: readonly Attendance[]): Attendance[] {
-  return attendances.filter((attendance) => attendance.status === "WAITING" || attendance.status === "IN_PROGRESS");
+  return attendances.filter((attendance) => isActiveQueueStatus(attendance.status));
 }
 
 export function salesByDay(sales: readonly Sale[], now: Date = new Date()): DayBucket[] {
