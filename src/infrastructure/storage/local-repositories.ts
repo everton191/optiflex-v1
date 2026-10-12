@@ -73,6 +73,7 @@ export class LocalCustomerRepository implements CustomerRepository {
 export class LocalAttendanceRepository implements AttendanceRepository {
   async listByStore(storeId: string): Promise<Attendance[]> { assertStoreAccess(storeId); return database.attendances.where("storeId").equals(storeId).reverse().sortBy("createdAt"); }
   async listByCustomer(customerId: string): Promise<Attendance[]> { const rows = await database.attendances.where("customerId").equals(customerId).reverse().sortBy("createdAt"); return rows.filter((attendance) => canAccessRecordSafe(attendance)); }
+  async get(id: string): Promise<Attendance | undefined> { const attendance = await database.attendances.get(id); return attendance && canAccessRecordSafe(attendance) ? attendance : undefined; }
   async save(attendance: Attendance): Promise<void> { assertRecordAccess(attendance); await database.attendances.put(attendance); }
 }
 

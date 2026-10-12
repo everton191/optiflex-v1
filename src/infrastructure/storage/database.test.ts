@@ -41,10 +41,11 @@ describe("local storage", () => {
     await database.open();
     const service = new ReceptionService(new LocalCustomerRepository(), new LocalAttendanceRepository());
     const customer = await service.createCustomer({ name: "Cliente de teste" });
-    const attendance = await service.startAttendance(customer.id, "store-centro", "CONSULTATION");
+    const attendance = await service.startAttendance(customer.id, "store-centro", "ADJUSTMENT", "  observação da recepção  ", { professionalId: "user-clinical", priority: "URGENT" });
     database.close();
     await database.open();
     expect(await service.getCustomer(customer.id)).toEqual(customer);
+    expect(await service.getAttendance(attendance.id)).toEqual(attendance);
     expect(await service.listQueue("store-centro")).toEqual([attendance]);
     expect(await service.listQueue("store-shopping")).toEqual([]);
   });

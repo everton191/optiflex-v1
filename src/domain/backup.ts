@@ -1,5 +1,6 @@
 import { rolePermissions, type RoleKey } from "./access";
 import { paymentMethodLabels } from "./cash";
+import { isAttendancePriority } from "./customer";
 import { isProductCategory } from "./inventory";
 import { workOrderEventLabels, workOrderStatusLabels } from "./work-order";
 
@@ -53,6 +54,7 @@ export function validateBackup(value: unknown): BackupSnapshot {
       if (name === "inventoryItems" && row.defaultPrice !== undefined && (typeof row.defaultPrice !== "number" || !Number.isFinite(row.defaultPrice) || row.defaultPrice < 0)) throw invalid();
       if (name === "inventoryItems" && row.cost !== undefined && (typeof row.cost !== "number" || !Number.isFinite(row.cost) || row.cost < 0)) throw invalid();
       if (name === "inventoryItems" && row.category !== undefined && !isProductCategory(row.category)) throw invalid();
+      if (name === "attendances" && row.priority !== undefined && !isAttendancePriority(row.priority)) throw invalid();
       if (name === "sales" && row.items !== undefined && (!Array.isArray(row.items) || row.items.some((item) => !object(item) || typeof item.inventoryItemId !== "string" || typeof item.name !== "string" || typeof item.quantity !== "number" || !Number.isFinite(item.quantity) || item.quantity <= 0 || typeof item.unitPrice !== "number" || !Number.isFinite(item.unitPrice) || item.unitPrice < 0))) throw invalid();
       if (name === "cashSessions") {
         for (const field of ["expectedBalance", "closingBalance"]) if (row[field] !== undefined && (typeof row[field] !== "number" || !Number.isFinite(row[field]) || (row[field] as number) < 0)) throw invalid();

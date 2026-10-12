@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ReceptionService } from "./reception-service";
 
 const customers = { list: vi.fn(), get: vi.fn(), save: vi.fn() };
-const attendances = { listByStore: vi.fn(), listByCustomer: vi.fn(), save: vi.fn() };
+const attendances = { listByStore: vi.fn(), listByCustomer: vi.fn(), get: vi.fn(), save: vi.fn() };
 const service = new ReceptionService(customers, attendances);
 beforeEach(() => { vi.resetAllMocks(); });
 
@@ -28,8 +28,46 @@ describe("reception validation", () => {
   it("preserves the selected customer and store", async () => {
     customers.get.mockResolvedValue({ id: "customer" });
     const attendance = await service.startAttendance("customer", "store", "RETURN");
-    expect(attendance).toMatchObject({ customerId: "customer", storeId: "store", type: "RETURN", status: "WAITING" });
+    expect(attendance).toMatchObject({ customerId: "customer", storeId: "store", type: "RETURN", status: "WAITING", priority: "NORMAL" });
     expect(attendances.save).toHaveBeenCalledWith(attendance);
+  });
+  it("persists type, trimmed notes, professional and urgent priority", async () => {
+    customers.get.mockResolvedValue({ id: "customer" });
+    const attendance = await service.startAttendance("customer", "store", "ADJUSTMENT", "  cliente relatou dor  ", { professionalId: "  user-9  ", priority: "URGENT" });
+    expect(attendance).toMatchObject({ type: "ADJUSTMENT", receptionNotes: "cliente relatou dor", professionalId: "user-9", priority: "URGENT", status: "WAITING" });
+    expect(attendances.save).toHaveBeenCalledWith(attendance);
+  });
+});
+
+describe("attendance lookup and transitions", () => {
+  it("returns the stored attendance through the repository", async () => {
+    const stored = { id: "attendance-1", customerId: "customer", storeId: "store", type: "CONSULTATION", status: "WAITING", createdAt: "2026-10-08T10:00:00.000Z" };
+    attendances.get.mockResolvedValue(stored);
+    expect(await service.getAttendance("attendance-1")).toEqual(stored);
+    expect(attendances.get).toHaveBeenCalledWith("attendance-1");
+  });
+  it("rejects transitions for unknown attendances without saving", async () => {
+    attendances.get.mockResolvedValue(undefined);
+    await expect(service.transitionAttendance("missing", "IN_PROGRESS")).rejects.toThrow("não encontrado");
+    expect(attendances.save).not.toHaveBeenCalled();
+  });
+  it("walks the happy path from waiting to in progress and finished", async () => {
+    const stored = { id: "attendance-1", customerId: "customer", storeId: "store", type: "CONSULTATION", status: "WAITING", createdAt: "2026-10-08T10:00:00.000Z" };
+    attendances.get.mockResolvedValue(stored);
+    const started = await service.transitionAttendance("attendance-1", "IN_PROGRESS");
+    expect(started.status).toBe("IN_PROGRESS");
+    expect(attendances.save).toHaveBeenCalledWith({ ...stored, status: "IN_PROGRESS" });
+    attendances.get.mockResolvedValue(started);
+    const finished = await service.transitionAttendance("attendance-1", "FINISHED");
+    expect(finished.status).toBe("FINISHED");
+  });
+  it("blocks invalid transitions such as reopening a closed attendance", async () => {
+    const finished = { id: "attendance-1", customerId: "customer", storeId: "store", type: "CONSULTATION", status: "FINISHED", createdAt: "2026-10-08T10:00:00.000Z" };
+    attendances.get.mockResolvedValue(finished);
+    await expect(service.transitionAttendance("attendance-1", "WAITING")).rejects.toThrow("não permite esta transição");
+    attendances.get.mockResolvedValue({ ...finished, status: "WAITING" });
+    await expect(service.transitionAttendance("attendance-1", "FINISHED")).rejects.toThrow("não permite esta transição");
+    expect(attendances.save).not.toHaveBeenCalled();
   });
 });
 

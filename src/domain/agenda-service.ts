@@ -43,7 +43,7 @@ export class AgendaService {
     if (event.status !== "SCHEDULED") throw new Error("Somente eventos agendados podem virar atendimento.");
     const attendanceType = attendanceTypeForAgendaEvent(event.type);
     if (!attendanceType) throw new Error("Este tipo de evento não vira atendimento.");
-    const attendance = await this.reception.startAttendance(event.customerId, event.storeId, attendanceType, event.notes);
+    const attendance = await this.reception.startAttendance(event.customerId, event.storeId, attendanceType, event.notes, event.professionalId ? { professionalId: event.professionalId } : undefined);
     const updated: AgendaEvent = { ...event, status: "COMPLETED", attendanceId: attendance.id };
     await this.events.save(updated);
     return { event: updated, attendance };

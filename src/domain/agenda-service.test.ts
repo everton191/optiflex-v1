@@ -45,11 +45,11 @@ describe("agenda service", () => {
     expect(events.listByStoreAndRange).toHaveBeenCalledTimes(2);
   });
   it("converts only scheduled convertible events into attendance without redigiting the customer", async () => {
-    const scheduled = { id: "agenda-1", storeId: "store", customerId: "customer", type: "RETURN", status: "SCHEDULED", startsAt: "2026-10-08T10:00:00.000Z", notes: "retorno", createdAt: "2026-10-01T10:00:00.000Z" };
+    const scheduled = { id: "agenda-1", storeId: "store", customerId: "customer", professionalId: "user-9", type: "RETURN", status: "SCHEDULED", startsAt: "2026-10-08T10:00:00.000Z", notes: "retorno", createdAt: "2026-10-01T10:00:00.000Z" };
     events.get.mockResolvedValue(scheduled);
     startAttendance.mockResolvedValue({ id: "attendance-1", customerId: "customer", status: "WAITING" } as never);
     const { event, attendance } = await service.convertToAttendance("agenda-1");
-    expect(startAttendance).toHaveBeenCalledWith("customer", "store", "RETURN", "retorno");
+    expect(startAttendance).toHaveBeenCalledWith("customer", "store", "RETURN", "retorno", { professionalId: "user-9" });
     expect(attendance.id).toBe("attendance-1");
     expect(event).toMatchObject({ status: "COMPLETED", attendanceId: "attendance-1" });
     expect(events.save).toHaveBeenCalledWith(event);

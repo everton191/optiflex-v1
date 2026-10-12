@@ -177,4 +177,17 @@ describe("encrypted backup and transactional restore", () => {
     const badType = structuredClone(snapshot); badType.tables.cashEntries[0].type = "CHARGEBACK" as never;
     expect(() => validateBackup(badType)).toThrow("inválido");
   });
+
+  it("accepts full attendance records and rejects an unknown priority", async () => {
+    const snapshot = await repository.snapshot();
+    snapshot.tables.customers.push({ id: "customer-attendance", name: "Cliente Atendimento", createdAt: "2026-01-01T09:00:00.000Z" });
+    snapshot.tables.attendances.push({ id: "attendance-full", customerId: "customer-attendance", storeId: "store-centro", type: "ADJUSTMENT", status: "WAITING", professionalId: "user-clinical", priority: "URGENT", receptionNotes: "observação da recepção", createdAt: "2026-01-01T10:00:00.000Z" });
+    expect(() => validateBackup(snapshot)).not.toThrow();
+    const badPriority = structuredClone(snapshot); badPriority.tables.attendances[0].priority = "RESCUE" as never;
+    expect(() => validateBackup(badPriority)).toThrow("inválido");
+    const wrongType = structuredClone(snapshot); wrongType.tables.attendances[0].type = "WALK_IN" as never;
+    expect(() => validateBackup(wrongType)).toThrow("inválido");
+    const legacy = structuredClone(snapshot); delete (legacy.tables.attendances[0] as { priority?: unknown }).priority;
+    expect(() => validateBackup(legacy)).not.toThrow();
+  });
 });

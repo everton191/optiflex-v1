@@ -1,6 +1,6 @@
 import { createBrowserRouter, Navigate, RouterProvider } from "react-router-dom";
 import { RequirePermission, RequireSession } from "./permissions";
-import { AttendancePage, BlockedPage, CashDeskPage, ChangePasswordPage, ClinicalQueuePage, ClinicalWorkspacePage, CustomerEditPage, CustomerNewPage, CustomerProfilePage, CustomersPage, DashboardPage, ForbiddenPage, InventoryPage, LoginPage, ProfilesPage, SettingsPage, StoresPage, UsersPage, WorkOrderDetailPage, WorkOrdersPage, AgendaPage } from "./pages";
+import { AttendanceDetailPage, AttendanceNewPage, AttendancePage, BlockedPage, CashDeskPage, ChangePasswordPage, ClinicalQueuePage, ClinicalWorkspacePage, CustomerEditPage, CustomerNewPage, CustomerProfilePage, CustomersPage, DashboardPage, ForbiddenPage, InventoryPage, LoginPage, ProfilesPage, SettingsPage, StoresPage, UsersPage, WorkOrderDetailPage, WorkOrdersPage, AgendaPage } from "./pages";
 import { routeGuards } from "./route-guards";
 import { AppShell } from "../shell/AppShell";
 
@@ -10,6 +10,8 @@ const guardedPages: Record<string, React.ReactNode> = {
   "clientes/:customerId": <CustomerProfilePage />,
   "clientes/:customerId/editar": <CustomerEditPage />,
   "atendimentos": <AttendancePage />,
+  "atendimentos/novo": <AttendanceNewPage />,
+  "atendimentos/:attendanceId": <AttendanceDetailPage />,
   "agenda": <AgendaPage />,
   "clinico": <ClinicalQueuePage />,
   "clinico/atendimento/:attendanceId": <ClinicalWorkspacePage />,

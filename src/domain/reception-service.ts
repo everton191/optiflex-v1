@@ -1,7 +1,13 @@
-import type { Attendance, AttendanceType, Customer } from "./customer";
+import type { Attendance, AttendancePriority, AttendanceStatus, AttendanceType, Customer } from "./customer";
+import { attendanceTransitions } from "./customer";
 import type { AttendanceRepository, CustomerRepository } from "./repositories";
 
 const id = (prefix: string) => `${prefix}-${crypto.randomUUID()}`;
+
+export interface StartAttendanceOptions {
+  professionalId?: string;
+  priority?: AttendancePriority;
+}
 
 export class ReceptionService {
   constructor(private readonly customers: CustomerRepository, private readonly attendances: AttendanceRepository) {}
@@ -21,10 +27,24 @@ export class ReceptionService {
     const customer: Customer = { ...existing, name, phone: input.phone?.trim() || undefined, cpf: input.cpf?.trim() || undefined, email: input.email?.trim() || undefined, birthDate: input.birthDate?.trim() || undefined };
     await this.customers.save(customer); return customer;
   }
-  async startAttendance(customerId: string, storeId: string, type: AttendanceType, receptionNotes?: string): Promise<Attendance> {
+  async startAttendance(customerId: string, storeId: string, type: AttendanceType, receptionNotes?: string, options?: StartAttendanceOptions): Promise<Attendance> {
     if (!storeId.trim()) throw new Error("Selecione uma loja para iniciar o atendimento.");
     if (!customerId || !await this.customers.get(customerId)) throw new Error("Selecione um cliente cadastrado.");
-    const attendance: Attendance = { id: id("attendance"), customerId, storeId, type, receptionNotes, status: "WAITING", createdAt: new Date().toISOString() };
+    const attendance: Attendance = {
+      id: id("attendance"), customerId, storeId, type,
+      professionalId: options?.professionalId?.trim() || undefined,
+      priority: options?.priority === "URGENT" ? "URGENT" : "NORMAL",
+      receptionNotes: receptionNotes?.trim() || undefined,
+      status: "WAITING", createdAt: new Date().toISOString()
+    };
+    await this.attendances.save(attendance); return attendance;
+  }
+  getAttendance(id: string): Promise<Attendance | undefined> { return this.attendances.get(id); }
+  async transitionAttendance(attendanceId: string, to: AttendanceStatus): Promise<Attendance> {
+    const existing = await this.attendances.get(attendanceId);
+    if (!existing) throw new Error("Atendimento não encontrado.");
+    if (!attendanceTransitions[existing.status].includes(to)) throw new Error("Status atual não permite esta transição.");
+    const attendance: Attendance = { ...existing, status: to };
     await this.attendances.save(attendance); return attendance;
   }
   listQueue(storeId: string): Promise<Attendance[]> { return this.attendances.listByStore(storeId); }
