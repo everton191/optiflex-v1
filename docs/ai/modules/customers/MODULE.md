@@ -1,4 +1,4 @@
-# Customers
+﻿# Customers
 
 ## Purpose
 
@@ -25,7 +25,7 @@ Páginas em `src/app/pages.tsx`; domínio em `customer.ts` e `reception-service.
 
 ## Services
 
-`ReceptionService`: list/get/create/update customer e operações de attendance.
+`ReceptionService`: list/get/create/update customer e operações de attendance; valida CPF/CNPJ (`isValidDocument`) antes de gravar.
 
 ## Repositories
 
@@ -48,6 +48,8 @@ Sem store ou hook dedicado; páginas usam `useState`/`useEffect`.
 Attendance, Design System, React Router e IndexedDB local.
 
 ## Public API
+
+`isValidDocument` (e `isValidCPF`/`isValidCNPJ`/`normalizeDocument`) em `customer.ts` valida documento com ou sem máscara.
 
 `ReceptionService.listCustomers`, `getCustomer`, `createCustomer`, `updateCustomer`; contrato `CustomerRepository`.
 
@@ -75,6 +77,10 @@ Não alterar attendance inteiro para correção restrita à busca. Não acessar 
 ### Alterar busca
 
 → `CustomersPage` e `LocalCustomerRepository.list`.
+
+### Alterar validação de documento
+
+→ `isValidCPF`/`isValidCNPJ`/`isValidDocument` em `customer.ts` + `createCustomer`/`updateCustomer`.
 
 ### Alterar regra de negócio
 

@@ -1,9 +1,10 @@
-# AI CONTEXT — Customers
+﻿# AI CONTEXT — Customers
 
 ## Current Status
 
 - Busca por nome, CPF ou telefone.
-- Cadastro de nome, telefone e CPF.
+- Cadastro de nome, telefone e CPF/CNPJ.
+- CPF/CNPJ validado no domínio (dígitos verificadores, com ou sem máscara) em create/update.
 - Edição com complementação (nome, telefone, CPF, e-mail, nascimento) em `/clientes/:customerId/editar` (F2-06, `00d0d9e`); botão "Editar cadastro" no perfil (`customers.manage`).
 - Perfil com histórico de atendimentos e resumo de contatos (telefone, CPF, e-mail, nascimento).
 - Dados persistidos no IndexedDB; edição preserva `id`/`createdAt` e dura após reload.
@@ -19,12 +20,12 @@
 ## Known Problems
 
 - Busca lê toda a tabela antes de filtrar.
-- Não há validação de CPF ou duplicidade.
+- Ainda não há prevenção de duplicidade de cadastro.
 - Criação não oferece e-mail/nascimento (só a edição complementa).
 
 ## Pending Work
 
-- Completar campos/validadores de formulário (telefone obrigatório no plano, CPF e duplicidade).
+- Completar campos/validadores de formulário (telefone obrigatório no plano e duplicidade).
 - Testes específicos de busca e componentes.
 
 ## Important Files Right Now
@@ -41,6 +42,7 @@
 - Cadastro impede envio repetido durante gravação e exibe erro sem limpar campos.
 - Listagem/perfil têm loading, erro, retry e descarte de consultas antigas.
 - Pré-seleção do cliente na fila corrigida; testes de service e persistência adicionados.
+- Validação de CPF/CNPJ (F2-07/#29, `5868e80`): helpers em `customer.ts`, mensagem clara no cadastro/edição e rótulo do campo como CPF/CNPJ.
 
 ## Be Careful With
 

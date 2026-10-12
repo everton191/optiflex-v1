@@ -4,6 +4,14 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `5868e80` + docs — Validação de CPF/CNPJ com dígitos verificadores (F2-07)
+
+- `src/domain/customer.ts`: helpers puros `normalizeDocument` (remove máscara `.`/`-`/`/` e espaços), `isValidCPF`/`isValidCNPJ` (dígitos verificadores oficiais, rejeita sequências repetidas como `111.111.111-11` e letras) e `isValidDocument` (roteia por contagem: 11 dígitos → CPF, 14 → CNPJ).
+- `src/domain/reception-service.ts`: `createCustomer` e `updateCustomer` validam `cpf` opcional após o trim e rejeitam com "CPF ou CNPJ inválido." antes de salvar; documento continua opcional (fora do escopo bloquear cadastro sem documento).
+- `src/app/pages.tsx`: `CustomerNewPage` exibe a mensagem vinda do domínio no catch (antes genérica), rótulo do campo vira "CPF/CNPJ" na criação e na edição.
+- Testes: `customer.test.ts` +3 (válidos com/sem máscara — `111.444.777-35`, `529.982.247-25`, CNPJs `11.222.333/0001-81` e `00.000.000/0001-91`; inválidos — repetidos, dígito errado, tamanho errado, letra; roteamento por dígitos), `reception-service.test.ts` +2 (rejeição em create/update sem save, aceitação com máscara preservando o valor digitado), fixture de `clinical.test.ts` corrigido para CPF válido; **258/258** (28 arquivos), build 0, tsc 0.
+- Card: F2-07/#29 → DONE (critérios: conhecidos inválidos rejeitados/válidos aceitos; testes unitários dos helpers; aceita com/sem máscara).
+
 ### `c45a6bf` + docs — Fila de atendimento completa com filtros, espera e transições (F3-03)
 
 - `src/domain/customer.ts`: `AttendanceStatus` + `NO_SHOW` ("Faltou", só nasce de `WAITING` e é estado fechado); `attendanceTransitions.WAITING` = `IN_PROGRESS`/`CANCELLED`/`NO_SHOW`; novos `activeQueueStatuses`/`isActiveQueueStatus` (fila ativa = `WAITING`+`IN_PROGRESS`) e `waitingMinutes(atendimento, now)` (minutos inteiros de espera apenas para `WAITING`; inválida/futura → 0).
