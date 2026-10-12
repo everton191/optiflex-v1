@@ -56,7 +56,7 @@ Classificação de inventário (Etapa 4) no corpo de cada card:
 
 - Issues totais: **155** (8 épicas + 147 tarefas).
 - Tarefas por fase: F1=14 · F2=18 · F3=20 · F4=20 · F5=19 · F6=19 · F7=19 · F8=18.
-- Tarefas por status (revisado em 08/10/2026; F1-09, F2-04, F7-02, F1-11, F3-09, F3-14, F1-02, F1-06, F4-16, F2-05, F4-10, F4-18, F4-12, F2-06, F3-01, F8-06, F8-07, F1-07 e F3-17 concluídas no mesmo dia): DONE=37 · IN PROGRESS=0 · READY=21 · TESTING=0 · CODE REVIEW=0 · BACKLOG=39 · BLOCKED=50.
+- Tarefas por status (revisado em 08/10/2026; F1-09, F2-04, F7-02, F1-11, F3-09, F3-14, F1-02, F1-06, F4-16, F2-05, F4-10, F4-18, F4-12, F2-06, F3-01, F8-06, F8-07, F1-07, F3-17 e F2-11 concluídas no mesmo dia): DONE=38 · IN PROGRESS=0 · READY=20 · TESTING=0 · CODE REVIEW=0 · BACKLOG=39 · BLOCKED=50.
 - Bloqueios: **50 tarefas** bloqueadas — 47 por dependência de fase futura/externa + **3 reclassificadas em 08/10** (F4-13 #70, F8-03 #137, F3-20 #57: status desatualizado, decisão externa já registrada).
 - **Revisão de dependências 08/10/2026:** 7 ciclos detectados (SCC/Tarjan sobre este arquivo) e corrigidos em KANBAN + corpos das issues; **0 ciclos remanescentes**. Detalhe antes/depois em `DEPENDENCIES.md`.
 
@@ -105,7 +105,7 @@ Regra de ouro: **nunca mover para DONE sem evidência verificável** (comando de
 | F2-08 | [Prevenção de duplicidades](https://github.com/everton191/optiflex-v1/issues/30) | Customers | BACKLOG | p2 | F2-07. |
 | F2-09 | [Histórico de clientes](https://github.com/everton191/optiflex-v1/issues/153) | Customers | BACKLOG | p1 | eventos de venda/OS (F3/F4), F1-11 (autorização). |
 | F2-10 | [Fornecedores e laboratórios](https://github.com/everton191/optiflex-v1/issues/31) | Administration | BACKLOG | p2 | F2-03 (CNPJ), F2-07 (validação). |
-| F2-11 | [Produtos: armações, lentes e acessórios](https://github.com/everton191/optiflex-v1/issues/32) | Inventory | READY | p1 | F1-06 (feito). |
+| F2-11 | [Produtos: armações, lentes e acessórios](https://github.com/everton191/optiflex-v1/issues/32) | Inventory | DONE | p1 | F1-06 (feito; entregue em `e3bd607` — catálogo com categoria obrigatória, ficha de produto, filtro por categoria e venda consumindo o item do catálogo). |
 | F2-12 | [Serviços](https://github.com/everton191/optiflex-v1/issues/33) | Inventory | BACKLOG | p2 | F2-11. |
 | F2-13 | [Variantes e características dos produtos](https://github.com/everton191/optiflex-v1/issues/34) | Inventory | BACKLOG | p3 | F2-11. |
 | F2-14 | [Códigos, preços e custos](https://github.com/everton191/optiflex-v1/issues/35) | Inventory | READY | p1 | F2-11, F1-06 (feito). |
@@ -271,16 +271,16 @@ Ordem recomendada para a próxima sessão de desenvolvimento (status READY/IN PR
 
 | # | ID | Issue | Tarefa | Prioridade | Dependências | Justificativa |
 |---|---|---|---|---|---|---|
-| 1 | F2-11 | #32 | [Inventory] Produtos: armações, lentes e acessórios | P1 | F1-06 (feito) | Catálogo libera a cadeia F2-14/F2-15/F6-04; base de preço/custo já em `InventoryItem`. |
-| 2 | F2-02 | #24 | [Administration] Matriz e filiais | P1 | F1-11 (feito) | Estrutura de matriz/filiais apoia usuários e lojas já administráveis. |
-| 3 | F3-02 | #41 | [Attendance] Cadastro de atendimento | P1 | F2-04 (feito) | Dependência (profissionais) entregue; é o passo seguinte da fila de atendimento. |
-| 4 | F2-07 | #29 | [Customers] Validação de CPF/CNPJ | P2 | F2-06 (feito) | Edição entregue; validadores de documento são o complemento natural do cadastro. |
-| 5 | F3-10 | #49 | [Sales] Orçamentos detalhados | P1 | F1-09 (feito) | Precisão monetária pronta; enriquece orçamento sem nova dependência. |
-| 6 | F4-11 | #68 | [Cash] PIX, dinheiro e cartão | P1 | F4-10, F1-09 (feitos) | Formas de pagamento e precisão monetária prontas; complementa o caixa entregue. |
-| 7 | F2-14 | #35 | [Inventory] Códigos, preços e custos | P1 | F2-11, F1-06 (feito) | Depende do catálogo (F2-11 na fila); margem usa preço/custo já em `InventoryItem`. |
-| 8 | F3-03 | #42 | [Attendance] Fila de atendimento | P1 | F3-02 | Fluxo de atendimento completo após cadastro; segue a cadeia F3-02→F3-03. |
-| 9 | F3-07 | #46 | [Clinical] Campos de grau OD/OE, cilindro, eixo e adição | P1 | F1-07 (feito) | Modelo `Prescription`/`PrescriptionEye` entregue; primeiro uso estruturado dos campos. |
-| 10 | F8-10 | #144 | [Infraestrutura] Recuperação de dados | P1 | F3-09 (feito) | Anexos duráveis entregues; recuperação fecha o ciclo de dados antes do piloto. |
+| 1 | F2-02 | #24 | [Administration] Matriz e filiais | P1 | F1-11 (feito) | Estrutura de matriz/filiais apoia usuários e lojas já administráveis. |
+| 2 | F3-02 | #41 | [Attendance] Cadastro de atendimento | P1 | F2-04 (feito) | Dependência (profissionais) entregue; é o passo seguinte da fila de atendimento. |
+| 3 | F2-07 | #29 | [Customers] Validação de CPF/CNPJ | P2 | F2-06 (feito) | Edição entregue; validadores de documento são o complemento natural do cadastro. |
+| 4 | F3-10 | #49 | [Sales] Orçamentos detalhados | P1 | F1-09 (feito) | Precisão monetária pronta; enriquece orçamento sem nova dependência. |
+| 5 | F4-11 | #68 | [Cash] PIX, dinheiro e cartão | P1 | F4-10, F1-09 (feitos) | Formas de pagamento e precisão monetária prontas; complementa o caixa entregue. |
+| 6 | F2-14 | #35 | [Inventory] Códigos, preços e custos | P1 | F2-11, F1-06 (feito) | Catálogo (F2-11) entregue; margem usa preço/custo já em `InventoryItem`. |
+| 7 | F3-03 | #42 | [Attendance] Fila de atendimento | P1 | F3-02 | Fluxo de atendimento completo após cadastro; segue a cadeia F3-02→F3-03. |
+| 8 | F3-07 | #46 | [Clinical] Campos de grau OD/OE, cilindro, eixo e adição | P1 | F1-07 (feito) | Modelo `Prescription`/`PrescriptionEye` entregue; primeiro uso estruturado dos campos. |
+| 9 | F8-10 | #144 | [Infraestrutura] Recuperação de dados | P1 | F3-09 (feito) | Anexos duráveis entregues; recuperação fecha o ciclo de dados antes do piloto. |
+| 10 | F8-02 | #136 | [Infraestrutura] Testes de integração | P1 | F8-01 (feito) | Base unitária consolidada (231 casos); integração cobre os fluxos vendidos ao piloto. |
 
 Os `#?` devem ser resolvidos pela tabela acima (coluna ID → link da issue). Os números já estão fixados nas tabelas das fases; para referência rápida: consulte `DEPENDENCIES.md`.
 

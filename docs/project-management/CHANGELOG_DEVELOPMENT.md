@@ -4,6 +4,16 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `e3bd607` + docs — Catálogo de produtos por categoria (F2-11)
+
+- `src/domain/inventory.ts`: `productCategories`/`ProductCategory` (`FRAME`/`LENS`/`ACCESSORY`), `productCategoryLabels`, `isProductCategory`, `filterByCategory` e campos de ficha em `InventoryItem` (`category?`, `brand?`, `material?`, `description?`).
+- `src/domain/inventory-service.ts`: `create`/`update` **exigem** categoria válida e normalizam marca/material/descrição (trim; vazio → `undefined`); saldo continua intocado na edição.
+- `src/app/InventoryWorkspace.tsx`: select de categoria no formulário, ficha (marca/material/descrição), filtro em abas com contagem por categoria (reusa `status-filters`), badge da categoria e ficha na linha do produto.
+- `src/app/pages.tsx`: seletor de produto do caixa mostra a categoria (`Lente · saldo 5`); baixa de estoque continua sobre o mesmo item do catálogo.
+- `src/domain/backup.ts`: `category` validada por `isProductCategory`; `brand`/`material`/`description` aceitas como strings opcionais (item legado sem categoria segue importável — sem bump de schema, campos sem índice).
+- Testes: `inventory-service.test.ts` +5 (categoria obrigatória, ficha normalizada, filtro por categoria, cópia em `ALL`), `inventory.test.ts` +1 (ficha persiste no reopen), `backup.test.ts` estendido (categoria/marca inválidas rejeitadas, legado sem categoria aceito), `sale-stock.test.ts` reforçado (produto do catálogo vendido mantém categoria/marca após a baixa); **231/231** (26 arquivos), build 0, tsc 0.
+- Card: F2-11/#32 → DONE (cadeia F2-14/F2-15/F6-04 liberada).
+
 ### `e6e525d` + docs — Prazos e alertas de OS (F3-17)
 
 - `src/domain/dashboard.ts`: novo `isOverdueOrder(order, now)` (prazo no passado + status aberto, datas inválidas ignoradas) como fonte única; `overdueOrders` passa a delegar para ele.
