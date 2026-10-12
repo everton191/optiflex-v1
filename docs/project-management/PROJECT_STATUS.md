@@ -16,7 +16,7 @@
 
 - Varredura de sigilos **antes do push** (repo público): chaves/certificados, tokens cloud, segredos em literais, CPF/CNPJ, JWT, `.env`, binários e históricos = **limpo**; caminho pessoal generalizado (`c4192c2`); autor dos commits = e-mail noreply do GitHub.
 - Push normal (`-u`, **sem force-push**) das duas branches; **`v1` preservada** (`3510602` local = remoto) e **nenhum merge executado**.
-- SHAs no remoto: `feat/operational-flow-v2` = `5868e80` · `docs/master-kanban` = `82b5d83` + commits desta revisão.
+- SHAs no remoto: `feat/operational-flow-v2` = `3820338` · `docs/master-kanban` = `35ef40a` + commits desta revisão.
 - Documentos do Kanban acessíveis via `raw.githubusercontent.com/.../docs/master-kanban/docs/project-management/`.
 - PR `docs/master-kanban` → `feat/operational-flow-v2` (somente documentação; ver relatório da sessão).
 
@@ -43,37 +43,38 @@
 
 ## Últimas tarefas concluídas (com evidência)
 
-1. `5868e80` + docs — Validação de CPF/CNPJ: helpers `normalizeDocument`/`isValidCPF`/`isValidCNPJ`/`isValidDocument` (dígitos verificadores, com/sem máscara, rejeita sequências repetidas e letras), uso em `createCustomer`/`updateCustomer` com mensagem "CPF ou CNPJ inválido.", erro do cadastro novo exibido na UI e rótulo "CPF/CNPJ" (F2-07/#29); 258/258.
-2. `c45a6bf` + docs — Fila completa de atendimento: status `NO_SHOW`, filtros Todos/Aguardando/Em atendimento, tempo de espera por registro (`waitingMinutes`), responsável/badge de urgência e ações Iniciar/Finalizar/Faltou/Cancelar por permissão; estados finais saem da fila (F3-03/#42); 252/252.
-3. `8daab89` + docs — Atendimento completo: `/atendimentos/novo` (tipo, profissional, prioridade, notas) e detalhe `/atendimentos/:attendanceId` por URL direta com transições básicas (`WAITING`→`IN_PROGRESS`→`FINISHED`, cancelamento), `Attendance.priority`/`professionalId`, conversão da agenda herda o profissional (F3-02/#41); 247/247.
-4. `c4e4e31` + docs — CRUD de lojas: `/admin/lojas` (`StoresPage`, guarda `stores.manage`), `createStore`/`updateStore`/`setStoreActive` (nome único, inativação não destrutiva com guarda de loja atual e última ativa), `refreshStores` no contexto (F2-02/#24); 241/241.
-5. `e3bd607` + docs — Catálogo de produtos: `InventoryItem` com `category` obrigatória (`FRAME`/`LENS`/`ACCESSORY`) + ficha `brand`/`material`/`description`, `filterByCategory` com abas por categoria, categoria no seletor do caixa e validação de backup (F2-11/#32); 231/231.
-6. `e6e525d` + docs — Prazos e alertas de OS: filtro `ATRASADAS` + badge "Atrasada" na lista/detalhe e seletor compartilhado `isOverdueOrder`/`overdueOrders` (fonte única lista↔dashboard) (F3-17/#55); 225/225.
-7. `41f0bfd` + docs — Modelos: `Prescription` versionada com retificação append-only (`issuePrescription`/`retifyPrescription`/`activePrescription`, contrato `PrescriptionRepository`) e `WorkOrder.laboratory?` + evento `LABORATORY` (F1-07/#15); persistência da prescrição vem com F3-06; 224/224.
-8. `277fdde` + docs — Auditoria de segurança: `SECURITY_PLAN.md` (threat model, varredura, achados P0–P3; único P0 = F1-12) e `security-scan.test.ts` automatizado (F8-07/#141); 217/217.
-9. `94b9d50` — Matriz rota×perfil e negativos de vendedor/clínico/caixa (F8-06/#140) — `route-guards.ts` (mapa único rota→permissão usado pelo router), `permission-routes.test.ts` (7 casos: 16 rotas × 10 perfis, ações negativas, escopo loja/registro); 215/215.
-10. `679951f` — Agenda dia/semana com eventos e conversão em atendimento (F3-01/#40) — `agenda-service.test.ts` (7 casos: ranges locais, validação, conversão/cancelamento), `agenda.test.ts` (3 casos de persistência/filtro por loja), backup schema 12; 208/208.
-11. `00d0d9e` — Edição de clientes: rota editar, `updateCustomer`, complementação e-mail/nascimento (F2-06/#28) — `reception-service.test.ts` +2 (validação/normalização) e `clinical.test.ts` +1 (durabilidade após reload); 198/198.
-12. `60e2ca4` — Pagamentos parciais: status `PARTIAL`, input de valor e saldo durável (F4-12/#69) — `cash.test.ts` +1 (durabilidade/reload) e ajustes de expectativa PENDING→PARTIAL, backup aceita PARTIAL; 195/195.
-13. `9f0fdfc` — Estornos e cancelamentos: cancelamento auditado com devolução de estoque e `REFUND` no caixa (F4-18/#75) — `sales-service.test.ts` +4, `sale-stock.test.ts` +5 (inclui concorrência), `cash.test.ts` +1, `backup.test.ts` +1; 194/194.
-14. `7f1d6e4` — Formas de pagamento: obrigatórias no recebimento, `DEBIT`/`CREDIT` e totais por método (F4-10/#67) — `cash-service.test.ts` +2 (totais/método e exigência), ajuste de chamadas no storage; 183/183.
-15. `1b3f757` — Permissões por loja, sync de sessão e matriz de perfis (F2-05/#27) — `access.test.ts` +6 (matriz/sync) e `storage/access-scope.test.ts` +1 (caixa/estoque); 182/182.
-16. `6a59f2b` — Suprimento e sangria no caixa (F4-16/#73) — `cash-service.test.ts` +2 e `cash.test.ts` +1 (durabilidade + guarda de saldo); 177/177.
-17. `b0f72d1` — Preço/custo de produto e forma de pagamento (F1-06/#14) — `inventory-service.test.ts` +3, `cash-service.test.ts` +2, `cash.test.ts` +1, `inventory.test.ts` +1, `backup.test.ts` +1; 175/175.
-18. `8fc64b0` — Auditoria de entidades e contratos (F1-02/#10) — 10 contratos revisados, última lacuna (`SettingsRepository`) coberta em `storage/settings.test.ts` (+3 casos); 167/167.
-19. `e56939e` — Rota de detalhe da OS, histórico de eventos, cancelamento auditado e insumos (F3-14/#53) — `work-order-service.test.ts` +4 e `work-orders.test.ts` +2; 164/164.
-20. `6ce9c9a` — Conteúdo real de anexos clínicos (F3-09/#48) — `clinical-attachments.test.ts` (3 casos) + `clinical.test.ts` +5 + `backup.test.ts` +1; 158/158.
-21. `a2c1369` — Escopo por registro SELF/STORE/ORG/NETWORK (F1-11/#19) — `access-scope.test.ts` (8 casos) + `storage/access-scope.test.ts` (4); 149/149.
-22. `bae739b` — Login local, guarda de sessão e troca de senha (F7-02/#117) — `authentication-service.test.ts` (7) + `access.test.ts` (12) + `administration-service.test.ts` (11); 137/137.
-23. `715e6e9` — CRUD de usuários com função/lojas/ativação (F2-04/#26) — `administration-service.test.ts` + `access.test.ts`; 126/126.
-24. `7dc1d7b` — Precisão monetária única (F1-09/#17) — `money.test.ts` (10 casos) + reforços em `sales-service`/`cash-service`/`inventory`; 115/115.
-25. `d6ab1d4` — Venda → estoque atômica (F3-13/F4-7) — `sale-stock.test.ts`/`sales-service.test.ts`.
-26. `a1be9b5` — Dashboard com métricas reais (F4-20) — `dashboard.test.ts` 8 casos.
-27. `8a68d67` — Fluxo de OS com prazo/estados (F3-14 parcial) — `work-order*.test.ts` 15 casos.
-28. `3f2c0c1` — Estoque com cadastro/movimentação/histórico (F4-01..04) — `inventory*.test.ts` 17 casos.
-29. `cbcf80f` — Fechamento de caixa, recebimento idempotente e `paymentStatus` (F4-08/09/17) — `cash*.test.ts`.
-30. `634eb37`/`b8d1a84` — Kanban mestre + Issues (#1–#155) + árvore de documentação.
-31. 08/10/2026 — Revisão: 7 ciclos → 0, 3 reclassificações de status, revalidação dos 18 DONE (só documentação/Issues).
+1. `3820338` + docs — Ciclo de vida de orçamento: `quoteStatus` (Rascunho/Enviado/Aceito/Recusado/Expirado) com `quoteTransitions`, edição de rascunho via `updateQuote` (mesma validação/total do create), filtros da lista (Todos/Orçamentos/Vendas/Canceladas com contagem), ações por estado (Enviar/Editar/Aceitar/Recusar/Expirar/Confirmar), impressão em janela nova com escape HTML, bloqueio de confirmação de recusado/expirado e `quoteStatus` validado no backup (F3-10/#49); 266/266.
+2. `5868e80` + docs — Validação de CPF/CNPJ: helpers `normalizeDocument`/`isValidCPF`/`isValidCNPJ`/`isValidDocument` (dígitos verificadores, com/sem máscara, rejeita sequências repetidas e letras), uso em `createCustomer`/`updateCustomer` com mensagem "CPF ou CNPJ inválido.", erro do cadastro novo exibido na UI e rótulo "CPF/CNPJ" (F2-07/#29); 258/258.
+3. `c45a6bf` + docs — Fila completa de atendimento: status `NO_SHOW`, filtros Todos/Aguardando/Em atendimento, tempo de espera por registro (`waitingMinutes`), responsável/badge de urgência e ações Iniciar/Finalizar/Faltou/Cancelar por permissão; estados finais saem da fila (F3-03/#42); 252/252.
+4. `8daab89` + docs — Atendimento completo: `/atendimentos/novo` (tipo, profissional, prioridade, notas) e detalhe `/atendimentos/:attendanceId` por URL direta com transições básicas (`WAITING`→`IN_PROGRESS`→`FINISHED`, cancelamento), `Attendance.priority`/`professionalId`, conversão da agenda herda o profissional (F3-02/#41); 247/247.
+5. `c4e4e31` + docs — CRUD de lojas: `/admin/lojas` (`StoresPage`, guarda `stores.manage`), `createStore`/`updateStore`/`setStoreActive` (nome único, inativação não destrutiva com guarda de loja atual e última ativa), `refreshStores` no contexto (F2-02/#24); 241/241.
+6. `e3bd607` + docs — Catálogo de produtos: `InventoryItem` com `category` obrigatória (`FRAME`/`LENS`/`ACCESSORY`) + ficha `brand`/`material`/`description`, `filterByCategory` com abas por categoria, categoria no seletor do caixa e validação de backup (F2-11/#32); 231/231.
+7. `e6e525d` + docs — Prazos e alertas de OS: filtro `ATRASADAS` + badge "Atrasada" na lista/detalhe e seletor compartilhado `isOverdueOrder`/`overdueOrders` (fonte única lista↔dashboard) (F3-17/#55); 225/225.
+8. `41f0bfd` + docs — Modelos: `Prescription` versionada com retificação append-only (`issuePrescription`/`retifyPrescription`/`activePrescription`, contrato `PrescriptionRepository`) e `WorkOrder.laboratory?` + evento `LABORATORY` (F1-07/#15); persistência da prescrição vem com F3-06; 224/224.
+9. `277fdde` + docs — Auditoria de segurança: `SECURITY_PLAN.md` (threat model, varredura, achados P0–P3; único P0 = F1-12) e `security-scan.test.ts` automatizado (F8-07/#141); 217/217.
+10. `94b9d50` — Matriz rota×perfil e negativos de vendedor/clínico/caixa (F8-06/#140) — `route-guards.ts` (mapa único rota→permissão usado pelo router), `permission-routes.test.ts` (7 casos: 16 rotas × 10 perfis, ações negativas, escopo loja/registro); 215/215.
+11. `679951f` — Agenda dia/semana com eventos e conversão em atendimento (F3-01/#40) — `agenda-service.test.ts` (7 casos: ranges locais, validação, conversão/cancelamento), `agenda.test.ts` (3 casos de persistência/filtro por loja), backup schema 12; 208/208.
+12. `00d0d9e` — Edição de clientes: rota editar, `updateCustomer`, complementação e-mail/nascimento (F2-06/#28) — `reception-service.test.ts` +2 (validação/normalização) e `clinical.test.ts` +1 (durabilidade após reload); 198/198.
+13. `60e2ca4` — Pagamentos parciais: status `PARTIAL`, input de valor e saldo durável (F4-12/#69) — `cash.test.ts` +1 (durabilidade/reload) e ajustes de expectativa PENDING→PARTIAL, backup aceita PARTIAL; 195/195.
+14. `9f0fdfc` — Estornos e cancelamentos: cancelamento auditado com devolução de estoque e `REFUND` no caixa (F4-18/#75) — `sales-service.test.ts` +4, `sale-stock.test.ts` +5 (inclui concorrência), `cash.test.ts` +1, `backup.test.ts` +1; 194/194.
+15. `7f1d6e4` — Formas de pagamento: obrigatórias no recebimento, `DEBIT`/`CREDIT` e totais por método (F4-10/#67) — `cash-service.test.ts` +2 (totais/método e exigência), ajuste de chamadas no storage; 183/183.
+16. `1b3f757` — Permissões por loja, sync de sessão e matriz de perfis (F2-05/#27) — `access.test.ts` +6 (matriz/sync) e `storage/access-scope.test.ts` +1 (caixa/estoque); 182/182.
+17. `6a59f2b` — Suprimento e sangria no caixa (F4-16/#73) — `cash-service.test.ts` +2 e `cash.test.ts` +1 (durabilidade + guarda de saldo); 177/177.
+18. `b0f72d1` — Preço/custo de produto e forma de pagamento (F1-06/#14) — `inventory-service.test.ts` +3, `cash-service.test.ts` +2, `cash.test.ts` +1, `inventory.test.ts` +1, `backup.test.ts` +1; 175/175.
+19. `8fc64b0` — Auditoria de entidades e contratos (F1-02/#10) — 10 contratos revisados, última lacuna (`SettingsRepository`) coberta em `storage/settings.test.ts` (+3 casos); 167/167.
+20. `e56939e` — Rota de detalhe da OS, histórico de eventos, cancelamento auditado e insumos (F3-14/#53) — `work-order-service.test.ts` +4 e `work-orders.test.ts` +2; 164/164.
+21. `6ce9c9a` — Conteúdo real de anexos clínicos (F3-09/#48) — `clinical-attachments.test.ts` (3 casos) + `clinical.test.ts` +5 + `backup.test.ts` +1; 158/158.
+22. `a2c1369` — Escopo por registro SELF/STORE/ORG/NETWORK (F1-11/#19) — `access-scope.test.ts` (8 casos) + `storage/access-scope.test.ts` (4); 149/149.
+23. `bae739b` — Login local, guarda de sessão e troca de senha (F7-02/#117) — `authentication-service.test.ts` (7) + `access.test.ts` (12) + `administration-service.test.ts` (11); 137/137.
+24. `715e6e9` — CRUD de usuários com função/lojas/ativação (F2-04/#26) — `administration-service.test.ts` + `access.test.ts`; 126/126.
+25. `7dc1d7b` — Precisão monetária única (F1-09/#17) — `money.test.ts` (10 casos) + reforços em `sales-service`/`cash-service`/`inventory`; 115/115.
+26. `d6ab1d4` — Venda → estoque atômica (F3-13/F4-7) — `sale-stock.test.ts`/`sales-service.test.ts`.
+27. `a1be9b5` — Dashboard com métricas reais (F4-20) — `dashboard.test.ts` 8 casos.
+28. `8a68d67` — Fluxo de OS com prazo/estados (F3-14 parcial) — `work-order*.test.ts` 15 casos.
+29. `3f2c0c1` — Estoque com cadastro/movimentação/histórico (F4-01..04) — `inventory*.test.ts` 17 casos.
+30. `cbcf80f` — Fechamento de caixa, recebimento idempotente e `paymentStatus` (F4-08/09/17) — `cash*.test.ts`.
+31. `634eb37`/`b8d1a84` — Kanban mestre + Issues (#1–#155) + árvore de documentação.
+32. 08/10/2026 — Revisão: 7 ciclos → 0, 3 reclassificações de status, revalidação dos 18 DONE (só documentação/Issues).
 
 ## Próxima execução — cinco tarefas (ordem respeitando dependências reais)
 
@@ -81,13 +82,13 @@
 |---|---|---|---|---|---|
 | 1 | F3-07 campos de grau OD/OE | #46 | P1 | F1-07 (concluído) | modelo `Prescription`/`PrescriptionEye` entregue; primeiro uso estruturado dos campos. |
 | 2 | F8-10 recuperação de dados | #144 | P1 | F3-09 (concluído) | anexos duráveis entregues; recuperação fecha o ciclo de dados antes do piloto. |
-| 3 | F8-02 testes de integração | #136 | P1 | F8-01 (concluído) | base unitária consolidada (258 casos); integração cobre os fluxos críticos antes do piloto. |
+| 3 | F8-02 testes de integração | #136 | P1 | F8-01 (concluído) | base unitária consolidada (266 casos); integração cobre os fluxos críticos antes do piloto. |
 | 4 | F7-01 design system consolidado | #116 | P1 | nenhuma | sem dependências; padroniza componentes usados pelas telas já entregues. |
 | 5 | F1-05 identificadores de org/filiais | #13 | P1 | F1-08 (concluído) | migração de schema entregue; identificadores estabilizam org/filiais antes da escala multiempresa. |
 
-F2-07 `#29` foi concluída nesta data (`5868e80` + docs) junto com F3-03 `#42`, F3-02 `#41`, F2-02 `#24`, F2-11 `#32`, F3-17 `#55`, F1-07 `#15`, F8-07 `#141`, F8-06 `#140`, F3-01 `#40`, F2-06 `#28`, F4-12 `#69`, F4-18 `#75`, F4-10 `#67`, F2-05 `#27`, F4-16 `#73`, F3-14 `#53`, F1-02 `#10` e F1-06 `#14`; nenhum card permanece IN PROGRESS — a fila acima é a retomada natural. F2-08 `#30` (duplicidades) teve a dependência F2-07 liberada (segue BACKLOG); F3-06 `#45` segue READY mas depende também de F3-07 (cadeia F3-07 → F3-06).
+F3-10 `#49` foi concluída nesta data (`3820338` + docs) junto com F2-07 `#29`, F3-03 `#42`, F3-02 `#41`, F2-02 `#24`, F2-11 `#32`, F3-17 `#55`, F1-07 `#15`, F8-07 `#141`, F8-06 `#140`, F3-01 `#40`, F2-06 `#28`, F4-12 `#69`, F4-18 `#75`, F4-10 `#67`, F2-05 `#27`, F4-16 `#73`, F3-14 `#53`, F1-02 `#10` e F1-06 `#14`; nenhum card permanece IN PROGRESS — a fila acima é a retomada natural. F3-11 `#50`, F3-12 `#51`, F4-05 `#62` e F7-13 `#128` tiveram a dependência F3-10 liberada (F3-11/F7-13 seguem READY); F2-08 `#30` teve F2-07 liberada; F3-06 `#45` segue READY mas depende também de F3-07 (cadeia F3-07 → F3-06).
 
-Reservas (se a fila avançar): F3-10 `#49` (orçamentos; F1-09 feito), F4-11 `#68` (PIX/dinheiro/cartão; F4-10+F1-09 feitos), F2-14 `#35` (códigos/preços; F2-11+F1-06 feitos), F1-03 `#11` (separação gradual de páginas; sem deps) e F7-03 `#118` (dashboard por função; F4-20+F1-11 feitos).
+Reservas (se a fila avançar): F2-08 `#30` (duplicidades; F2-07 feito), F4-11 `#68` (PIX/dinheiro/cartão; F4-10+F1-09 feitos), F2-14 `#35` (códigos/preços; F2-11+F1-06 feitos), F1-03 `#11` (separação gradual de páginas; sem deps) e F7-03 `#118` (dashboard por função; F4-20+F1-11 feitos).
 
 ## Bloqueios verdadeiros (aguardam decisão do usuário)
 
@@ -99,11 +100,11 @@ Reservas (se a fila avançar): F3-10 `#49` (orçamentos; F1-09 feito), F4-11 `#6
 2. **Idempotência de caixa** (F4-08/09/12/16/17/18): `cash-service.test.ts` obrigatório; F4-12 entregue (`60e2ca4`) grava `PARTIAL` e valida `paid + amount > total` na transação — saldo em centavos é a fonte de conferência; F4-18 cria `REFUND` apenas dentro da transação de cancelamento e bloqueia duplo cancelamento.
 3. **Migrações** (F1-08/F8-09): `database.test.ts` cobre v8→v12 (verno atual); caminhos anteriores sem cobertura.
 4. **F7-04 navegação desktop:** validação apenas manual (auditoria 1440px) — sem teste automatizado; mudanças de menu podem regredir em silêncio.
-5. **258 testes verdes ≠ validação operacional:** ainda sem e2e (P5), teste offline em aparelho, validação por perfil completo, multiempresa e fiscal.
+5. **266 testes verdes ≠ validação operacional:** ainda sem e2e (P5), teste offline em aparelho, validação por perfil completo, multiempresa e fiscal.
 
 ## Resultados dos testes disponíveis
 
-- `npm.cmd test` → **258/258** (28 arquivos) em 08/10/2026 sobre `5868e80`.
+- `npm.cmd test` → **266/266** (29 arquivos) em 08/10/2026 sobre `3820338`.
 - `npm.cmd run build` → exit 0 (PWA gerada).
 - `npx.cmd tsc -b --pretty false` → exit 0.
 - Não existe script `lint` (não declarar lint executado).

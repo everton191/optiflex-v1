@@ -4,6 +4,15 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `3820338` + docs — Ciclo de vida completo do orçamento: estados, edição, filtro e impressão (F3-10)
+
+- `src/domain/sales.ts`: `QuoteStatus` (`DRAFT`/`SENT`/`ACCEPTED`/`REJECTED`/`EXPIRED`) em `Sale.quoteStatus?` (ausente = rascunho, compatível com dados legados), `quoteStatusLabels`, `quoteTransitions` (rascunho → enviado → aceito/recusado/expirado; aceito/recusado/expirado terminais) e `quoteStatusOf`; `Sale.status` permanece `QUOTE` — confirmação/cancelamento/backup validados da Fase E intactos.
+- `src/domain/sales-service.ts`: `buildQuote` compartilhado entre `createQuote` e o novo `updateQuote` (edita só rascunho, revalida itens/total/descrição e preserva `id`/`createdAt`), `transitionQuote` (guarda por `quoteTransitions` com mensagem clara) e `confirm` agora bloqueia recusado/expirado ("Orçamento recusado ou expirado não pode ser confirmado.") sem mudar o fluxo de rascunho/enviado/aceito.
+- `src/domain/backup.ts`: valida `quoteStatus` conhecido em `sales` (ausente continua válido para backups legados).
+- `src/app/pages.tsx` (`CashDeskPage`): filtros `.status-filters` Todos/Orçamentos/Vendas/Canceladas com contagem; badge de estado do orçamento na linha; ações por estado (Enviar/Editar em rascunho, Aceitar/Recusar/Expirar em enviado) condicionadas a `sales.manage`; "Editar" carrega o formulário do topo (botão vira "Salvar rascunho" com "Cancelar edição"); "Imprimir" abre janela nova com cabeçalho, cliente, itens e total — todos os campos com escape HTML.
+- Testes: `sales-service.test.ts` +6 (transições, guardas, confirmação bloqueada, edição de rascunho), `backup.test.ts` +1 (`quoteStatus` aceito/rejeitado/legado), novo `quote-recovery.test.ts` (orçamento de 3 dias reaberto conserva itens/preços/estado); **266/266** (29 arquivos), build 0, tsc 0.
+- Card: F3-10/#49 → DONE (critérios: recuperação de orçamento após dias com itens/preços; estados com transições testadas; impressão e edição entregues; envio WhatsApp/e-mail segue fora do escopo).
+
 ### `5868e80` + docs — Validação de CPF/CNPJ com dígitos verificadores (F2-07)
 
 - `src/domain/customer.ts`: helpers puros `normalizeDocument` (remove máscara `.`/`-`/`/` e espaços), `isValidCPF`/`isValidCNPJ` (dígitos verificadores oficiais, rejeita sequências repetidas como `111.111.111-11` e letras) e `isValidDocument` (roteia por contagem: 11 dígitos → CPF, 14 → CNPJ).

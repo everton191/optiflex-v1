@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Criar orçamentos (com itens opcionais de estoque), confirmar vendas baixando saldo e iniciar ordem de serviço na área unificada de Caixa.
+Criar orçamentos (com itens opcionais de estoque), gerenciar o ciclo de vida da negociação (rascunho → enviado → aceito/recusado/expirado), editar rascunhos, confirmar vendas baixando saldo e iniciar ordem de serviço na área unificada de Caixa.
 
 ## Directory
 
@@ -23,7 +23,7 @@ UI em `CashDeskPage`; domínio em `sales.ts` e `sales-service.ts`; repository em
 
 ## Services
 
-`SalesService.list`, `createQuote` (calcula total e descrição a partir dos itens), `confirm` (transação que confirma a venda e baixa o estoque), `cancel` (motivo obrigatório; cotação via `save`, confirmada via `repository.cancel` devolvendo estoque e estornando caixa).
+`SalesService.list`, `createQuote` (calcula total e descrição a partir dos itens), `updateQuote` (edita apenas rascunho, com a mesma validação do create), `transitionQuote` (muda `quoteStatus` conforme `quoteTransitions`), `confirm` (transação que confirma a venda e baixa o estoque; bloqueia recusado/expirado), `cancel` (motivo obrigatório; cotação via `save`, confirmada via `repository.cancel` devolvendo estoque e estornando caixa).
 
 ## Repositories
 
@@ -35,7 +35,7 @@ Estado React local; sem store/hook dedicado.
 
 ## Models
 
-`Sale`, `SaleStatus`, `SalePaymentStatus`, `SaleItem` (com `cancelReason?`/`cancelledAt?`/`cancelledBy?`); helpers `itemsTotalCents`/`itemsTotal` (regra em `src/domain/money.ts`), `stockMovementsFor` e `refundStockMovementsFor`.
+`Sale`, `SaleStatus`, `SalePaymentStatus`, `QuoteStatus` (`DRAFT`/`SENT`/`ACCEPTED`/`REJECTED`/`EXPIRED` em `Sale.quoteStatus?`, ausente = rascunho), `quoteStatusLabels`, `quoteTransitions`, `quoteStatusOf`, `SaleItem` (com `cancelReason?`/`cancelledAt?`/`cancelledBy?`); helpers `itemsTotalCents`/`itemsTotal` (regra em `src/domain/money.ts`), `stockMovementsFor` e `refundStockMovementsFor`.
 
 ## Permissions
 
@@ -51,17 +51,17 @@ Customers, cash, work-orders, inventory (estoque) e currentStore.
 
 ## Files Normally Modified
 
-- UI/abas: `CashDeskPage` (form de venda, seletor de itens e cancelamento).
+- UI/abas: `CashDeskPage` (form de venda, seletor de itens, filtros da lista, ações de negociação e cancelamento).
 - Regras: `sales-service.ts`.
 - Regra de dinheiro: `src/domain/money.ts` (compartilhado com cash; F1-09).
-- Tipos: `sales.ts` (`SaleItem`, `stockMovementsFor`, `refundStockMovementsFor`).
+- Tipos: `sales.ts` (`SaleItem`, estados do orçamento, `stockMovementsFor`, `refundStockMovementsFor`).
 - Persistência: `LocalSaleRepository.confirm`/`cancel` (transação venda + estoque + caixa).
-- Backup: validação de `items` e campos de cancelamento em `backup.ts`.
+- Backup: validação de `items`, `quoteStatus` e campos de cancelamento em `backup.ts`.
 - Acesso: `access.ts` e `/caixa`.
 
 ## Avoid Modifying
 
-Não recriar página `/vendas`; ela redireciona para o Caixa. Não confirmar venda sem status `QUOTE` nem sem a transação que baixa o estoque.
+Não recriar página `/vendas`; ela redireciona para o Caixa. Não confirmar venda sem status `QUOTE` nem sem a transação que baixa o estoque; não confirmar orçamento recusado/expirado nem editar fora do rascunho.
 
 ## Common Tasks
 
@@ -83,7 +83,11 @@ Não recriar página `/vendas`; ela redireciona para o Caixa. Não confirmar ven
 
 ### Alterar listagem
 
-→ `SalesService.list` + LocalSaleRepository + CashDeskPage.
+→ `SalesService.list` + LocalSaleRepository + CashDeskPage (filtros `.status-filters`).
+
+### Alterar estados do orçamento
+
+→ `quoteTransitions`/`quoteStatusOf` em `sales.ts` + `transitionQuote`/`updateQuote`/`confirm` em `sales-service.ts` + ações por estado e impressão em CashDeskPage + validação de `quoteStatus` em `backup.ts`.
 
 ## Related Modules
 
