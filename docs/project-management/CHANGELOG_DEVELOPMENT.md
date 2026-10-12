@@ -4,6 +4,13 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `e6e525d` + docs — Prazos e alertas de OS (F3-17)
+
+- `src/domain/dashboard.ts`: novo `isOverdueOrder(order, now)` (prazo no passado + status aberto, datas inválidas ignoradas) como fonte única; `overdueOrders` passa a delegar para ele.
+- `src/app/WorkOrdersWorkspace.tsx`: filtro `ATRASADAS` na barra de status (contagem com o mesmo seletor do dashboard), badge "Atrasada" (`.badge.is-out`) nas linhas e na página de detalhe; lógica local `isOverdue` removida (lista, detalhe e dashboard agora compartilham o seletor → contagem coerente).
+- Testes: `dashboard.test.ts` +1 caso (`isOverdueOrder`: vencida, futuro, igual ao agora, sem prazo, data inválida, entregue/cancelada); **225/225** (26 arquivos), build 0, tsc 0.
+- Card: F3-17/#55 → DONE (destaque + filtro + contagem; notificação push fica em F7 notificações).
+
 ### `41f0bfd` + docs — Modelos de prescrição e laboratório da OS (F1-07)
 
 - `src/domain/clinical.ts`: modelo `Prescription` (append-only) + `PrescriptionEye` (`sphere`/`cylinder`/`axis`/`add`); `issuePrescription` valida autor, ids, data, eixo 0–180 e exige ao menos um grau ou observação; `retifyPrescription(current, input, reason, author)` cria a próxima versão (`version + 1`, `retifies`, `retificationReason`) **sem reescrever o original**; `activePrescription(list)` resolve a vigente.

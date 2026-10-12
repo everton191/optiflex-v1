@@ -56,7 +56,7 @@ Classificação de inventário (Etapa 4) no corpo de cada card:
 
 - Issues totais: **155** (8 épicas + 147 tarefas).
 - Tarefas por fase: F1=14 · F2=18 · F3=20 · F4=20 · F5=19 · F6=19 · F7=19 · F8=18.
-- Tarefas por status (revisado em 08/10/2026; F1-09, F2-04, F7-02, F1-11, F3-09, F3-14, F1-02, F1-06, F4-16, F2-05, F4-10, F4-18, F4-12, F2-06, F3-01, F8-06, F8-07 e F1-07 concluídas no mesmo dia): DONE=36 · IN PROGRESS=0 · READY=22 · TESTING=0 · CODE REVIEW=0 · BACKLOG=39 · BLOCKED=50.
+- Tarefas por status (revisado em 08/10/2026; F1-09, F2-04, F7-02, F1-11, F3-09, F3-14, F1-02, F1-06, F4-16, F2-05, F4-10, F4-18, F4-12, F2-06, F3-01, F8-06, F8-07, F1-07 e F3-17 concluídas no mesmo dia): DONE=37 · IN PROGRESS=0 · READY=21 · TESTING=0 · CODE REVIEW=0 · BACKLOG=39 · BLOCKED=50.
 - Bloqueios: **50 tarefas** bloqueadas — 47 por dependência de fase futura/externa + **3 reclassificadas em 08/10** (F4-13 #70, F8-03 #137, F3-20 #57: status desatualizado, decisão externa já registrada).
 - **Revisão de dependências 08/10/2026:** 7 ciclos detectados (SCC/Tarjan sobre este arquivo) e corrigidos em KANBAN + corpos das issues; **0 ciclos remanescentes**. Detalhe antes/depois em `DEPENDENCIES.md`.
 
@@ -135,7 +135,7 @@ Regra de ouro: **nunca mover para DONE sem evidência verificável** (comando de
 | F3-14 | [Ordens de serviço](https://github.com/everton191/optiflex-v1/issues/53) | Work-orders | DONE | p1 | F1-07 (parte de OS já testada em 8a68d67; concluída em `e56939e` — rota de detalhe, histórico, cancelamento auditado, insumos). Ciclo corrigido 08/10: F3-15 depende de F3-14 (feito). |
 | F3-15 | [Laboratórios parceiros](https://github.com/everton191/optiflex-v1/issues/54) | Work-orders | BACKLOG | p2 | F2-10, F3-14 (feito). |
 | F3-16 | [Acompanhamento da fabricação](https://github.com/everton191/optiflex-v1/issues/154) | Work-orders | BACKLOG | p2 | F3-14 (feito). |
-| F3-17 | [Prazos e alertas](https://github.com/everton191/optiflex-v1/issues/55) | Work-orders | READY | p1 | F3-14 (feito). |
+| F3-17 | [Prazos e alertas](https://github.com/everton191/optiflex-v1/issues/55) | Work-orders | DONE | p1 | F3-14 (feito; entregue em `e6e525d` — filtro `ATRASADAS`, badge de atraso e seletor compartilhado `isOverdueOrder`/`overdueOrders` com contagem coerente no dashboard). |
 | F3-18 | [Produtos prontos](https://github.com/everton191/optiflex-v1/issues/155) | Work-orders | BACKLOG | p2 | F3-16, F4-5 (reserva). |
 | F3-19 | [Entrega ao cliente](https://github.com/everton191/optiflex-v1/issues/56) | Work-orders | READY | p1 | F3-16, F4-12 (saldo). |
 | F3-20 | [Garantias, ajustes e trocas](https://github.com/everton191/optiflex-v1/issues/57) | Work-orders | BLOCKED | p2 | F2-09 (histórico), F3-14 (OS) + decisão P7 (política de garantia). |
@@ -271,16 +271,16 @@ Ordem recomendada para a próxima sessão de desenvolvimento (status READY/IN PR
 
 | # | ID | Issue | Tarefa | Prioridade | Dependências | Justificativa |
 |---|---|---|---|---|---|---|
-| 1 | F3-17 | #55 | [Work-orders] Prazos e alertas | P1 | F3-14 (feito) | Dependência recém-entregue (histórico/detalhe de OS); alertas usam o evento/dados de OS. |
-| 2 | F2-11 | #32 | [Inventory] Produtos: armações, lentes e acessórios | P1 | F1-06 (feito) | Catálogo libera a cadeia F2-14/F2-15/F6-04; base de preço/custo já em `InventoryItem`. |
-| 3 | F2-02 | #24 | [Administration] Matriz e filiais | P1 | F1-11 (feito) | Estrutura de matriz/filiais apoia usuários e lojas já administráveis. |
-| 4 | F3-02 | #41 | [Attendance] Cadastro de atendimento | P1 | F2-04 (feito) | Dependência (profissionais) entregue; é o passo seguinte da fila de atendimento. |
-| 5 | F2-07 | #29 | [Customers] Validação de CPF/CNPJ | P2 | F2-06 (feito) | Edição entregue; validadores de documento são o complemento natural do cadastro. |
-| 6 | F3-10 | #49 | [Sales] Orçamentos detalhados | P1 | F1-09 (feito) | Precisão monetária pronta; enriquece orçamento sem nova dependência. |
-| 7 | F4-11 | #68 | [Cash] PIX, dinheiro e cartão | P1 | F4-10, F1-09 (feitos) | Formas de pagamento e precisão monetária prontas; complementa o caixa entregue. |
-| 8 | F2-14 | #35 | [Inventory] Códigos, preços e custos | P1 | F2-11, F1-06 (feito) | Depende do catálogo (F2-11 na fila); margem usa preço/custo já em `InventoryItem`. |
-| 9 | F3-03 | #42 | [Attendance] Fila de atendimento | P1 | F3-02 | Fluxo de atendimento completo após cadastro; segue a cadeia F3-02→F3-03. |
-| 10 | F3-07 | #46 | [Clinical] Campos de grau OD/OE, cilindro, eixo e adição | P1 | F1-07 (feito) | Modelo `Prescription`/`PrescriptionEye` entregue; primeiro uso estruturado dos campos. |
+| 1 | F2-11 | #32 | [Inventory] Produtos: armações, lentes e acessórios | P1 | F1-06 (feito) | Catálogo libera a cadeia F2-14/F2-15/F6-04; base de preço/custo já em `InventoryItem`. |
+| 2 | F2-02 | #24 | [Administration] Matriz e filiais | P1 | F1-11 (feito) | Estrutura de matriz/filiais apoia usuários e lojas já administráveis. |
+| 3 | F3-02 | #41 | [Attendance] Cadastro de atendimento | P1 | F2-04 (feito) | Dependência (profissionais) entregue; é o passo seguinte da fila de atendimento. |
+| 4 | F2-07 | #29 | [Customers] Validação de CPF/CNPJ | P2 | F2-06 (feito) | Edição entregue; validadores de documento são o complemento natural do cadastro. |
+| 5 | F3-10 | #49 | [Sales] Orçamentos detalhados | P1 | F1-09 (feito) | Precisão monetária pronta; enriquece orçamento sem nova dependência. |
+| 6 | F4-11 | #68 | [Cash] PIX, dinheiro e cartão | P1 | F4-10, F1-09 (feitos) | Formas de pagamento e precisão monetária prontas; complementa o caixa entregue. |
+| 7 | F2-14 | #35 | [Inventory] Códigos, preços e custos | P1 | F2-11, F1-06 (feito) | Depende do catálogo (F2-11 na fila); margem usa preço/custo já em `InventoryItem`. |
+| 8 | F3-03 | #42 | [Attendance] Fila de atendimento | P1 | F3-02 | Fluxo de atendimento completo após cadastro; segue a cadeia F3-02→F3-03. |
+| 9 | F3-07 | #46 | [Clinical] Campos de grau OD/OE, cilindro, eixo e adição | P1 | F1-07 (feito) | Modelo `Prescription`/`PrescriptionEye` entregue; primeiro uso estruturado dos campos. |
+| 10 | F8-10 | #144 | [Infraestrutura] Recuperação de dados | P1 | F3-09 (feito) | Anexos duráveis entregues; recuperação fecha o ciclo de dados antes do piloto. |
 
 Os `#?` devem ser resolvidos pela tabela acima (coluna ID → link da issue). Os números já estão fixados nas tabelas das fases; para referência rápida: consulte `DEPENDENCIES.md`.
 
