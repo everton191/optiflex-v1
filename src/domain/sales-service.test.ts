@@ -125,3 +125,57 @@ describe("sale cancellation", () => {
     expect(repository.cancel.mock.calls[0][1]).toEqual([]);
   });
 });
+
+describe("quote negotiation lifecycle", () => {
+  it("walks a draft through sent, accepted, rejected and expired states", async () => {
+    repository.save.mockResolvedValue(undefined);
+    const sent = await service.transitionQuote(quote(), "SENT");
+    expect(sent).toMatchObject({ status: "QUOTE", quoteStatus: "SENT" });
+    const accepted = await service.transitionQuote(sent, "ACCEPTED");
+    expect(accepted.quoteStatus).toBe("ACCEPTED");
+    const rejected = await service.transitionQuote({ ...sent, id: "sale-2" }, "REJECTED");
+    expect(rejected.quoteStatus).toBe("REJECTED");
+    const expired = await service.transitionQuote({ ...sent, id: "sale-3" }, "EXPIRED");
+    expect(expired.quoteStatus).toBe("EXPIRED");
+    expect(repository.save).toHaveBeenCalledTimes(4);
+  });
+
+  it("rejects transitions the current state does not allow without saving", async () => {
+    await expect(service.transitionQuote(quote({ quoteStatus: "ACCEPTED" }), "SENT")).rejects.toThrow("não permite essa mudança");
+    await expect(service.transitionQuote(quote({ quoteStatus: "REJECTED" }), "ACCEPTED")).rejects.toThrow("não permite essa mudança");
+    await expect(service.transitionQuote(quote({ quoteStatus: "EXPIRED" }), "SENT")).rejects.toThrow("não permite essa mudança");
+    await expect(service.transitionQuote(quote({ quoteStatus: "SENT" }), "DRAFT")).rejects.toThrow("não permite essa mudança");
+    await expect(service.transitionQuote(quote({ status: "CONFIRMED" }), "SENT")).rejects.toThrow("Somente orçamentos");
+    expect(repository.save).not.toHaveBeenCalled();
+  });
+
+  it("blocks confirmation of rejected or expired quotes and keeps drafts confirmable", async () => {
+    repository.confirm.mockResolvedValue(undefined);
+    await expect(service.confirm(quote({ quoteStatus: "ACCEPTED" }))).resolves.toMatchObject({ status: "CONFIRMED" });
+    await expect(service.confirm(quote({ quoteStatus: "REJECTED" }))).rejects.toThrow("recusado ou expirado");
+    await expect(service.confirm(quote({ quoteStatus: "EXPIRED" }))).rejects.toThrow("recusado ou expirado");
+    expect(repository.confirm).toHaveBeenCalledOnce();
+  });
+});
+
+describe("draft quote editing", () => {
+  it("revalidates, recalculates the total from items and keeps identity", async () => {
+    repository.save.mockResolvedValue(undefined);
+    const updated = await service.updateQuote(quote(), { customerId: "customer-2", description: "  ", total: 0, items: [item("i1", 3, 100)] });
+    expect(updated).toMatchObject({ id: "sale-1", createdAt: "2026-01-01T10:00:00.000Z", status: "QUOTE", customerId: "customer-2", description: "Produto i1", total: 300 });
+    expect(repository.save).toHaveBeenCalledOnce();
+  });
+
+  it("keeps the manual total when the draft has no items", async () => {
+    repository.save.mockResolvedValue(undefined);
+    const updated = await service.updateQuote(quote(), { customerId: "customer-1", description: "Serviço", total: 150, items: [] });
+    expect(updated).toMatchObject({ description: "Serviço", total: 150, items: undefined });
+  });
+
+  it("rejects edits to quotes that are not drafts and invalid values", async () => {
+    await expect(service.updateQuote(quote({ quoteStatus: "SENT" }), { customerId: "customer-1", description: "Novo", total: 10, items: [] })).rejects.toThrow("Apenas rascunhos");
+    await expect(service.updateQuote(quote({ status: "CONFIRMED" }), { customerId: "customer-1", description: "Novo", total: 10, items: [] })).rejects.toThrow("Somente orçamentos");
+    await expect(service.updateQuote(quote(), { customerId: "customer-1", description: "   ", total: 0, items: [] })).rejects.toThrow("descrição e valor");
+    expect(repository.save).not.toHaveBeenCalled();
+  });
+});

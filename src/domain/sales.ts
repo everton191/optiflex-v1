@@ -3,6 +3,21 @@ import { fromCents, toCents } from "./money";
 
 export type SaleStatus = "QUOTE" | "CONFIRMED" | "CANCELLED";
 export type SalePaymentStatus = "PENDING" | "PARTIAL" | "PAID";
+export type QuoteStatus = "DRAFT" | "SENT" | "ACCEPTED" | "REJECTED" | "EXPIRED";
+
+export const quoteStatusLabels: Record<QuoteStatus, string> = { DRAFT: "Rascunho", SENT: "Enviado", ACCEPTED: "Aceito", REJECTED: "Recusado", EXPIRED: "Expirado" };
+
+export const quoteTransitions: Record<QuoteStatus, readonly QuoteStatus[]> = {
+  DRAFT: ["SENT", "ACCEPTED", "REJECTED"],
+  SENT: ["ACCEPTED", "REJECTED", "EXPIRED"],
+  ACCEPTED: [],
+  REJECTED: [],
+  EXPIRED: []
+};
+
+export function quoteStatusOf(sale: Pick<Sale, "quoteStatus">): QuoteStatus {
+  return sale.quoteStatus ?? "DRAFT";
+}
 
 export interface SaleItem {
   inventoryItemId: string;
@@ -16,6 +31,7 @@ export interface Sale {
   customerId: string;
   storeId: string;
   status: SaleStatus;
+  quoteStatus?: QuoteStatus;
   paymentStatus?: SalePaymentStatus;
   description: string;
   total: number;

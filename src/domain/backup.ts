@@ -2,6 +2,7 @@ import { rolePermissions, type RoleKey } from "./access";
 import { paymentMethodLabels } from "./cash";
 import { isAttendancePriority } from "./customer";
 import { isProductCategory } from "./inventory";
+import { quoteStatusLabels } from "./sales";
 import { workOrderEventLabels, workOrderStatusLabels } from "./work-order";
 
 // Session is intentionally excluded: restoring business data must not import a login.
@@ -48,6 +49,7 @@ export function validateBackup(value: unknown): BackupSnapshot {
       if (name === "users" && (!Array.isArray(row.storeIds) || row.storeIds.some((id) => typeof id !== "string"))) throw invalid();
       if (name === "users" && (!Object.hasOwn(rolePermissions, row.role as string) || !["SELF", "STORE", "ORGANIZATION", "NETWORK"].includes(row.scope as string))) throw invalid();
       if (name === "sales" && row.paymentStatus !== undefined && !["PENDING", "PARTIAL", "PAID"].includes(row.paymentStatus as string)) throw invalid();
+      if (name === "sales" && row.quoteStatus !== undefined && !Object.hasOwn(quoteStatusLabels, row.quoteStatus as string)) throw invalid();
       if (name === "cashEntries" && row.paymentMethod !== undefined && !Object.hasOwn(paymentMethodLabels, row.paymentMethod as string)) throw invalid();
       if (name === "cashEntries" && row.reason !== undefined && (typeof row.reason !== "string" || !row.reason.trim())) throw invalid();
       if (name === "cashEntries" && row.author !== undefined && typeof row.author !== "string") throw invalid();

@@ -194,4 +194,17 @@ describe("encrypted backup and transactional restore", () => {
     const legacy = structuredClone(snapshot); delete (legacy.tables.attendances[0] as { priority?: unknown }).priority;
     expect(() => validateBackup(legacy)).not.toThrow();
   });
+
+  it("accepts quote negotiation states and rejects an unknown quote status", async () => {
+    const snapshot = await repository.snapshot();
+    snapshot.tables.customers.push({ id: "customer-quote", name: "Cliente Orçamento", createdAt: "2026-01-01T09:00:00.000Z" });
+    snapshot.tables.sales.push({ id: "sale-quote-states", customerId: "customer-quote", storeId: "store-centro", status: "QUOTE", quoteStatus: "SENT", description: "Orçamento enviado", total: 250, createdAt: "2026-01-01T11:00:00.000Z" });
+    expect(() => validateBackup(snapshot)).not.toThrow();
+    const accepted = structuredClone(snapshot); accepted.tables.sales[0].quoteStatus = "ACCEPTED" as never;
+    expect(() => validateBackup(accepted)).not.toThrow();
+    const legacy = structuredClone(snapshot); delete (legacy.tables.sales[0] as { quoteStatus?: unknown }).quoteStatus;
+    expect(() => validateBackup(legacy)).not.toThrow();
+    const badState = structuredClone(snapshot); badState.tables.sales[0].quoteStatus = "LOST" as never;
+    expect(() => validateBackup(badState)).toThrow("inválido");
+  });
 });
