@@ -17,7 +17,7 @@ afterEach(async () => { await database.delete(); });
 
 async function seed(productQuantity: number, itemQuantity = 1) {
   await database.customers.add({ id: "customer-1", name: "Cliente", createdAt: "2026-01-01T09:00:00.000Z" });
-  const product = await inventoryService.create("store-centro", { name: "Lente", quantity: productQuantity, minimumQuantity: 0 }, "Operador");
+  const product = await inventoryService.create("store-centro", { name: "Lente", quantity: productQuantity, minimumQuantity: 0, category: "LENS", brand: "Essilor" }, "Operador");
   const sale = await salesService.createQuote("customer-1", "store-centro", "Venda com item", 0, [saleItem(product, itemQuantity)]);
   return { product, sale };
 }
@@ -29,6 +29,7 @@ describe("sale confirmation deducts stock atomically", () => {
     const confirmed = await salesService.confirm(sale);
     expect(confirmed.status).toBe("CONFIRMED");
     expect((await inventoryService.list("store-centro"))[0].quantity).toBe(4);
+    expect((await inventoryService.list("store-centro"))[0]).toMatchObject({ category: "LENS", brand: "Essilor" });
     const movements = await inventoryService.history("store-centro");
     expect(movements).toHaveLength(2);
     const outgoing = movements.find((movement) => movement.type === "OUT");
@@ -52,7 +53,7 @@ describe("sale confirmation deducts stock atomically", () => {
   it("lets only one of two concurrent confirmations take the last unit", async () => {
     await database.open();
     await database.customers.add({ id: "customer-1", name: "Cliente", createdAt: "2026-01-01T09:00:00.000Z" });
-    const product = await inventoryService.create("store-centro", { name: "Lente", quantity: 1, minimumQuantity: 0 });
+    const product = await inventoryService.create("store-centro", { name: "Lente", quantity: 1, minimumQuantity: 0, category: "LENS" });
     const quoteOf = () => salesService.createQuote("customer-1", "store-centro", "Venda", 0, [saleItem(product, 1)]);
     const [first, second] = await Promise.all([quoteOf(), quoteOf()]);
     const results = await Promise.allSettled([salesService.confirm(first), salesService.confirm(second)]);
@@ -69,7 +70,7 @@ describe("sale confirmation deducts stock atomically", () => {
     const { sale } = await seed(5);
     await salesService.confirm(sale);
     await expect(salesService.confirm(sale)).rejects.toThrow("pendentes");
-    const otherProduct = await inventoryService.create("store-shopping", { name: "Lente B", quantity: 5, minimumQuantity: 0 });
+    const otherProduct = await inventoryService.create("store-shopping", { name: "Lente B", quantity: 5, minimumQuantity: 0, category: "LENS" });
     const quote = await salesService.createQuote("customer-1", "store-centro", "Venda", 0, [saleItem(otherProduct, 1)]);
     await expect(salesService.confirm(quote)).rejects.toThrow("não encontrado nesta loja");
     expect((await salesService.list("store-centro")).filter((entry) => entry.status === "CONFIRMED")).toHaveLength(1);

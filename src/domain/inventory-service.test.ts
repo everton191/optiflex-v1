@@ -1,75 +1,125 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { InventoryService } from "./inventory-service";
 import type { InventoryItem } from "./inventory";
-import { movementDelta, stockState } from "./inventory";
+import { filterByCategory, movementDelta, stockState } from "./inventory";
 
 const repository = { listByStore: vi.fn(), listMovements: vi.fn(), createItem: vi.fn(), updateItem: vi.fn(), applyMovement: vi.fn() };
 const service = new InventoryService(repository);
-const item: InventoryItem = { id: "item-1", storeId: "store-centro", name: "Armação", quantity: 10, minimumQuantity: 3 };
+const item: InventoryItem = { id: "item-1", storeId: "store-centro", name: "Armação", quantity: 10, minimumQuantity: 3, category: "FRAME" };
 beforeEach(() => { vi.resetAllMocks(); });
 
 describe("product registration", () => {
   it("rejects an empty store, a blank name and invalid quantities", async () => {
-    await expect(service.create("  ", { name: "Armação", quantity: 1, minimumQuantity: 1 })).rejects.toThrow("Selecione uma loja");
-    await expect(service.create("store-centro", { name: "   ", quantity: 1, minimumQuantity: 1 })).rejects.toThrow("Informe o nome do produto");
-    await expect(service.create("store-centro", { name: "Armação", quantity: -1, minimumQuantity: 0 })).rejects.toThrow("saldo inicial");
-    await expect(service.create("store-centro", { name: "Armação", quantity: 0, minimumQuantity: Number.NaN })).rejects.toThrow("estoque mínimo");
+    await expect(service.create("  ", { name: "Armação", quantity: 1, minimumQuantity: 1, category: "FRAME" })).rejects.toThrow("Selecione uma loja");
+    await expect(service.create("store-centro", { name: "   ", quantity: 1, minimumQuantity: 1, category: "FRAME" })).rejects.toThrow("Informe o nome do produto");
+    await expect(service.create("store-centro", { name: "Armação", quantity: -1, minimumQuantity: 0, category: "FRAME" })).rejects.toThrow("saldo inicial");
+    await expect(service.create("store-centro", { name: "Armação", quantity: 0, minimumQuantity: Number.NaN, category: "FRAME" })).rejects.toThrow("estoque mínimo");
+    expect(repository.createItem).not.toHaveBeenCalled();
+  });
+
+  it("requires a valid catalog category on create", async () => {
+    await expect(service.create("store-centro", { name: "Armação", quantity: 1, minimumQuantity: 1 } as never)).rejects.toThrow("Selecione a categoria do produto");
+    await expect(service.create("store-centro", { name: "Armação", quantity: 1, minimumQuantity: 1, category: "SHADE" as never })).rejects.toThrow("Selecione a categoria do produto");
+    await expect(service.create("store-centro", { name: "Armação", quantity: 1, minimumQuantity: 1, category: undefined as never })).rejects.toThrow("Selecione a categoria do produto");
     expect(repository.createItem).not.toHaveBeenCalled();
   });
 
   it("creates the product together with the initial stock movement", async () => {
     repository.createItem.mockResolvedValue(undefined);
-    const created = await service.create("store-centro", { name: "  Lente 1.67  ", code: "  LT-1  ", quantity: 8, minimumQuantity: 2 }, "Operador");
-    expect(created).toMatchObject({ storeId: "store-centro", name: "Lente 1.67", code: "LT-1", quantity: 8, minimumQuantity: 2 });
+    const created = await service.create("store-centro", { name: "  Lente 1.67  ", code: "  LT-1  ", quantity: 8, minimumQuantity: 2, category: "LENS" }, "Operador");
+    expect(created).toMatchObject({ storeId: "store-centro", name: "Lente 1.67", code: "LT-1", quantity: 8, minimumQuantity: 2, category: "LENS" });
     const [stored, initial] = repository.createItem.mock.calls[0];
-    expect(stored).toMatchObject({ name: "Lente 1.67", quantity: 8 });
+    expect(stored).toMatchObject({ name: "Lente 1.67", quantity: 8, category: "LENS" });
     expect(initial).toMatchObject({ itemId: stored.id, type: "IN", quantity: 8, reason: "Estoque inicial", author: "Operador" });
   });
 
   it("creates an empty product without an initial movement", async () => {
     repository.createItem.mockResolvedValue(undefined);
-    const created = await service.create("store-centro", { name: "Armação", quantity: 0, minimumQuantity: 0 });
+    const created = await service.create("store-centro", { name: "Armação", quantity: 0, minimumQuantity: 0, category: "FRAME" });
     expect(created).toMatchObject({ quantity: 0 });
     expect(repository.createItem.mock.calls[0][1]).toBeUndefined();
   });
 
   it("stores an optional default price and cost without touching the balance", async () => {
     repository.createItem.mockResolvedValue(undefined);
-    const created = await service.create("store-centro", { name: "Armação", quantity: 2, minimumQuantity: 1, defaultPrice: 250.5, cost: 120 });
+    const created = await service.create("store-centro", { name: "Armação", quantity: 2, minimumQuantity: 1, defaultPrice: 250.5, cost: 120, category: "FRAME" });
     expect(created).toMatchObject({ defaultPrice: 250.5, cost: 120, quantity: 2, minimumQuantity: 1 });
   });
 
+  it("stores the product sheet (brand, material, description) trimmed", async () => {
+    repository.createItem.mockResolvedValue(undefined);
+    const created = await service.create("store-centro", { name: "Armação", quantity: 1, minimumQuantity: 0, category: "FRAME", brand: "  Nike  ", material: " Acetato ", description: "  Hipster aro 52  " });
+    expect(created).toMatchObject({ category: "FRAME", brand: "Nike", material: "Acetato", description: "Hipster aro 52" });
+    const blank = await service.create("store-centro", { name: "Lente", quantity: 1, minimumQuantity: 0, category: "LENS", brand: "  ", material: "", description: "" });
+    expect(blank.brand).toBeUndefined();
+    expect(blank.material).toBeUndefined();
+    expect(blank.description).toBeUndefined();
+  });
+
   it("rejects an invalid default price or cost", async () => {
-    await expect(service.create("store-centro", { name: "Armação", quantity: 1, minimumQuantity: 1, defaultPrice: -1 })).rejects.toThrow("preço padrão válido");
-    await expect(service.create("store-centro", { name: "Armação", quantity: 1, minimumQuantity: 1, defaultPrice: Number.POSITIVE_INFINITY })).rejects.toThrow("preço padrão válido");
-    await expect(service.create("store-centro", { name: "Armação", quantity: 1, minimumQuantity: 1, cost: Number.NaN })).rejects.toThrow("custo válido");
+    await expect(service.create("store-centro", { name: "Armação", quantity: 1, minimumQuantity: 1, category: "FRAME", defaultPrice: -1 })).rejects.toThrow("preço padrão válido");
+    await expect(service.create("store-centro", { name: "Armação", quantity: 1, minimumQuantity: 1, category: "FRAME", defaultPrice: Number.POSITIVE_INFINITY })).rejects.toThrow("preço padrão válido");
+    await expect(service.create("store-centro", { name: "Armação", quantity: 1, minimumQuantity: 1, category: "FRAME", cost: Number.NaN })).rejects.toThrow("custo válido");
     expect(repository.createItem).not.toHaveBeenCalled();
   });
 });
 
 describe("product editing", () => {
   it("validates the name and the minimum before writing", async () => {
-    await expect(service.update(item, { name: " ", minimumQuantity: 2 })).rejects.toThrow("Informe o nome do produto");
-    await expect(service.update(item, { name: "Armação", minimumQuantity: -1 })).rejects.toThrow("estoque mínimo");
+    await expect(service.update(item, { name: " ", minimumQuantity: 2, category: "FRAME" })).rejects.toThrow("Informe o nome do produto");
+    await expect(service.update(item, { name: "Armação", minimumQuantity: -1, category: "FRAME" })).rejects.toThrow("estoque mínimo");
     expect(repository.updateItem).not.toHaveBeenCalled();
   });
 
-  it("updates identification and minimum without changing the balance", async () => {
+  it("requires a valid catalog category on update", async () => {
+    await expect(service.update(item, { name: "Armação", minimumQuantity: 3 } as never)).rejects.toThrow("Selecione a categoria do produto");
+    await expect(service.update(item, { name: "Armação", minimumQuantity: 3, category: "SHADE" as never })).rejects.toThrow("Selecione a categoria do produto");
+    expect(repository.updateItem).not.toHaveBeenCalled();
+  });
+
+  it("updates identification, category and sheet without changing the balance", async () => {
     repository.updateItem.mockResolvedValue(undefined);
-    const updated = await service.update(item, { name: "  Armação nova  ", code: " AR-1 ", minimumQuantity: 6 });
-    expect(updated).toMatchObject({ name: "Armação nova", code: "AR-1", minimumQuantity: 6, quantity: 10 });
+    const updated = await service.update(item, { name: "  Armação nova  ", code: " AR-1 ", minimumQuantity: 6, category: "ACCESSORY", brand: "Ray-Ban", material: "Metal", description: "Aro 50" });
+    expect(updated).toMatchObject({ name: "Armação nova", code: "AR-1", minimumQuantity: 6, quantity: 10, category: "ACCESSORY", brand: "Ray-Ban", material: "Metal", description: "Aro 50" });
     expect(repository.updateItem).toHaveBeenCalledOnce();
   });
 
-  it("updates and clears the optional default price and cost", async () => {
+  it("updates and clears the optional default price, cost and sheet", async () => {
     repository.updateItem.mockResolvedValue(undefined);
-    const updated = await service.update(item, { name: "Armação", minimumQuantity: 3, defaultPrice: 99.9, cost: 40 });
+    const updated = await service.update(item, { name: "Armação", minimumQuantity: 3, defaultPrice: 99.9, cost: 40, category: "FRAME" });
     expect(updated).toMatchObject({ defaultPrice: 99.9, cost: 40 });
-    const cleared = await service.update(updated, { name: "Armação", minimumQuantity: 3 });
+    const cleared = await service.update(updated, { name: "Armação", minimumQuantity: 3, category: "FRAME", brand: "", material: "", description: "" });
     expect(cleared.defaultPrice).toBeUndefined();
     expect(cleared.cost).toBeUndefined();
-    await expect(service.update(item, { name: "Armação", minimumQuantity: 3, defaultPrice: -5 })).rejects.toThrow("preço padrão válido");
+    expect(cleared.brand).toBeUndefined();
+    expect(cleared.material).toBeUndefined();
+    expect(cleared.description).toBeUndefined();
+    await expect(service.update(item, { name: "Armação", minimumQuantity: 3, category: "FRAME", defaultPrice: -5 })).rejects.toThrow("preço padrão válido");
     expect(repository.updateItem).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("catalog filtering", () => {
+  const frame: InventoryItem = { id: "f", storeId: "store-centro", name: "Armação", quantity: 1, minimumQuantity: 0, category: "FRAME" };
+  const lens: InventoryItem = { id: "l", storeId: "store-centro", name: "Lente", quantity: 2, minimumQuantity: 0, category: "LENS" };
+  const accessory: InventoryItem = { id: "a", storeId: "store-centro", name: "Cabo", quantity: 3, minimumQuantity: 0, category: "ACCESSORY" };
+  const legacy: InventoryItem = { id: "g", storeId: "store-centro", name: "Avulso", quantity: 4, minimumQuantity: 0 };
+
+  it("finds products by category and keeps uncategorized stock only under ALL", () => {
+    const items = [frame, lens, accessory, legacy];
+    expect(filterByCategory(items, "ALL")).toEqual([frame, lens, accessory, legacy]);
+    expect(filterByCategory(items, "FRAME")).toEqual([frame]);
+    expect(filterByCategory(items, "LENS")).toEqual([lens]);
+    expect(filterByCategory(items, "ACCESSORY")).toEqual([accessory]);
+    expect(filterByCategory(items, "FRAME")).not.toContain(legacy);
+    expect(filterByCategory([], "LENS")).toEqual([]);
+  });
+
+  it("returns a copy on ALL so filtering never mutates the loaded list", () => {
+    const items = [frame, lens];
+    const filtered = filterByCategory(items, "ALL");
+    filtered.pop();
+    expect(items).toHaveLength(2);
   });
 });
 

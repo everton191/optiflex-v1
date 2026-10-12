@@ -1,3 +1,12 @@
+export const productCategories = ["FRAME", "LENS", "ACCESSORY"] as const;
+export type ProductCategory = (typeof productCategories)[number];
+export const productCategoryLabels: Record<ProductCategory, string> = { FRAME: "Armação", LENS: "Lente", ACCESSORY: "Acesso" };
+export type ProductCategoryFilter = "ALL" | ProductCategory;
+
+export function isProductCategory(value: unknown): value is ProductCategory {
+  return typeof value === "string" && (productCategories as readonly string[]).includes(value);
+}
+
 export interface InventoryItem {
   id: string;
   storeId: string;
@@ -7,6 +16,15 @@ export interface InventoryItem {
   minimumQuantity: number;
   defaultPrice?: number;
   cost?: number;
+  category?: ProductCategory;
+  brand?: string;
+  material?: string;
+  description?: string;
+}
+
+export function filterByCategory(items: readonly InventoryItem[], filter: ProductCategoryFilter): InventoryItem[] {
+  if (filter === "ALL") return [...items];
+  return items.filter((item) => item.category === filter);
 }
 
 export type InventoryMovementType = "IN" | "OUT" | "ADJUSTMENT";

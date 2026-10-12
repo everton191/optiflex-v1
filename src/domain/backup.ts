@@ -1,5 +1,6 @@
 import { rolePermissions, type RoleKey } from "./access";
 import { paymentMethodLabels } from "./cash";
+import { isProductCategory } from "./inventory";
 import { workOrderEventLabels, workOrderStatusLabels } from "./work-order";
 
 // Session is intentionally excluded: restoring business data must not import a login.
@@ -51,12 +52,13 @@ export function validateBackup(value: unknown): BackupSnapshot {
       if (name === "cashEntries" && row.author !== undefined && typeof row.author !== "string") throw invalid();
       if (name === "inventoryItems" && row.defaultPrice !== undefined && (typeof row.defaultPrice !== "number" || !Number.isFinite(row.defaultPrice) || row.defaultPrice < 0)) throw invalid();
       if (name === "inventoryItems" && row.cost !== undefined && (typeof row.cost !== "number" || !Number.isFinite(row.cost) || row.cost < 0)) throw invalid();
+      if (name === "inventoryItems" && row.category !== undefined && !isProductCategory(row.category)) throw invalid();
       if (name === "sales" && row.items !== undefined && (!Array.isArray(row.items) || row.items.some((item) => !object(item) || typeof item.inventoryItemId !== "string" || typeof item.name !== "string" || typeof item.quantity !== "number" || !Number.isFinite(item.quantity) || item.quantity <= 0 || typeof item.unitPrice !== "number" || !Number.isFinite(item.unitPrice) || item.unitPrice < 0))) throw invalid();
       if (name === "cashSessions") {
         for (const field of ["expectedBalance", "closingBalance"]) if (row[field] !== undefined && (typeof row[field] !== "number" || !Number.isFinite(row[field]) || (row[field] as number) < 0)) throw invalid();
         if (row.difference !== undefined && (typeof row.difference !== "number" || !Number.isFinite(row.difference))) throw invalid();
       }
-      for (const field of ["cpf", "phone", "birthDate", "email", "receptionNotes", "closedAt", "closedBy", "closingNote", "code", "author", "updatedAt", "updatedBy", "dueAt", "notes", "cancelledBy", "professionalId", "attendanceId"]) if (row[field] !== undefined && typeof row[field] !== "string") throw invalid();
+      for (const field of ["cpf", "phone", "birthDate", "email", "receptionNotes", "closedAt", "closedBy", "closingNote", "code", "author", "updatedAt", "updatedBy", "dueAt", "notes", "cancelledBy", "professionalId", "attendanceId", "brand", "material", "description"]) if (row[field] !== undefined && typeof row[field] !== "string") throw invalid();
       if (name === "clinicalRecords" || name === "clinicalVersions") {
         if (!Array.isArray(row.attachments) || row.attachments.some((item) => !object(item) || typeof item.id !== "string" || typeof item.name !== "string" || typeof item.mimeType !== "string" || typeof item.size !== "number" || typeof item.createdAt !== "string")) throw invalid();
         for (const field of ["revision", "version"]) if (row[field] !== undefined && (!Number.isSafeInteger(row[field]) || (row[field] as number) < (field === "version" ? 1 : 0))) throw invalid();

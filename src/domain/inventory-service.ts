@@ -1,5 +1,5 @@
-import type { InventoryItem, InventoryMovement, InventoryMovementType } from "./inventory";
-import { movementDelta } from "./inventory";
+import type { InventoryItem, InventoryMovement, InventoryMovementType, ProductCategory } from "./inventory";
+import { isProductCategory, movementDelta } from "./inventory";
 import type { InventoryRepository } from "./repositories";
 import { isMoney } from "./money";
 
@@ -10,9 +10,23 @@ export interface InventoryItemInput {
   minimumQuantity: number;
   defaultPrice?: number;
   cost?: number;
+  category: ProductCategory;
+  brand?: string;
+  material?: string;
+  description?: string;
 }
 
 const valid = (value: number) => Number.isFinite(value) && value >= 0;
+
+function optionalText(value: string | undefined): string | undefined {
+  const text = value?.trim() || undefined;
+  return text;
+}
+
+function categoryOf(category: ProductCategory): ProductCategory {
+  if (!isProductCategory(category)) throw new Error("Selecione a categoria do produto.");
+  return category;
+}
 
 function optionalMoney(value: number | undefined, field: "defaultPrice" | "cost"): number | undefined {
   if (value === undefined) return undefined;
@@ -29,18 +43,20 @@ export class InventoryService {
     if (!storeId?.trim()) throw new Error("Selecione uma loja.");
     const name = input.name.trim();
     if (!name) throw new Error("Informe o nome do produto.");
+    const category = categoryOf(input.category);
     if (!valid(input.quantity) || !valid(input.minimumQuantity)) throw new Error("Informe saldo inicial e estoque mínimo válidos.");
-    const item: InventoryItem = { id: `item-${crypto.randomUUID()}`, storeId, name, code: input.code?.trim() || undefined, quantity: input.quantity, minimumQuantity: input.minimumQuantity, defaultPrice: optionalMoney(input.defaultPrice, "defaultPrice"), cost: optionalMoney(input.cost, "cost") };
+    const item: InventoryItem = { id: `item-${crypto.randomUUID()}`, storeId, name, code: input.code?.trim() || undefined, quantity: input.quantity, minimumQuantity: input.minimumQuantity, defaultPrice: optionalMoney(input.defaultPrice, "defaultPrice"), cost: optionalMoney(input.cost, "cost"), category, brand: optionalText(input.brand), material: optionalText(input.material), description: optionalText(input.description) };
     const initial: InventoryMovement | undefined = input.quantity > 0 ? { id: `movement-${crypto.randomUUID()}`, itemId: item.id, storeId, type: "IN", quantity: input.quantity, reason: "Estoque inicial", createdAt: new Date().toISOString(), author } : undefined;
     await this.repository.createItem(item, initial);
     return item;
   }
 
-  async update(item: InventoryItem, input: { name: string; code?: string; minimumQuantity: number; defaultPrice?: number; cost?: number }): Promise<InventoryItem> {
+  async update(item: InventoryItem, input: { name: string; code?: string; minimumQuantity: number; defaultPrice?: number; cost?: number; category: ProductCategory; brand?: string; material?: string; description?: string }): Promise<InventoryItem> {
     const name = input.name.trim();
     if (!name) throw new Error("Informe o nome do produto.");
+    const category = categoryOf(input.category);
     if (!valid(input.minimumQuantity)) throw new Error("Informe um estoque mínimo válido.");
-    const updated: InventoryItem = { ...item, name, code: input.code?.trim() || undefined, minimumQuantity: input.minimumQuantity, defaultPrice: optionalMoney(input.defaultPrice, "defaultPrice"), cost: optionalMoney(input.cost, "cost") };
+    const updated: InventoryItem = { ...item, name, code: input.code?.trim() || undefined, minimumQuantity: input.minimumQuantity, defaultPrice: optionalMoney(input.defaultPrice, "defaultPrice"), cost: optionalMoney(input.cost, "cost"), category, brand: optionalText(input.brand), material: optionalText(input.material), description: optionalText(input.description) };
     await this.repository.updateItem(updated);
     return updated;
   }

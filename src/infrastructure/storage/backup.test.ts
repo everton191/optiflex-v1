@@ -121,10 +121,10 @@ describe("encrypted backup and transactional restore", () => {
     const badCancelReason = structuredClone(snapshot); badCancelReason.tables.workOrders[1].cancelReason = "   ";
     expect(() => validateBackup(badCancelReason)).toThrow("inválido");
   });
-  it("accepts product price, cost and payment method, rejecting invalid values", async () => {
+  it("accepts product price, cost, catalog sheet and payment method, rejecting invalid values", async () => {
     const snapshot = await repository.snapshot();
     snapshot.tables.stores.push({ id: "store-x", name: "Loja X", active: true });
-    snapshot.tables.inventoryItems.push({ id: "item-x", storeId: "store-x", name: "Lente 1.60", quantity: 1, minimumQuantity: 0, defaultPrice: 100.5, cost: 40 });
+    snapshot.tables.inventoryItems.push({ id: "item-x", storeId: "store-x", name: "Lente 1.60", quantity: 1, minimumQuantity: 0, defaultPrice: 100.5, cost: 40, category: "LENS", brand: "Essilor", material: "1.60", description: "Antirreflexo" });
     snapshot.tables.cashSessions.push({ id: "cash-x", storeId: "store-x", openedAt: "2026-01-01T10:00:00.000Z", openingBalance: 0 });
     snapshot.tables.cashEntries.push({ id: "entry-x", sessionId: "cash-x", storeId: "store-x", type: "RECEIPT", amount: 10, paymentMethod: "PIX", createdAt: "2026-01-01T11:00:00.000Z" });
     expect(() => validateBackup(snapshot)).not.toThrow();
@@ -134,6 +134,12 @@ describe("encrypted backup and transactional restore", () => {
     expect(() => validateBackup(badPrice)).toThrow("inválido");
     const badCost = structuredClone(snapshot); badCost.tables.inventoryItems[0].cost = Number.NaN;
     expect(() => validateBackup(badCost)).toThrow("inválido");
+    const badCategory = structuredClone(snapshot); (badCategory.tables.inventoryItems[0] as { category: unknown }).category = "SHADE";
+    expect(() => validateBackup(badCategory)).toThrow("inválido");
+    const badBrand = structuredClone(snapshot); (badBrand.tables.inventoryItems[0] as { brand: unknown }).brand = 42;
+    expect(() => validateBackup(badBrand)).toThrow("inválido");
+    const legacyWithoutCategory = structuredClone(snapshot); delete (legacyWithoutCategory.tables.inventoryItems[0] as { category?: unknown }).category;
+    expect(() => validateBackup(legacyWithoutCategory)).not.toThrow();
     const withReason = structuredClone(snapshot);
     withReason.tables.cashEntries[0] = { ...withReason.tables.cashEntries[0], type: "DEPOSIT" as never, reason: "Troco do banco", author: "Operadora" };
     expect(() => validateBackup(withReason)).not.toThrow();

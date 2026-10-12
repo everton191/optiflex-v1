@@ -14,7 +14,7 @@ afterEach(async () => { await database.delete(); });
 describe("inventory storage", () => {
   it("persists the product and its initial movement across reopen", async () => {
     await database.open();
-    const created = await service.create("store-centro", { name: "Lente 1.67", code: "LT-167", quantity: 8, minimumQuantity: 2 }, "Operador");
+    const created = await service.create("store-centro", { name: "Lente 1.67", code: "LT-167", quantity: 8, minimumQuantity: 2, category: "LENS" }, "Operador");
     const history = await service.history("store-centro");
     expect(history).toHaveLength(1);
     expect(history[0]).toMatchObject({ itemId: created.id, type: "IN", quantity: 8, reason: "Estoque inicial", author: "Operador" });
@@ -26,15 +26,24 @@ describe("inventory storage", () => {
 
   it("persists the optional default price and cost with the product", async () => {
     await database.open();
-    await service.create("store-centro", { name: "Lente 1.60", quantity: 2, minimumQuantity: 1, defaultPrice: 180.5, cost: 95 }, "Operador");
+    await service.create("store-centro", { name: "Lente 1.60", quantity: 2, minimumQuantity: 1, defaultPrice: 180.5, cost: 95, category: "LENS" }, "Operador");
     database.close();
     await database.open();
     expect((await service.list("store-centro"))[0]).toMatchObject({ name: "Lente 1.60", defaultPrice: 180.5, cost: 95 });
   });
 
+  it("persists the catalog sheet (category, brand, material) across reopen", async () => {
+    await database.open();
+    await service.create("store-centro", { name: "Armação Oakley", quantity: 2, minimumQuantity: 1, category: "FRAME", brand: "Oakley", material: "O Matter", description: "Aro 54" }, "Operador");
+    database.close();
+    await database.open();
+    expect((await service.list("store-centro"))[0]).toMatchObject({ name: "Armação Oakley", category: "FRAME", brand: "Oakley", material: "O Matter", description: "Aro 54" });
+    expect((await service.list("store-centro"))[0].category).toBeDefined();
+  });
+
   it("applies a movement and refuses to leave a negative balance", async () => {
     await database.open();
-    await service.create("store-centro", { name: "Armação", quantity: 10, minimumQuantity: 4 });
+    await service.create("store-centro", { name: "Armação", quantity: 10, minimumQuantity: 4, category: "FRAME" });
     const [stored] = await service.list("store-centro");
     const afterOut = await service.adjust(stored, "OUT", 4, "Venda", "Operador");
     expect(afterOut.quantity).toBe(6);
@@ -45,7 +54,7 @@ describe("inventory storage", () => {
 
   it("keeps concurrent outgoing movements atomic", async () => {
     await database.open();
-    await service.create("store-centro", { name: "Armação", quantity: 10, minimumQuantity: 0 });
+    await service.create("store-centro", { name: "Armação", quantity: 10, minimumQuantity: 0, category: "FRAME" });
     const [stored] = await service.list("store-centro");
     const results = await Promise.allSettled([
       service.adjust(stored, "OUT", 6, "Venda A"),
@@ -59,7 +68,7 @@ describe("inventory storage", () => {
 
   it("isolates products and movements by store", async () => {
     await database.open();
-    const created = await service.create("store-centro", { name: "Armação", quantity: 5, minimumQuantity: 1 });
+    const created = await service.create("store-centro", { name: "Armação", quantity: 5, minimumQuantity: 1, category: "FRAME" });
     expect(await service.list("store-shopping")).toHaveLength(0);
     expect(await service.history("store-shopping")).toHaveLength(0);
     await expect(service.adjust({ ...created, storeId: "store-shopping" }, "OUT", 1, "Venda")).rejects.toThrow("não encontrado");
@@ -69,8 +78,8 @@ describe("inventory storage", () => {
 
   it("edits product data without touching the persisted balance", async () => {
     await database.open();
-    const created = await service.create("store-centro", { name: "Armação", quantity: 5, minimumQuantity: 1 });
-    const updated = await service.update({ ...created, quantity: 999 }, { name: "  Armação nova  ", code: " AR-1 ", minimumQuantity: 6 });
+    const created = await service.create("store-centro", { name: "Armação", quantity: 5, minimumQuantity: 1, category: "FRAME" });
+    const updated = await service.update({ ...created, quantity: 999 }, { name: "  Armação nova  ", code: " AR-1 ", minimumQuantity: 6, category: "FRAME" });
     expect(updated).toMatchObject({ name: "Armação nova", code: "AR-1", minimumQuantity: 6, quantity: 999 });
     const [stored] = await service.list("store-centro");
     expect(stored).toMatchObject({ name: "Armação nova", quantity: 5, minimumQuantity: 6 });
@@ -78,7 +87,7 @@ describe("inventory storage", () => {
 
   it("registers a signed adjustment from an inventory count", async () => {
     await database.open();
-    await service.create("store-centro", { name: "Armação", quantity: 5, minimumQuantity: 1 });
+    await service.create("store-centro", { name: "Armação", quantity: 5, minimumQuantity: 1, category: "FRAME" });
     const [stored] = await service.list("store-centro");
     const adjusted = await service.adjust(stored, "ADJUSTMENT", -2, "Conferência", "Operador");
     expect(adjusted.quantity).toBe(3);
