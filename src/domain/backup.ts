@@ -3,16 +3,16 @@ import { paymentMethodLabels } from "./cash";
 import { workOrderEventLabels, workOrderStatusLabels } from "./work-order";
 
 // Session is intentionally excluded: restoring business data must not import a login.
-export const backupTables = ["settings", "stores", "users", "currentStore", "customers", "attendances", "clinicalRecords", "clinicalVersions", "attachments", "sales", "workOrders", "inventoryItems", "inventoryMovements", "cashSessions", "cashEntries"] as const;
+export const backupTables = ["settings", "stores", "users", "currentStore", "customers", "attendances", "agendaEvents", "clinicalRecords", "clinicalVersions", "attachments", "sales", "workOrders", "inventoryItems", "inventoryMovements", "cashSessions", "cashEntries"] as const;
 export type BackupTable = typeof backupTables[number];
-// Schema 10 predates the attachments content table; both remain importable.
-export interface BackupSnapshot { format: "opticore"; version: 1; schema: 10 | 11; createdAt: string; tables: Record<BackupTable, Record<string, unknown>[]>; }
+// Schema 10 predates the attachments content table; 11 predates agenda events. All remain importable.
+export interface BackupSnapshot { format: "opticore"; version: 1; schema: 10 | 11 | 12; createdAt: string; tables: Record<BackupTable, Record<string, unknown>[]>; }
 export interface BackupRepository { snapshot(): Promise<BackupSnapshot>; restore(snapshot: BackupSnapshot): Promise<void>; }
 export interface BackupCodec { encrypt(value: string, password: string): Promise<string>; decrypt(value: string, password: string): Promise<string>; }
 
 const requiredStrings: Record<BackupTable, string[]> = {
   settings: ["id", "organizationName", "clinicalProfessionalLabel"], stores: ["id", "name"], users: ["id", "name", "email", "role", "scope"], currentStore: ["id", "storeId"],
-  customers: ["id", "name", "createdAt"], attendances: ["id", "customerId", "storeId", "type", "status", "createdAt"],
+  customers: ["id", "name", "createdAt"], attendances: ["id", "customerId", "storeId", "type", "status", "createdAt"], agendaEvents: ["id", "customerId", "storeId", "type", "status", "startsAt", "createdAt"],
   clinicalRecords: ["attendanceId", "anamnesis", "examination", "prescription", "requests", "updatedAt"], clinicalVersions: ["id", "attendanceId", "anamnesis", "examination", "prescription", "requests", "updatedAt", "finalizedAt"],
   attachments: ["id", "content"],
   sales: ["id", "customerId", "storeId", "status", "description", "createdAt"], workOrders: ["id", "saleId", "storeId", "customerId", "status", "createdAt"],
@@ -21,12 +21,16 @@ const requiredStrings: Record<BackupTable, string[]> = {
 const object = (value: unknown): value is Record<string, unknown> => Boolean(value && typeof value === "object" && !Array.isArray(value));
 const invalid = () => new Error("Backup inválido ou incompatível. Nenhum dado foi substituído.");
 export function validateBackup(value: unknown): BackupSnapshot {
-  if (!object(value) || value.format !== "opticore" || value.version !== 1 || (value.schema !== 10 && value.schema !== 11) || typeof value.createdAt !== "string" || !Number.isFinite(Date.parse(value.createdAt)) || !object(value.tables)) throw invalid();
+  if (!object(value) || value.format !== "opticore" || value.version !== 1 || (value.schema !== 10 && value.schema !== 11 && value.schema !== 12) || typeof value.createdAt !== "string" || !Number.isFinite(Date.parse(value.createdAt)) || !object(value.tables)) throw invalid();
   const importedTables = { ...value.tables };
   if (value.schema === 10) {
-    if (Object.keys(importedTables).length !== backupTables.length - 1 || "attachments" in importedTables) throw invalid();
+    if (Object.keys(importedTables).length !== backupTables.length - 2 || "attachments" in importedTables || "agendaEvents" in importedTables) throw invalid();
     importedTables.attachments = [];
-  } else if (Object.keys(importedTables).length !== backupTables.length || !("attachments" in importedTables)) throw invalid();
+    importedTables.agendaEvents = [];
+  } else if (value.schema === 11) {
+    if (Object.keys(importedTables).length !== backupTables.length - 1 || "agendaEvents" in importedTables || !("attachments" in importedTables)) throw invalid();
+    importedTables.agendaEvents = [];
+  } else if (Object.keys(importedTables).length !== backupTables.length || !("attachments" in importedTables) || !("agendaEvents" in importedTables)) throw invalid();
   for (const name of backupTables) {
     const rows = importedTables[name];
     if (!Array.isArray(rows)) throw invalid();
@@ -52,7 +56,7 @@ export function validateBackup(value: unknown): BackupSnapshot {
         for (const field of ["expectedBalance", "closingBalance"]) if (row[field] !== undefined && (typeof row[field] !== "number" || !Number.isFinite(row[field]) || (row[field] as number) < 0)) throw invalid();
         if (row.difference !== undefined && (typeof row.difference !== "number" || !Number.isFinite(row.difference))) throw invalid();
       }
-      for (const field of ["cpf", "phone", "birthDate", "email", "receptionNotes", "closedAt", "closedBy", "closingNote", "code", "author", "updatedAt", "updatedBy", "dueAt", "notes", "cancelledBy"]) if (row[field] !== undefined && typeof row[field] !== "string") throw invalid();
+      for (const field of ["cpf", "phone", "birthDate", "email", "receptionNotes", "closedAt", "closedBy", "closingNote", "code", "author", "updatedAt", "updatedBy", "dueAt", "notes", "cancelledBy", "professionalId", "attendanceId"]) if (row[field] !== undefined && typeof row[field] !== "string") throw invalid();
       if (name === "clinicalRecords" || name === "clinicalVersions") {
         if (!Array.isArray(row.attachments) || row.attachments.some((item) => !object(item) || typeof item.id !== "string" || typeof item.name !== "string" || typeof item.mimeType !== "string" || typeof item.size !== "number" || typeof item.createdAt !== "string")) throw invalid();
         for (const field of ["revision", "version"]) if (row[field] !== undefined && (!Number.isSafeInteger(row[field]) || (row[field] as number) < (field === "version" ? 1 : 0))) throw invalid();
@@ -84,7 +88,7 @@ export function validateBackup(value: unknown): BackupSnapshot {
   const customers = ids("customers"), stores = ids("stores"), attendances = ids("attendances");
   if (tables.currentStore.length !== 1 || tables.currentStore[0].id !== "current" || !tables.stores.some((store) => store.id === tables.currentStore[0].storeId && store.active)) throw invalid();
   if (tables.settings.length > 1 || tables.settings.some((row) => row.id !== "current")) throw invalid();
-  for (const name of ["attendances", "sales", "workOrders"] as const) for (const row of tables[name]) if (!customers.has(row.customerId) || !stores.has(row.storeId)) throw invalid();
+  for (const name of ["attendances", "sales", "workOrders", "agendaEvents"] as const) for (const row of tables[name]) if (!customers.has(row.customerId) || !stores.has(row.storeId)) throw invalid();
   for (const name of ["clinicalRecords", "clinicalVersions"] as const) for (const row of tables[name]) if (!attendances.has(row.attendanceId)) throw invalid();
   for (const name of ["inventoryItems", "inventoryMovements", "cashSessions", "cashEntries"] as const) for (const row of tables[name]) if (!stores.has(row.storeId)) throw invalid();
   if (tables.users.some((row) => (row.storeIds as string[]).some((id) => !stores.has(id)))) throw invalid();
@@ -100,13 +104,16 @@ export function validateBackup(value: unknown): BackupSnapshot {
     if (row.id !== `${row.attendanceId}:${row.version ?? 1}` || !Number.isFinite(Date.parse(row.finalizedAt as string))) throw invalid();
   }
   const enums: Partial<Record<BackupTable, [string, string[]]>> = {
-    attendances: ["status", ["DRAFT", "WAITING", "IN_PROGRESS", "FINISHED", "CANCELLED"]], sales: ["status", ["QUOTE", "CONFIRMED", "CANCELLED"]], workOrders: ["status", ["OPEN", "IN_PRODUCTION", "READY", "DELIVERED", "CANCELLED"]], inventoryMovements: ["type", ["IN", "OUT", "ADJUSTMENT"]], cashEntries: ["type", ["RECEIPT", "WITHDRAWAL", "DEPOSIT", "REFUND"]],
+    attendances: ["status", ["DRAFT", "WAITING", "IN_PROGRESS", "FINISHED", "CANCELLED"]], agendaEvents: ["status", ["SCHEDULED", "COMPLETED", "CANCELLED"]], sales: ["status", ["QUOTE", "CONFIRMED", "CANCELLED"]], workOrders: ["status", ["OPEN", "IN_PRODUCTION", "READY", "DELIVERED", "CANCELLED"]], inventoryMovements: ["type", ["IN", "OUT", "ADJUSTMENT"]], cashEntries: ["type", ["RECEIPT", "WITHDRAWAL", "DEPOSIT", "REFUND"]],
   };
   for (const name of backupTables) {
     const rule = enums[name];
     if (rule && tables[name].some((row) => !rule[1].includes(row[rule[0]] as string))) throw invalid();
   }
   if (tables.attendances.some((row) => !["CONSULTATION", "RETURN", "ADJUSTMENT", "ASSESSMENT"].includes(row.type as string))) throw invalid();
+  if (tables.agendaEvents.some((row) => !["CONSULTATION", "RETURN", "DELIVERY", "ADJUSTMENT", "BILLING"].includes(row.type as string))) throw invalid();
+  const attendanceIds = ids("attendances");
+  if (tables.agendaEvents.some((row) => row.attendanceId !== undefined && !attendanceIds.has(row.attendanceId as string))) throw invalid();
   return snapshot;
 }
 

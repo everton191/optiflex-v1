@@ -1,5 +1,6 @@
 import type { CurrentStoreContext, LocalSession, OrganizationSettings, Store, User } from "../../domain/access";
 import { assertRecordAccess, assertStoreAccess, canAccessRecord, getActiveAccessContext } from "../../domain/access-context";
+import type { AgendaEvent } from "../../domain/agenda";
 import type { Attendance, Customer } from "../../domain/customer";
 import type { ClinicalRecord } from "../../domain/clinical";
 import type { Sale } from "../../domain/sales";
@@ -7,7 +8,7 @@ import type { WorkOrder, WorkOrderStatus } from "../../domain/work-order";
 import type { InventoryItem, InventoryMovement } from "../../domain/inventory";
 import type { CashEntry, CashSession } from "../../domain/cash";
 import { cashTotals } from "../../domain/cash";
-import type { AdministrationRepository, AttendanceRepository, CashCloseInput, CashRepository, ClinicalRepository, CustomerRepository, InventoryRepository, SaleRepository, SessionRepository, SettingsRepository, WorkOrderRepository } from "../../domain/repositories";
+import type { AdministrationRepository, AgendaRepository, AttendanceRepository, CashCloseInput, CashRepository, ClinicalRepository, CustomerRepository, InventoryRepository, SaleRepository, SessionRepository, SettingsRepository, WorkOrderRepository } from "../../domain/repositories";
 import { database } from "./database";
 
 const defaultSettings: OrganizationSettings = {
@@ -73,6 +74,15 @@ export class LocalAttendanceRepository implements AttendanceRepository {
   async listByStore(storeId: string): Promise<Attendance[]> { assertStoreAccess(storeId); return database.attendances.where("storeId").equals(storeId).reverse().sortBy("createdAt"); }
   async listByCustomer(customerId: string): Promise<Attendance[]> { const rows = await database.attendances.where("customerId").equals(customerId).reverse().sortBy("createdAt"); return rows.filter((attendance) => canAccessRecordSafe(attendance)); }
   async save(attendance: Attendance): Promise<void> { assertRecordAccess(attendance); await database.attendances.put(attendance); }
+}
+
+export class LocalAgendaRepository implements AgendaRepository {
+  async listByStoreAndRange(storeId: string, from: string, to: string): Promise<AgendaEvent[]> {
+    assertStoreAccess(storeId);
+    return database.agendaEvents.where("storeId").equals(storeId).and((event) => event.startsAt >= from && event.startsAt < to).sortBy("startsAt");
+  }
+  async get(id: string): Promise<AgendaEvent | undefined> { return database.agendaEvents.get(id); }
+  async save(event: AgendaEvent): Promise<void> { assertRecordAccess(event); await database.agendaEvents.put(event); }
 }
 
 function canAccessRecordSafe(record: { storeId?: string; userId?: string }): boolean {

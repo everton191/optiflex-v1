@@ -33,12 +33,21 @@ describe("encrypted backup and transactional restore", () => {
   });
   it("keeps legacy backups readable and rejects corrupted attachment content", async () => {
     const snapshot = await repository.snapshot();
-    const legacy = structuredClone(snapshot);
-    legacy.schema = 10;
-    const legacyTables = legacy as unknown as { tables: Record<string, unknown> };
-    delete legacyTables.tables.attachments;
-    expect(() => validateBackup(legacy)).not.toThrow();
-    expect(validateBackup(legacy).tables.attachments).toEqual([]);
+    expect(snapshot.schema).toBe(12);
+    const legacyTen = structuredClone(snapshot);
+    legacyTen.schema = 10;
+    const legacyTenTables = legacyTen as unknown as { tables: Record<string, unknown> };
+    delete legacyTenTables.tables.attachments;
+    delete legacyTenTables.tables.agendaEvents;
+    expect(() => validateBackup(legacyTen)).not.toThrow();
+    expect(validateBackup(legacyTen).tables.attachments).toEqual([]);
+    expect(validateBackup(legacyTen).tables.agendaEvents).toEqual([]);
+    const legacyEleven = structuredClone(snapshot);
+    legacyEleven.schema = 11;
+    const legacyElevenTables = legacyEleven as unknown as { tables: Record<string, unknown> };
+    delete legacyElevenTables.tables.agendaEvents;
+    expect(() => validateBackup(legacyEleven)).not.toThrow();
+    expect(validateBackup(legacyEleven).tables.agendaEvents).toEqual([]);
     const schemaTenWithTable = structuredClone(snapshot);
     schemaTenWithTable.schema = 10;
     expect(() => validateBackup(schemaTenWithTable)).toThrow("inválido");

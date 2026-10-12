@@ -1,4 +1,5 @@
 import type { CurrentStoreContext, LocalSession, OrganizationSettings, Store, User } from "./access";
+import type { AgendaEvent } from "./agenda";
 import type { Attendance, Customer } from "./customer";
 import type { ClinicalRecord, ClinicalVersion } from "./clinical";
 import type { Sale } from "./sales";
@@ -37,6 +38,12 @@ export interface AttendanceRepository {
   listByStore(storeId: string): Promise<Attendance[]>;
   listByCustomer(customerId: string): Promise<Attendance[]>;
   save(attendance: Attendance): Promise<void>;
+}
+
+export interface AgendaRepository {
+  listByStoreAndRange(storeId: string, from: string, to: string): Promise<AgendaEvent[]>;
+  get(id: string): Promise<AgendaEvent | undefined>;
+  save(event: AgendaEvent): Promise<void>;
 }
 
 export interface ClinicalRepository {

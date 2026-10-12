@@ -5,7 +5,10 @@ import { Button, Card, Input } from "../design-system/components";
 import { allPermissions, hasPermission, roleDefinitions, sessionUserState } from "../domain/access";
 import type { RoleKey, User } from "../domain/access";
 import type { Attendance, Customer } from "../domain/customer";
+import type { AgendaEvent } from "../domain/agenda";
+import { agendaEventStatusLabels, agendaEventTypeLabels } from "../domain/agenda";
 import { ReceptionService } from "../domain/reception-service";
+import { AgendaService } from "../domain/agenda-service";
 import { BackupPanel } from "./BackupPanel";
 export { ClinicalWorkspacePage } from "./ClinicalWorkspace";
 export { DashboardPage } from "./DashboardWorkspace";
@@ -18,9 +21,10 @@ import { CashService } from "../domain/cash-service";
 import type { WorkOrder } from "../domain/work-order";
 import type { CashEntry, CashMovementType, CashSession, PaymentMethod } from "../domain/cash";
 import { cashTotals, paymentMethodLabels, paymentMethodOptions } from "../domain/cash";
-import { LocalAttendanceRepository, LocalCashRepository, LocalCustomerRepository, LocalInventoryRepository, LocalSaleRepository, LocalWorkOrderRepository } from "../infrastructure/storage/local-repositories";
+import { LocalAgendaRepository, LocalAttendanceRepository, LocalCashRepository, LocalCustomerRepository, LocalInventoryRepository, LocalSaleRepository, LocalWorkOrderRepository } from "../infrastructure/storage/local-repositories";
 
 const receptionService = new ReceptionService(new LocalCustomerRepository(), new LocalAttendanceRepository());
+const agendaService = new AgendaService(new LocalAgendaRepository(), new LocalCustomerRepository(), receptionService);
 const saleRepository = new LocalSaleRepository();
 const salesService = new SalesService(saleRepository);
 const workOrderService = new WorkOrderService(new LocalWorkOrderRepository());
@@ -229,6 +233,96 @@ export function CustomerEditPage() {
 export function AttendancePage() {
   const { currentStoreId } = useAppContext();
   return <AttendanceQueue key={currentStoreId} />;
+}
+
+export function AgendaPage() {
+  const { currentStoreId, users } = useAppContext();
+  const session = useSession(); const navigate = useNavigate();
+  const [view, setView] = useState<"day" | "week">("day");
+  const [anchor, setAnchor] = useState(() => new Date());
+  const [events, setEvents] = useState<AgendaEvent[]>([]); const [customers, setCustomers] = useState<Customer[]>([]);
+  const [loading, setLoading] = useState(true); const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(""); const [message, setMessage] = useState(""); const [attempt, setAttempt] = useState(0);
+  const [showForm, setShowForm] = useState(false);
+  const [customerId, setCustomerId] = useState(""); const [professionalId, setProfessionalId] = useState("");
+  const [type, setType] = useState<AgendaEvent["type"]>("CONSULTATION"); const [startsAt, setStartsAt] = useState(""); const [notes, setNotes] = useState("");
+  const pending = useRef(false); const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  const canManage = hasPermission(session.role, "attendance.create");
+  useEffect(() => {
+    let active = true;
+    setLoading(true); setError("");
+    const loader = view === "day" ? agendaService.listDay(currentStoreId, anchor) : agendaService.listWeek(currentStoreId, anchor);
+    void Promise.all([loader, receptionService.listCustomers()])
+      .then(([loadedEvents, loadedCustomers]) => { if (active) { setEvents(loadedEvents); setCustomers(loadedCustomers); } })
+      .catch(() => { if (active) setError("Não foi possível carregar a agenda desta loja."); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [currentStoreId, view, anchor, attempt]);
+  const customersById = new Map(customers.map((customer) => [customer.id, customer.name]));
+  const usersById = new Map(users.map((user) => [user.id, user.name]));
+  const customerName = (id: string) => customersById.get(id) ?? "Cliente";
+  const professionalName = (id?: string) => (id ? usersById.get(id) : undefined) ?? "Sem profissional";
+  function shiftAnchor(direction: number) {
+    const days = view === "day" ? direction : direction * 7;
+    setAnchor((current) => new Date(current.getFullYear(), current.getMonth(), current.getDate() + days));
+  }
+  async function submit(event: React.FormEvent) {
+    event.preventDefault();
+    if (pending.current || !customerId) return;
+    pending.current = true; setSaving(true); setError(""); setMessage("");
+    try {
+      await agendaService.createEvent({ storeId: currentStoreId, customerId, professionalId: professionalId || undefined, type, startsAt, notes });
+      if (!mounted.current) return;
+      setShowForm(false); setCustomerId(""); setProfessionalId(""); setStartsAt(""); setNotes("");
+      setMessage("Evento agendado."); setAttempt((value) => value + 1);
+    } catch (reason) { if (mounted.current) setError(reason instanceof Error ? reason.message : "Não foi possível agendar o evento."); }
+    finally { pending.current = false; if (mounted.current) setSaving(false); }
+  }
+  async function convert(item: AgendaEvent) {
+    if (pending.current) return;
+    pending.current = true; setError(""); setMessage("");
+    try {
+      const { attendance } = await agendaService.convertToAttendance(item.id);
+      if (!mounted.current) return;
+      setMessage("Evento virou atendimento na fila.");
+      navigate(`/atendimentos?customer=${attendance.customerId}`);
+    } catch (reason) { if (mounted.current) setError(reason instanceof Error ? reason.message : "Não foi possível converter o evento."); }
+    finally { pending.current = false; }
+  }
+  async function cancel(item: AgendaEvent) {
+    if (pending.current) return;
+    pending.current = true; setError(""); setMessage("");
+    try { await agendaService.cancel(item.id); if (mounted.current) { setMessage("Evento cancelado."); setAttempt((value) => value + 1); } }
+    catch { if (mounted.current) setError("Não foi possível cancelar o evento."); }
+    finally { pending.current = false; }
+  }
+  const heading = view === "day" ? anchor.toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" }) : `Semana de ${anchor.toLocaleDateString("pt-BR")}`;
+  const renderEvent = (item: AgendaEvent) => <article className="list-row" key={item.id}>
+    <div><strong>{customerName(item.customerId)}</strong><span>{agendaEventTypeLabels[item.type]} · {professionalName(item.professionalId)} · {agendaEventStatusLabels[item.status]}{item.notes ? ` · ${item.notes}` : ""}</span></div>
+    {canManage && item.status === "SCHEDULED" && <div className="page-title-actions"><Button type="button" onClick={() => void convert(item)}>Virar atendimento</Button><Button type="button" onClick={() => void cancel(item)}>Cancelar</Button></div>}
+  </article>;
+  const dayEvents = (day: Date) => {
+    const key = day.toDateString();
+    return events.filter((item) => new Date(item.startsAt).toDateString() === key);
+  };
+  const weekDays = Array.from({ length: 7 }, (_, index) => {
+    const offset = (anchor.getDay() + 6) % 7;
+    return new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate() - offset + index);
+  });
+  return <div className="page"><p className="eyebrow">Recepção</p><div className="page-title"><div><h1>Agenda</h1><p className="page-intro">Consultas, retornos, entregas, ajustes e cobranças do dia ou da semana. Eventos do tipo consulta, retorno ou ajuste viram atendimento na fila sem redigitar o cliente.</p></div>{canManage && <Button type="button" onClick={() => setShowForm((open) => !open)}>{showForm ? "Fechar formulário" : "Novo evento"}</Button>}</div>
+    <div className="page-title-actions"><Button type="button" onClick={() => shiftAnchor(-1)}>{view === "day" ? "Dia anterior" : "Semana anterior"}</Button><strong>{heading}</strong><Button type="button" onClick={() => shiftAnchor(1)}>{view === "day" ? "Próximo dia" : "Próxima semana"}</Button><Button type="button" onClick={() => setAnchor(new Date())}>Hoje</Button><Button type="button" onClick={() => setView(view === "day" ? "week" : "day")}>{view === "day" ? "Ver semana" : "Ver dia"}</Button></div>
+    {showForm && canManage && <form className="settings-form" onSubmit={(event) => void submit(event)}>
+      <label>Cliente<select aria-label="Selecionar cliente" value={customerId} disabled={saving} required onChange={(event) => setCustomerId(event.target.value)}><option value="">Selecionar cliente</option>{customers.map((customer) => <option key={customer.id} value={customer.id}>{customer.name}</option>)}</select></label>
+      <label>Profissional<select aria-label="Selecionar profissional" value={professionalId} disabled={saving} onChange={(event) => setProfessionalId(event.target.value)}><option value="">Sem profissional</option>{users.filter((user) => user.active).map((user) => <option key={user.id} value={user.id}>{user.name}</option>)}</select></label>
+      <label>Tipo<select aria-label="Tipo de evento" value={type} disabled={saving} onChange={(event) => setType(event.target.value as AgendaEvent["type"])}>{(Object.keys(agendaEventTypeLabels) as AgendaEvent["type"][]).map((key) => <option key={key} value={key}>{agendaEventTypeLabels[key]}</option>)}</select></label>
+      <label>Data e hora<input aria-label="Data e hora" type="datetime-local" value={startsAt} disabled={saving} required onChange={(event) => setStartsAt(event.target.value)} /></label>
+      <label>Observações<input value={notes} disabled={saving} onChange={(event) => setNotes(event.target.value)} /></label>
+      <div className="form-actions"><Button type="submit" disabled={saving || !customerId}>{saving ? "Agendando…" : "Agendar"}</Button></div>
+    </form>}
+    {error && <p role="alert" className="error-text">{error}</p>}
+    {message && <p role="status" className="success">{message}</p>}
+    {loading ? <p role="status" className="empty-state">Carregando agenda…</p> : view === "day" ? <div className="list-card">{dayEvents(anchor).length ? dayEvents(anchor).map(renderEvent) : <p className="empty-state">Nenhum evento neste dia.</p>}</div> : <>{weekDays.map((day) => <section key={day.toISOString()}><h2 className="section-title">{day.toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "2-digit" })}</h2><div className="list-card">{dayEvents(day).length ? dayEvents(day).map(renderEvent) : <p className="empty-state">Sem eventos.</p>}</div></section>)}</>}</div>;
 }
 
 function AttendanceQueue() {

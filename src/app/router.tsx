@@ -1,6 +1,6 @@
 import { createBrowserRouter, Navigate, RouterProvider } from "react-router-dom";
 import { RequirePermission, RequireSession } from "./permissions";
-import { AttendancePage, BlockedPage, CashDeskPage, ChangePasswordPage, ClinicalQueuePage, ClinicalWorkspacePage, CustomerEditPage, CustomerNewPage, CustomerProfilePage, CustomersPage, DashboardPage, ForbiddenPage, InventoryPage, LoginPage, ProfilesPage, SettingsPage, UsersPage, WorkOrderDetailPage, WorkOrdersPage } from "./pages";
+import { AgendaPage, AttendancePage, BlockedPage, CashDeskPage, ChangePasswordPage, ClinicalQueuePage, ClinicalWorkspacePage, CustomerEditPage, CustomerNewPage, CustomerProfilePage, CustomersPage, DashboardPage, ForbiddenPage, InventoryPage, LoginPage, ProfilesPage, SettingsPage, UsersPage, WorkOrderDetailPage, WorkOrdersPage } from "./pages";
 import { AppShell } from "../shell/AppShell";
 
 const router = createBrowserRouter([
@@ -14,6 +14,7 @@ const router = createBrowserRouter([
       { path: "clientes/:customerId", element: <RequirePermission permission="customers.read"><CustomerProfilePage /></RequirePermission> },
       { path: "clientes/:customerId/editar", element: <RequirePermission permission="customers.manage"><CustomerEditPage /></RequirePermission> },
       { path: "atendimentos", element: <RequirePermission permission="attendance.read"><AttendancePage /></RequirePermission> },
+      { path: "agenda", element: <RequirePermission permission="attendance.read"><AgendaPage /></RequirePermission> },
       { path: "clinico", element: <RequirePermission permission="clinical.workspace.access"><ClinicalQueuePage /></RequirePermission> },
       { path: "clinico/atendimento/:attendanceId", element: <RequirePermission permission="clinical.workspace.access"><ClinicalWorkspacePage /></RequirePermission> },
       { path: "vendas", element: <Navigate to="/caixa" replace /> },
