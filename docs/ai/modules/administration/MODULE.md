@@ -10,13 +10,14 @@ Código distribuído entre `src/app/providers.tsx`, `src/app/pages.tsx`, `src/do
 
 ## Routes
 
+- `/admin/lojas`
 - `/admin/usuarios`
 - `/admin/perfis`
 - `/admin/configuracoes`
 
 ## Main Pages
 
-`UsersPage`, `ProfilesPage`, `SettingsPage`.
+`StoresPage`, `UsersPage`, `ProfilesPage`, `SettingsPage`.
 
 ## Components
 
@@ -24,7 +25,7 @@ Código distribuído entre `src/app/providers.tsx`, `src/app/pages.tsx`, `src/do
 
 ## Services
 
-`AdministrationService`: initialize, listar lojas/usuários, consultar/trocar loja, criar/editar usuário (`UserInput`), ativar/inativar com proteção da sessão atual.
+`AdministrationService`: initialize, listar lojas/usuários, consultar/trocar loja, criar/editar loja (`StoreInput`: nome único sem maiúsculas/acentos de comparação) e ativar/inativar (`setStoreActive`), criar/editar usuário (`UserInput`), ativar/inativar com proteção da sessão atual. Inativação de loja é **não destrutiva**: exige ao menos uma loja ativa, bloqueia a loja atual (troque antes) e só altera `active` — nenhum dado é apagado; `selectStore` recusa loja inativa.
 
 ## Repositories
 
@@ -74,6 +75,10 @@ Não mudar schema ou seeds por ajuste visual. Preservar a experiência de falha 
 ### Alterar usuários
 
 → `UsersPage`, `UserInput`, `AdministrationService.createUser/updateUser/setUserActive`, `sessionUserState` (`access.ts`) e permissão `users.manage`. Usuário inativo não entra (`providers.tsx`).
+
+### Criar/editar/inativar lojas
+
+→ `StoresPage` (`/admin/lojas`), `StoreInput`, `AdministrationService.createStore/updateStore/setStoreActive` + `refreshStores` do contexto (seletor atualiza na hora); guarda de rota `stores.manage`; fallback do provider troca a loja atual se ela ficar inativa (`providers.tsx`).
 
 ## Related Modules
 

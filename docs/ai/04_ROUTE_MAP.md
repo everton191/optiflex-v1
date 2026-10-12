@@ -18,6 +18,7 @@ Todas as rotas usam `AppShell`. A configuração canônica está em `src/app/rou
 | `/ordens-servico` | `WorkOrdersPage` | work-orders | `sales.read` | AppShell |
 | `/vendas` | redirect para `/caixa` | sales | guard aplicado no destino | AppShell |
 | `/pagamentos` | redirect para `/caixa` | cash | guard aplicado no destino | AppShell |
+| `/admin/lojas` | `StoresPage` | administration | `stores.manage` | AppShell |
 | `/admin/usuarios` | `UsersPage` | administration | `users.read` | AppShell |
 | `/admin/perfis` | `ProfilesPage` | access/admin | `roles.read` | AppShell |
 | `/admin/configuracoes` | `SettingsPage` | administration | `settings.manage` | AppShell |

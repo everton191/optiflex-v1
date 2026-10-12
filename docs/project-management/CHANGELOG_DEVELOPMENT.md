@@ -4,6 +4,15 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `c4e4e31` + docs — CRUD de lojas com inativação não destrutiva (F2-02)
+
+- `src/domain/administration-service.ts`: `StoreInput` + `createStore`/`updateStore`/`setStoreActive` — nome obrigatório e único (case-insensitive), inativação exige ao menos uma loja ativa, **bloqueia a loja atual** (troque antes) e só altera `active` (nada é apagado); status igual é no-op.
+- `src/app/providers.tsx`: contexto ganha `createStore`/`updateStore`/`setStoreActive` + `refreshStores` (seletor do topo atualiza na hora); fallback do provider também exige loja atual `active` (defesa do seletor).
+- `src/app/pages.tsx`: `StoresPage` — listagem com badge Ativa/Inativa, criar/renomear (form `settings-form`), botão Inativar/Reativar desabilitado na loja atual.
+- `src/app/router.tsx` + `route-guards.ts` + `AppShell.tsx`: rota `/admin/lojas` na single source com `stores.manage` (OWNER/NETWORK_ADMINISTRATOR) e entrada "Lojas" no menu de administração.
+- Testes: `administration-service.test.ts` +7 (criação/edição/inativação/no-op e regras), novo `storage/administration.test.ts` (3 casos: filial persiste após reopen, inativação preserva o registro + `selectStore` recusa, renomear mantém o mesmo registro), `permission-routes.test.ts` 16→17 rotas + matriz atualizada; **241/241** (27 arquivos), build 0, tsc 0.
+- Card: F2-02/#24 → DONE (critérios: filial nova aparece no seletor após reload; inativa some do seletor sem apagar dados).
+
 ### `e3bd607` + docs — Catálogo de produtos por categoria (F2-11)
 
 - `src/domain/inventory.ts`: `productCategories`/`ProductCategory` (`FRAME`/`LENS`/`ACCESSORY`), `productCategoryLabels`, `isProductCategory`, `filterByCategory` e campos de ficha em `InventoryItem` (`category?`, `brand?`, `material?`, `description?`).
