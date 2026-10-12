@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { attendanceTransitions, isActiveQueueStatus, waitingMinutes, type AttendanceStatus } from "./customer";
+import { attendanceTransitions, isActiveQueueStatus, isValidCPF, isValidCNPJ, isValidDocument, waitingMinutes, type AttendanceStatus } from "./customer";
 
 const allStatuses: readonly AttendanceStatus[] = ["DRAFT", "WAITING", "IN_PROGRESS", "FINISHED", "CANCELLED", "NO_SHOW"];
 
@@ -34,5 +34,37 @@ describe("attendance transition guards", () => {
     expect(attendanceTransitions.FINISHED).toEqual([]);
     expect(attendanceTransitions.CANCELLED).toEqual([]);
     expect(attendanceTransitions.NO_SHOW).toEqual([]);
+  });
+});
+
+describe("CPF/CNPJ validation", () => {
+  it("accepts known valid documents with and without mask", () => {
+    expect(isValidCPF("111.444.777-35")).toBe(true);
+    expect(isValidCPF("11144477735")).toBe(true);
+    expect(isValidCPF("529.982.247-25")).toBe(true);
+    expect(isValidCPF("52998224725")).toBe(true);
+    expect(isValidCNPJ("11.222.333/0001-81")).toBe(true);
+    expect(isValidCNPJ("11222333000181")).toBe(true);
+    expect(isValidCNPJ("00.000.000/0001-91")).toBe(true);
+  });
+  it("rejects known invalid documents", () => {
+    expect(isValidCPF("111.111.111-11")).toBe(false);
+    expect(isValidCPF("11144477734")).toBe(false);
+    expect(isValidCPF("529.982.247-2")).toBe(false);
+    expect(isValidCPF("529.982.247-2x")).toBe(false);
+    expect(isValidCPF("")).toBe(false);
+    expect(isValidCNPJ("11.222.333/0001-80")).toBe(false);
+    expect(isValidCNPJ("11111111111111")).toBe(false);
+    expect(isValidCNPJ("1122233300018")).toBe(false);
+    expect(isValidCNPJ("abc")).toBe(false);
+  });
+  it("routes by digit count and rejects other lengths", () => {
+    expect(isValidDocument("11144477735")).toBe(true);
+    expect(isValidDocument("11222333000181")).toBe(true);
+    expect(isValidDocument("529.982.247-25")).toBe(true);
+    expect(isValidDocument("11.222.333/0001-81")).toBe(true);
+    expect(isValidDocument("1122233300018")).toBe(false);
+    expect(isValidDocument("123")).toBe(false);
+    expect(isValidDocument("")).toBe(false);
   });
 });

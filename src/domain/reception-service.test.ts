@@ -16,6 +16,20 @@ describe("reception validation", () => {
     expect(customer).toMatchObject({ name: "Cliente", phone: undefined, cpf: undefined });
     expect(customers.save).toHaveBeenCalledOnce();
   });
+  it("rejects invalid CPF/CNPJ documents without saving", async () => {
+    await expect(service.createCustomer({ name: "Ana", cpf: "111.111.111-11" })).rejects.toThrow("CPF ou CNPJ inválido.");
+    await expect(service.createCustomer({ name: "Ana", cpf: "1122233300018" })).rejects.toThrow("CPF ou CNPJ inválido.");
+    await expect(service.createCustomer({ name: "Ana", cpf: "123" })).rejects.toThrow("CPF ou CNPJ inválido.");
+    await expect(service.createCustomer({ name: "Ana", cpf: "529.982.247-2x" })).rejects.toThrow("CPF ou CNPJ inválido.");
+    expect(customers.save).not.toHaveBeenCalled();
+  });
+  it("accepts valid CPF/CNPJ with or without mask and keeps the typed value", async () => {
+    const masked = await service.createCustomer({ name: "Ana", cpf: "529.982.247-25" });
+    expect(masked.cpf).toBe("529.982.247-25");
+    const company = await service.createCustomer({ name: "Clínica", cpf: "11222333000181" });
+    expect(company.cpf).toBe("11222333000181");
+    expect(customers.save).toHaveBeenCalledTimes(2);
+  });
   it("rejects attendance without a store", async () => {
     await expect(service.startAttendance("customer", " ", "CONSULTATION")).rejects.toThrow("Selecione uma loja");
     expect(attendances.save).not.toHaveBeenCalled();
@@ -91,9 +105,14 @@ describe("customer update", () => {
   });
   it("trims fields, clears blanks and preserves id and createdAt", async () => {
     customers.get.mockResolvedValue(existing);
-    const updated = await service.updateCustomer("customer-1", { name: "  Ana Maria  ", phone: "  ", cpf: " 222 ", email: " ana@exemplo.com ", birthDate: "1990-05-20" });
-    expect(updated).toMatchObject({ id: "customer-1", createdAt: "2026-01-01T09:00:00.000Z", name: "Ana Maria", phone: undefined, cpf: "222", email: "ana@exemplo.com", birthDate: "1990-05-20" });
+    const updated = await service.updateCustomer("customer-1", { name: "  Ana Maria  ", phone: "  ", cpf: " 529.982.247-25 ", email: " ana@exemplo.com ", birthDate: "1990-05-20" });
+    expect(updated).toMatchObject({ id: "customer-1", createdAt: "2026-01-01T09:00:00.000Z", name: "Ana Maria", phone: undefined, cpf: "529.982.247-25", email: "ana@exemplo.com", birthDate: "1990-05-20" });
     expect(customers.save).toHaveBeenCalledOnce();
     expect(customers.save).toHaveBeenCalledWith(updated);
+  });
+  it("rejects invalid documents on update without saving", async () => {
+    customers.get.mockResolvedValue(existing);
+    await expect(service.updateCustomer("customer-1", { name: "Ana", cpf: "111.111.111-11" })).rejects.toThrow("CPF ou CNPJ inválido.");
+    expect(customers.save).not.toHaveBeenCalled();
   });
 });

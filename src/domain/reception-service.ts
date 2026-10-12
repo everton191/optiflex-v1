@@ -1,5 +1,5 @@
 import type { Attendance, AttendancePriority, AttendanceStatus, AttendanceType, Customer } from "./customer";
-import { attendanceTransitions } from "./customer";
+import { attendanceTransitions, isValidDocument } from "./customer";
 import type { AttendanceRepository, CustomerRepository } from "./repositories";
 
 const id = (prefix: string) => `${prefix}-${crypto.randomUUID()}`;
@@ -16,7 +16,9 @@ export class ReceptionService {
   async createCustomer(input: Omit<Customer, "id" | "createdAt">): Promise<Customer> {
     const name = input.name.trim();
     if (!name) throw new Error("Informe o nome do cliente.");
-    const customer = { ...input, name, phone: input.phone?.trim() || undefined, cpf: input.cpf?.trim() || undefined, email: input.email?.trim() || undefined, birthDate: input.birthDate?.trim() || undefined, id: id("customer"), createdAt: new Date().toISOString() };
+    const cpf = input.cpf?.trim() || undefined;
+    if (cpf && !isValidDocument(cpf)) throw new Error("CPF ou CNPJ inválido.");
+    const customer = { ...input, name, phone: input.phone?.trim() || undefined, cpf, email: input.email?.trim() || undefined, birthDate: input.birthDate?.trim() || undefined, id: id("customer"), createdAt: new Date().toISOString() };
     await this.customers.save(customer); return customer;
   }
   async updateCustomer(customerId: string, input: Pick<Customer, "name" | "phone" | "cpf" | "email" | "birthDate">): Promise<Customer> {
@@ -24,7 +26,9 @@ export class ReceptionService {
     if (!existing) throw new Error("Cliente não encontrado.");
     const name = input.name?.trim();
     if (!name) throw new Error("Informe o nome do cliente.");
-    const customer: Customer = { ...existing, name, phone: input.phone?.trim() || undefined, cpf: input.cpf?.trim() || undefined, email: input.email?.trim() || undefined, birthDate: input.birthDate?.trim() || undefined };
+    const cpf = input.cpf?.trim() || undefined;
+    if (cpf && !isValidDocument(cpf)) throw new Error("CPF ou CNPJ inválido.");
+    const customer: Customer = { ...existing, name, phone: input.phone?.trim() || undefined, cpf, email: input.email?.trim() || undefined, birthDate: input.birthDate?.trim() || undefined };
     await this.customers.save(customer); return customer;
   }
   async startAttendance(customerId: string, storeId: string, type: AttendanceType, receptionNotes?: string, options?: StartAttendanceOptions): Promise<Attendance> {
