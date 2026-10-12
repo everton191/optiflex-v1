@@ -4,6 +4,14 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `41f0bfd` + docs — Modelos de prescrição e laboratório da OS (F1-07)
+
+- `src/domain/clinical.ts`: modelo `Prescription` (append-only) + `PrescriptionEye` (`sphere`/`cylinder`/`axis`/`add`); `issuePrescription` valida autor, ids, data, eixo 0–180 e exige ao menos um grau ou observação; `retifyPrescription(current, input, reason, author)` cria a próxima versão (`version + 1`, `retifies`, `retificationReason`) **sem reescrever o original**; `activePrescription(list)` resolve a vigente.
+- `src/domain/repositories.ts`: contrato `PrescriptionRepository` (`listByAttendance`, `save`) — implementação local/persistência vêm com F3-06.
+- `src/domain/work-order.ts`: campo `laboratory?` em `WorkOrder` e novo evento `LABORATORY` ("Laboratório informado"); `WorkOrderService.setLaboratory` (valida autor, bloqueia entregue/cancelada, registra evento auditado).
+- Testes: `prescription.test.ts` (5 casos: emissão/validação, retificação imutável, cadeia de versões) e `work-order-service.test.ts` +1 describe (2 casos de laboratório); **224/224** (26 arquivos), build 0, tsc 0.
+- Card: F1-07/#15 → DONE; desbloqueia F3-07/F3-06 (cadeia de prescrição estruturada).
+
 ### `277fdde` + docs — Auditoria de segurança (F8-07)
 
 - `docs/architecture/SECURITY_PLAN.md`: threat model curto (login, TTL, backup AES-GCM/PBKDF2, escopo de loja/registro, erros globais, XSS, PWA), varredura de segredos, tabela de testes negativos existentes e achados P0–P3 (único P0 aberto: F1-12/#20 tratamento global de erros; P2: rate-limit de login e IndexedDB sem criptografia própria — aceitos no modelo offline-first; P3: autorização só no frontend, sessão sem binding de dispositivo, sem auto-lock por inatividade). Preserva as seções F1-11/F7-02 e regras permanentes.

@@ -74,7 +74,7 @@ F4-7 baixa transacional (FEITO)
 ### 3. Venda confirmada → ordem de serviço → laboratório → entrega
 
 ```text
-F1-07 modelos de prescrição/OS (OBR — parte de OS já testada em 8a68d67)
+F1-07 modelos de prescrição/OS (FEITO 08/10 — `41f0bfd`, 224 testes; `Prescription` versionada + `WorkOrder.laboratory?`; parte de OS já testada em 8a68d67)
   └─ F3-14 OS (FEITO 08/10 — `e56939e`, 164 testes)
        ├─ F3-15 laboratórios (OBR p/ produção; pré-req: F2-10 fornecedores)
        ├─ F3-16 acompanhamento de fabricação (OBR p/ prazo fino)

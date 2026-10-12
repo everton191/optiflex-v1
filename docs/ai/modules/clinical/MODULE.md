@@ -37,6 +37,8 @@ Sem store/hook. O rascunho fica em `useState` até salvar.
 
 `ClinicalRecord`, `ClinicalAttachment` (metadados + `category` opcional: EXAM/IMAGE/DOCUMENT), `ClinicalAttachmentContent` (conteúdo em base64). Validação em `clinical.ts`: `ATTACHMENT_ALLOWED_MIME_TYPES` (PDF/JPG/PNG), `ATTACHMENT_MAX_BYTES` (5 MB), `assertValidAttachment`/`assertValidAttachmentCategory`.
 
+`Prescription` + `PrescriptionEye` (F1-07, `41f0bfd`): documento append-only de versões (`version`, `author`, `issuedAt`, OD/OE com `sphere`/`cylinder`/`axis`/`add`, `notes`). Retificação: `retifyPrescription(current, input, reason, author)` cria a próxima versão com `retifies`/`retificationReason` sem reescrever o original; `activePrescription(list)` resolve a vigente. Validação em `issuePrescription` (autor, ids, data, eixo 0–180, ao menos um grau ou observação). Contrato `PrescriptionRepository` (append-only, `listByAttendance`/`save`) em `repositories.ts` — implementação local e persistência vêm com F3-06.
+
 ## Permissions
 
 `clinical.workspace.access` em lista, workspace e menu.
@@ -47,7 +49,7 @@ Attendance fornece `attendanceId`; storage usa `clinicalRecords` e a tabela `att
 
 ## Public API
 
-`ClinicalService` e `ClinicalRepository`.
+`ClinicalService` e `ClinicalRepository`; funções puras de prescrição (`issuePrescription`/`retifyPrescription`/`activePrescription`) em `clinical.ts` + `PrescriptionRepository`.
 
 ## Shared Components
 

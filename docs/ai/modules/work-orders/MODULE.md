@@ -25,7 +25,7 @@ Botões de transição, filtros `.status-filters`, formulário `.orders-form` e 
 
 ## Services
 
-`WorkOrderService.list`, `getBySale`, `createFromConfirmedSale(sale, author)`, `transition`, `cancel(order, reason, author)`, `schedule`, `recordInputs(order, items, author)`.
+`WorkOrderService.list`, `getBySale`, `createFromConfirmedSale(sale, author)`, `transition`, `cancel(order, reason, author)`, `schedule`, `setLaboratory(order, laboratory, author)`, `recordInputs(order, items, author)`.
 
 ## Repositories
 
@@ -37,7 +37,7 @@ Sem store/hook; estado local + `currentStoreId` + `session.userName`.
 
 ## Models
 
-`WorkOrder` (`status`, `dueAt?`, `notes?`, `updatedAt?`, `updatedBy?`, `cancelReason?`, `events?: WorkOrderEvent[]`), `WorkOrderStatus`, `workOrderStatusLabels`, `workOrderTransitions`, `canTransition`, `WorkOrderEvent` (`id`, `type` CREATED/STATUS/SCHEDULE/CANCELLED/INPUTS, `from?`, `to?`, `note?`, `author`, `at`), `workOrderEventLabels`, `WorkOrderInput` (`itemId`, `name`, `quantity`).
+`WorkOrder` (`status`, `dueAt?`, `notes?`, `laboratory?`, `updatedAt?`, `updatedBy?`, `cancelReason?`, `events?: WorkOrderEvent[]`), `WorkOrderStatus`, `workOrderStatusLabels`, `workOrderTransitions`, `canTransition`, `WorkOrderEvent` (`id`, `type` CREATED/STATUS/SCHEDULE/CANCELLED/INPUTS/LABORATORY, `from?`, `to?`, `note?`, `author`, `at`), `workOrderEventLabels`, `WorkOrderInput` (`itemId`, `name`, `quantity`).
 
 ## Permissions
 
