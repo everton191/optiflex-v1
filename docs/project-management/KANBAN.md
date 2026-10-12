@@ -56,7 +56,7 @@ Classificação de inventário (Etapa 4) no corpo de cada card:
 
 - Issues totais: **155** (8 épicas + 147 tarefas).
 - Tarefas por fase: F1=14 · F2=18 · F3=20 · F4=20 · F5=19 · F6=19 · F7=19 · F8=18.
-- Tarefas por status (revisado em 08/10/2026; F1-09, F2-04, F7-02, F1-11, F3-09, F3-14, F1-02, F1-06, F4-16, F2-05, F4-10, F4-18, F4-12, F2-06, F3-01 e F8-06 concluídas no mesmo dia): DONE=34 · IN PROGRESS=0 · READY=24 · TESTING=0 · CODE REVIEW=0 · BACKLOG=39 · BLOCKED=50.
+- Tarefas por status (revisado em 08/10/2026; F1-09, F2-04, F7-02, F1-11, F3-09, F3-14, F1-02, F1-06, F4-16, F2-05, F4-10, F4-18, F4-12, F2-06, F3-01, F8-06 e F8-07 concluídas no mesmo dia): DONE=35 · IN PROGRESS=0 · READY=23 · TESTING=0 · CODE REVIEW=0 · BACKLOG=39 · BLOCKED=50.
 - Bloqueios: **50 tarefas** bloqueadas — 47 por dependência de fase futura/externa + **3 reclassificadas em 08/10** (F4-13 #70, F8-03 #137, F3-20 #57: status desatualizado, decisão externa já registrada).
 - **Revisão de dependências 08/10/2026:** 7 ciclos detectados (SCC/Tarjan sobre este arquivo) e corrigidos em KANBAN + corpos das issues; **0 ciclos remanescentes**. Detalhe antes/depois em `DEPENDENCIES.md`.
 
@@ -252,7 +252,7 @@ Regra de ouro: **nunca mover para DONE sem evidência verificável** (comando de
 | F8-04 | [Testes offline](https://github.com/everton191/optiflex-v1/issues/138) | Infraestrutura | BACKLOG | p1 | F3-09 (anexos), F8-01. |
 | F8-05 | [Testes multiempresa](https://github.com/everton191/optiflex-v1/issues/139) | Saas | BLOCKED | p1 | F5-04. |
 | F8-06 | [Testes de permissões](https://github.com/everton191/optiflex-v1/issues/140) | Access | DONE | p1 | F1-11, F2-05 (entregue em `94b9d50` — matriz rota×perfil em `route-guards.ts`, negativos de vendedor/clínico/caixa, escopo por perfil). |
-| F8-07 | [Auditoria de segurança](https://github.com/everton191/optiflex-v1/issues/141) | Access | READY | p1 | F7-02, F1-11. |
+| F8-07 | [Auditoria de segurança](https://github.com/everton191/optiflex-v1/issues/141) | Access | DONE | p1 | F7-02, F1-11 (entregue em `277fdde` — `SECURITY_PLAN.md` com threat model, varredura automatizada de segredos e achados P0–P3; único P0 aberto = F1-12 erros globais, já em BACKLOG). |
 | F8-08 | [Verificação de LGPD](https://github.com/everton191/optiflex-v1/issues/142) | Compliance | BLOCKED | p2 | orientação jurídica; F3-09 (anexos), F1-10 (auditoria). |
 | F8-09 | [Testes de migração](https://github.com/everton191/optiflex-v1/issues/143) | Infraestrutura | DONE | p1 | F1-08. |
 | F8-10 | [Recuperação de dados](https://github.com/everton191/optiflex-v1/issues/144) | Infraestrutura | READY | p1 | F3-09. |
@@ -271,16 +271,16 @@ Ordem recomendada para a próxima sessão de desenvolvimento (status READY/IN PR
 
 | # | ID | Issue | Tarefa | Prioridade | Dependências | Justificativa |
 |---|---|---|---|---|---|---|
-| 1 | F8-07 | #141 | [Access] Auditoria de segurança | P1 | F7-02 e F1-11 (feitos) | Dependências entregues; fecha a lacuna de rastreio antes do piloto. |
-| 2 | F1-07 | #15 | [Infraestrutura] Modelos de prescrições e ordens de serviço | P1 | nenhuma | Sem pendências; desbloqueia a cadeia de prescrição estruturada (F3-07 → F3-06). |
-| 3 | F3-17 | #55 | [Work-orders] Prazos e alertas | P1 | F3-14 (feito) | Dependência recém-entregue (histórico/detalhe de OS); alertas usam o evento/dados de OS. |
-| 4 | F2-11 | #32 | [Inventory] Produtos: armações, lentes e acessórios | P1 | F1-06 (feito) | Catálogo libera a cadeia F2-14/F2-15/F6-04; base de preço/custo já em `InventoryItem`. |
-| 5 | F2-02 | #24 | [Administration] Matriz e filiais | P1 | F1-11 (feito) | Estrutura de matriz/filiais apoia usuários e lojas já administráveis. |
-| 6 | F3-02 | #41 | [Attendance] Cadastro de atendimento | P1 | F2-04 (feito) | Dependência (profissionais) entregue; é o passo seguinte da fila de atendimento. |
-| 7 | F2-07 | #29 | [Customers] Validação de CPF/CNPJ | P2 | F2-06 (feito) | Edição entregue; validadores de documento são o complemento natural do cadastro. |
-| 8 | F3-10 | #49 | [Sales] Orçamentos detalhados | P1 | F1-09 (feito) | Precisão monetária pronta; enriquece orçamento sem nova dependência. |
-| 9 | F4-11 | #68 | [Cash] PIX, dinheiro e cartão | P1 | F4-10, F1-09 (feitos) | Formas de pagamento e precisão monetária prontas; complementa o caixa entregue. |
-| 10 | F2-14 | #35 | [Inventory] Códigos, preços e custos | P1 | F2-11, F1-06 (feito) | Depende do catálogo (F2-11 na fila); margem usa preço/custo já em `InventoryItem`. |
+| 1 | F1-07 | #15 | [Infraestrutura] Modelos de prescrições e ordens de serviço | P1 | nenhuma | Sem pendências; desbloqueia a cadeia de prescrição estruturada (F3-07 → F3-06). |
+| 2 | F3-17 | #55 | [Work-orders] Prazos e alertas | P1 | F3-14 (feito) | Dependência recém-entregue (histórico/detalhe de OS); alertas usam o evento/dados de OS. |
+| 3 | F2-11 | #32 | [Inventory] Produtos: armações, lentes e acessórios | P1 | F1-06 (feito) | Catálogo libera a cadeia F2-14/F2-15/F6-04; base de preço/custo já em `InventoryItem`. |
+| 4 | F2-02 | #24 | [Administration] Matriz e filiais | P1 | F1-11 (feito) | Estrutura de matriz/filiais apoia usuários e lojas já administráveis. |
+| 5 | F3-02 | #41 | [Attendance] Cadastro de atendimento | P1 | F2-04 (feito) | Dependência (profissionais) entregue; é o passo seguinte da fila de atendimento. |
+| 6 | F2-07 | #29 | [Customers] Validação de CPF/CNPJ | P2 | F2-06 (feito) | Edição entregue; validadores de documento são o complemento natural do cadastro. |
+| 7 | F3-10 | #49 | [Sales] Orçamentos detalhados | P1 | F1-09 (feito) | Precisão monetária pronta; enriquece orçamento sem nova dependência. |
+| 8 | F4-11 | #68 | [Cash] PIX, dinheiro e cartão | P1 | F4-10, F1-09 (feitos) | Formas de pagamento e precisão monetária prontas; complementa o caixa entregue. |
+| 9 | F2-14 | #35 | [Inventory] Códigos, preços e custos | P1 | F2-11, F1-06 (feito) | Depende do catálogo (F2-11 na fila); margem usa preço/custo já em `InventoryItem`. |
+| 10 | F3-03 | #42 | [Attendance] Fila de atendimento | P1 | F3-02 | Fluxo de atendimento completo após cadastro; segue a cadeia F3-02→F3-03. |
 
 Os `#?` devem ser resolvidos pela tabela acima (coluna ID → link da issue). Os números já estão fixados nas tabelas das fases; para referência rápida: consulte `DEPENDENCIES.md`.
 

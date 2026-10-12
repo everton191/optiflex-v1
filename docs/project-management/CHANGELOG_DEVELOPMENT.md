@@ -4,6 +4,13 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `277fdde` + docs — Auditoria de segurança (F8-07)
+
+- `docs/architecture/SECURITY_PLAN.md`: threat model curto (login, TTL, backup AES-GCM/PBKDF2, escopo de loja/registro, erros globais, XSS, PWA), varredura de segredos, tabela de testes negativos existentes e achados P0–P3 (único P0 aberto: F1-12/#20 tratamento global de erros; P2: rate-limit de login e IndexedDB sem criptografia própria — aceitos no modelo offline-first; P3: autorização só no frontend, sessão sem binding de dispositivo, sem auto-lock por inatividade). Preserva as seções F1-11/F7-02 e regras permanentes.
+- Novo `src/domain/security-scan.test.ts`: varredura automatizada de padrões de credenciais (chaves privadas, AWS, Stripe, GitHub, Slack, GitLab, Google, URLs com senhas) em todo o `src/` via `import.meta.glob`; roda a cada `npm.cmd test`.
+- Evidência: `npm.cmd test` **217/217** (25 arquivos), build 0, tsc 0; varredura manual complementar sem achados.
+- Card: F8-07/#141 → DONE (relatório com achados e status publicado; libera fila para F1-07/F3-17/F2-11).
+
 ### `94b9d50` — feat: route guard matrix tests and shared route permission map (F8-06 testes de permissões)
 
 - Novo `src/app/route-guards.ts`: mapa único rota→permissão (16 rotas guardadas, incluindo `/agenda`); `router.tsx` agora gera as rotas protegidas a partir desse mapa (elimina divergência entre router e testes).
