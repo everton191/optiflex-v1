@@ -8,6 +8,7 @@ Todas as rotas usam `AppShell`. A configuração canônica está em `src/app/rou
 | `/clientes` | `CustomersPage` | customers | `customers.read` | AppShell |
 | `/clientes/novo` | `CustomerNewPage` | customers | `customers.manage` | AppShell |
 | `/clientes/:customerId` | `CustomerProfilePage` | customers | `customers.read` | AppShell |
+| `/clientes/:customerId/editar` | `CustomerEditPage` | customers | `customers.manage` | AppShell |
 | `/atendimentos` | `AttendancePage` | attendance | `attendance.read` | AppShell |
 | `/clinico` | `ClinicalQueuePage` | clinical | `clinical.workspace.access` | AppShell |
 | `/clinico/atendimento/:attendanceId` | `ClinicalWorkspacePage` | clinical | `clinical.workspace.access` | AppShell |

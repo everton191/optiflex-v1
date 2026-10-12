@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Buscar, cadastrar e exibir clientes, seus dados básicos e histórico de atendimentos.
+Buscar, cadastrar, editar e exibir clientes, seus dados básicos e histórico de atendimentos.
 
 ## Directory
 
@@ -13,18 +13,19 @@ Páginas em `src/app/pages.tsx`; domínio em `customer.ts` e `reception-service.
 - `/clientes`
 - `/clientes/novo`
 - `/clientes/:customerId`
+- `/clientes/:customerId/editar`
 
 ## Main Pages
 
-`CustomersPage`, `CustomerNewPage`, `CustomerProfilePage`.
+`CustomersPage`, `CustomerNewPage`, `CustomerProfilePage`, `CustomerEditPage`.
 
 ## Components
 
-`Input`, `Button`, classes de lista e page header.
+`Input`, `Button`, classes de lista, page header e `.page-title-actions`/`.form-actions`.
 
 ## Services
 
-`ReceptionService`: list/get/create customer e operações de attendance.
+`ReceptionService`: list/get/create/update customer e operações de attendance.
 
 ## Repositories
 
@@ -48,7 +49,7 @@ Attendance, Design System, React Router e IndexedDB local.
 
 ## Public API
 
-`ReceptionService.listCustomers`, `getCustomer`, `createCustomer`; contrato `CustomerRepository`.
+`ReceptionService.listCustomers`, `getCustomer`, `createCustomer`, `updateCustomer`; contrato `CustomerRepository`.
 
 ## Files Normally Modified
 
@@ -69,7 +70,7 @@ Não alterar attendance inteiro para correção restrita à busca. Não acessar 
 
 ### Alterar formulário
 
-→ `CustomerNewPage` + `Customer` + createCustomer.
+→ `CustomerNewPage` (criação: nome/telefone/CPF) e `CustomerEditPage` (edição: nome/telefone/CPF/e-mail/nascimento) + `Customer` + createCustomer/updateCustomer.
 
 ### Alterar busca
 

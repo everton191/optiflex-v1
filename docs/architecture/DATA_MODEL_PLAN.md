@@ -2,7 +2,7 @@
 
 **Não duplica:** o estado real dos modelos vive em `src/domain/*.ts` e nos mapas `docs/ai/01–09` (especialmente `02_ARCHITECTURE.md` e `07_DATA_FLOW.md`). Este documento planeja a **evolução** e aponta os cards responsáveis.
 
-Atualizado em: 08/10/2026 · Base: `60e2ca4` (schema IndexedDB `opticore-v1` v11).
+Atualizado em: 08/10/2026 · Base: `00d0d9e` (schema IndexedDB `opticore-v1` v11).
 
 ## Estado atual (resumo)
 

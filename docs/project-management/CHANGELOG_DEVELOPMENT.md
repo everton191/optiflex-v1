@@ -4,6 +4,16 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `00d0d9e` — feat: customer edit page with contact fields and durable update (F2-06 edição de clientes)
+
+- `ReceptionService.updateCustomer(customerId, input)`: carrega o cliente existente ("Cliente não encontrado."), valida nome (trim), normaliza telefone/CPF/e-mail/nascimento (string vazia vira `undefined`) e persiste via `save` preservando `id`/`createdAt`.
+- Nova rota `/clientes/:customerId/editar` (`customers.manage`) com `CustomerEditPage`: formulário pré-preenchido (nome, telefone, CPF, e-mail, nascimento), validação de nome, navegação de volta ao perfil, botão Cancelar.
+- Perfil do cliente ganha botão "Editar cadastro" (secondary) para `customers.manage` e exibe e-mail/nascimento no resumo (quando presentes).
+- Criação também normaliza e-mail/nascimento quando enviados; campos opcionais sem índice → sem bump de schema.
+- CSS: `.page-title-actions` e `.button.secondary`.
+- Evidência: `npm.cmd test` **198/198** (21 arquivos; `reception-service.test.ts` +2 validação/normalização, `clinical.test.ts` +1 durabilidade após reload), build 0, tsc 0.
+- Card: F2-06/#28 → DONE (editar nome/contatos, reload preserva, perfil reflete, rota documentada no route map; libera F2-07 validação de CPF).
+
 ### `60e2ca4` — feat: partial payments with PARTIAL status and amount input (F4-12 pagamentos parciais)
 
 - `SalePaymentStatus` ganha `PARTIAL` (`PENDING`/`PARTIAL`/`PAID`); `LocalSaleRepository.recordReceipt` grava `PARTIAL` quando a soma dos RECEIPTs ainda não cobre o total e `PAID` quando cobre (validação `paid + amount > total` já existente na transação permanece a autoridade).

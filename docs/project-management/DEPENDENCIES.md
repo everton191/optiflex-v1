@@ -133,7 +133,7 @@ F3-09 conteúdo real de anexos (P0, DONE — `6ce9c9a`)
 ## Dependências que NÃO são obrigatórias (podem seguir em paralelo)
 
 - F4-16 suprimento/sangria (FEITO 08/10 — só dependia da abertura, feita).
-- F2-06 edição de clientes (F1-03 é opcional/estilo).
+- F2-06 edição de clientes (FEITO 08/10 — `00d0d9e`; F1-03 era opcional/estilo).
 - F7-05 navegação mobile, F7-11 estados de UI (independentes do domínio).
 - F4-05 reserva de itens e F4-06 transferência (esperam prioridade, não bloqueiam o núcleo).
 
