@@ -1,31 +1,39 @@
 import { createBrowserRouter, Navigate, RouterProvider } from "react-router-dom";
 import { RequirePermission, RequireSession } from "./permissions";
-import { AgendaPage, AttendancePage, BlockedPage, CashDeskPage, ChangePasswordPage, ClinicalQueuePage, ClinicalWorkspacePage, CustomerEditPage, CustomerNewPage, CustomerProfilePage, CustomersPage, DashboardPage, ForbiddenPage, InventoryPage, LoginPage, ProfilesPage, SettingsPage, UsersPage, WorkOrderDetailPage, WorkOrdersPage } from "./pages";
+import { AttendancePage, BlockedPage, CashDeskPage, ChangePasswordPage, ClinicalQueuePage, ClinicalWorkspacePage, CustomerEditPage, CustomerNewPage, CustomerProfilePage, CustomersPage, DashboardPage, ForbiddenPage, InventoryPage, LoginPage, ProfilesPage, SettingsPage, UsersPage, WorkOrderDetailPage, WorkOrdersPage, AgendaPage } from "./pages";
+import { routeGuards } from "./route-guards";
 import { AppShell } from "../shell/AppShell";
+
+const guardedPages: Record<string, React.ReactNode> = {
+  "clientes": <CustomersPage />,
+  "clientes/novo": <CustomerNewPage />,
+  "clientes/:customerId": <CustomerProfilePage />,
+  "clientes/:customerId/editar": <CustomerEditPage />,
+  "atendimentos": <AttendancePage />,
+  "agenda": <AgendaPage />,
+  "clinico": <ClinicalQueuePage />,
+  "clinico/atendimento/:attendanceId": <ClinicalWorkspacePage />,
+  "caixa": <CashDeskPage />,
+  "estoque": <InventoryPage />,
+  "ordens-servico": <WorkOrdersPage />,
+  "ordens-servico/:orderId": <WorkOrderDetailPage />,
+  "admin/usuarios": <UsersPage />,
+  "admin/perfis": <ProfilesPage />,
+  "admin/configuracoes": <SettingsPage />
+};
+
+const guardedChildren = routeGuards.map((guard) => guard.index
+  ? { index: true, element: <RequirePermission permission={guard.permission}><DashboardPage /></RequirePermission> }
+  : { path: guard.path, element: <RequirePermission permission={guard.permission}>{guardedPages[guard.path!]}</RequirePermission> });
 
 const router = createBrowserRouter([
   { path: "/login", element: <LoginPage /> },
   { path: "/bloqueado", element: <BlockedPage /> },
   { path: "/", element: <RequireSession />, children: [
     { element: <AppShell />, children: [
-      { index: true, element: <RequirePermission permission="dashboard.view"><DashboardPage /></RequirePermission> },
-      { path: "clientes", element: <RequirePermission permission="customers.read"><CustomersPage /></RequirePermission> },
-      { path: "clientes/novo", element: <RequirePermission permission="customers.manage"><CustomerNewPage /></RequirePermission> },
-      { path: "clientes/:customerId", element: <RequirePermission permission="customers.read"><CustomerProfilePage /></RequirePermission> },
-      { path: "clientes/:customerId/editar", element: <RequirePermission permission="customers.manage"><CustomerEditPage /></RequirePermission> },
-      { path: "atendimentos", element: <RequirePermission permission="attendance.read"><AttendancePage /></RequirePermission> },
-      { path: "agenda", element: <RequirePermission permission="attendance.read"><AgendaPage /></RequirePermission> },
-      { path: "clinico", element: <RequirePermission permission="clinical.workspace.access"><ClinicalQueuePage /></RequirePermission> },
-      { path: "clinico/atendimento/:attendanceId", element: <RequirePermission permission="clinical.workspace.access"><ClinicalWorkspacePage /></RequirePermission> },
+      ...guardedChildren,
       { path: "vendas", element: <Navigate to="/caixa" replace /> },
       { path: "pagamentos", element: <Navigate to="/caixa" replace /> },
-      { path: "caixa", element: <RequirePermission permission="cash.read"><CashDeskPage /></RequirePermission> },
-      { path: "estoque", element: <RequirePermission permission="inventory.read"><InventoryPage /></RequirePermission> },
-      { path: "ordens-servico", element: <RequirePermission permission="sales.read"><WorkOrdersPage /></RequirePermission> },
-      { path: "ordens-servico/:orderId", element: <RequirePermission permission="sales.read"><WorkOrderDetailPage /></RequirePermission> },
-      { path: "admin/usuarios", element: <RequirePermission permission="users.read"><UsersPage /></RequirePermission> },
-      { path: "admin/perfis", element: <RequirePermission permission="roles.read"><ProfilesPage /></RequirePermission> },
-      { path: "admin/configuracoes", element: <RequirePermission permission="settings.manage"><SettingsPage /></RequirePermission> },
       { path: "trocar-senha", element: <ChangePasswordPage /> },
       { path: "sem-acesso", element: <ForbiddenPage /> }
     ]}
