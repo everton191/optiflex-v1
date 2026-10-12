@@ -4,6 +4,16 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `679951f` — feat: agenda day/week views with event to attendance conversion (F3-01 agenda e recepção)
+
+- Novo domínio `src/domain/agenda.ts`: `AgendaEvent` (loja, cliente, profissional opcional, tipo consulta/retorno/entrega/ajuste/cobrança, status, `startsAt` ISO, observações, vínculo `attendanceId`), labels e helpers `dayRange`/`weekRange` em hora local (semana começa na segunda).
+- `AgendaService`: `createEvent` (valida loja/cliente/data, normaliza opcionais), `listDay`/`listWeek`, `convertToAttendance` (só `SCHEDULED`; tipos consulta/retorno/ajuste reutilizam o `customerId` e criam atendimento `WAITING` na fila via `ReceptionService` sem redigitar cliente; entrega/cobrança não convertem) e `cancel`.
+- Persistência: `AgendaRepository`/`LocalAgendaRepository` com filtro por loja+range, guards de acesso; Dexie **v12** (`agendaEvents: id, storeId, professionalId, status, startsAt`).
+- Backup: schema **12** com `agendaEvents` (validação de status/tipo, vínculos cliente/loja/attendance); schemas 10 e 11 continuam importáveis (tabela defaulta a `[]`).
+- UI: rota `/agenda` (`attendance.read`) com `AgendaPage` — navegação dia/semana (anterior/próximo/hoje), formulário de novo evento (`attendance.create`), conversão (navega para `/atendimentos?customer=<id>`) e cancelamento; link "Agenda" no menu lateral.
+- Evidência: `npm.cmd test` **208/208** (23 arquivos; `agenda-service.test.ts` 7 casos, `agenda.test.ts` 3 casos, ajustes em `database.test.ts`/`backup.test.ts`), build 0, tsc 0.
+- Card: F3-01/#40 → DONE (evento no dia correto após reload, conversão sem redigitar cliente, rotas documentadas; libera fila de agenda).
+
 ### `00d0d9e` — feat: customer edit page with contact fields and durable update (F2-06 edição de clientes)
 
 - `ReceptionService.updateCustomer(customerId, input)`: carrega o cliente existente ("Cliente não encontrado."), valida nome (trim), normaliza telefone/CPF/e-mail/nascimento (string vazia vira `undefined`) e persiste via `save` preservando `id`/`createdAt`.

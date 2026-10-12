@@ -10,6 +10,7 @@ Todas as rotas usam `AppShell`. A configuração canônica está em `src/app/rou
 | `/clientes/:customerId` | `CustomerProfilePage` | customers | `customers.read` | AppShell |
 | `/clientes/:customerId/editar` | `CustomerEditPage` | customers | `customers.manage` | AppShell |
 | `/atendimentos` | `AttendancePage` | attendance | `attendance.read` | AppShell |
+| `/agenda` | `AgendaPage` | attendance | `attendance.read` | AppShell |
 | `/clinico` | `ClinicalQueuePage` | clinical | `clinical.workspace.access` | AppShell |
 | `/clinico/atendimento/:attendanceId` | `ClinicalWorkspacePage` | clinical | `clinical.workspace.access` | AppShell |
 | `/caixa` | `CashDeskPage` | cash/sales | `cash.read` | AppShell |
@@ -27,6 +28,7 @@ Todas as rotas usam `AppShell`. A configuração canônica está em `src/app/rou
 - `customerId`: identifica o cliente carregado por `ReceptionService.getCustomer`.
 - `attendanceId`: chave do `ClinicalRecord` e vínculo com atendimento.
 - Cadastro/perfil encaminham `/atendimentos?customer=<id>` para pré-seleção validada na fila; o parâmetro é removido após o envio. Cadastro sem `attendance.create` retorna ao perfil.
+- Agenda: view dia/semana com navegação anterior/próximo/hoje; converter evento navega para `/atendimentos?customer=<id>` do cliente do evento.
 
 ## Guards e navegação
 

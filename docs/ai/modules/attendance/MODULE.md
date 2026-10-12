@@ -2,20 +2,21 @@
 
 ## Purpose
 
-Criar atendimentos para clientes e manter a fila da loja usada pela recepção e pela área clínica.
+Criar atendimentos para clientes e manter a fila da loja usada pela recepção e pela área clínica; a agenda (dia/semana) alimenta a fila com eventos convertidos em atendimento.
 
 ## Directory
 
-UI em `src/app/pages.tsx`; tipos em `src/domain/customer.ts`; service em `reception-service.ts`; repository local em storage.
+UI em `src/app/pages.tsx`; tipos em `src/domain/customer.ts` e `src/domain/agenda.ts`; services em `reception-service.ts` e `agenda-service.ts`; repositories locais em storage.
 
 ## Routes
 
 - `/atendimentos`.
+- `/agenda` (dia/semana).
 - Origem comum: `/clientes/:customerId` e `/clientes/novo`.
 
 ## Main Pages
 
-`AttendancePage`. `ClinicalQueuePage` é consumidora relacionada.
+`AttendancePage`, `AgendaPage`. `ClinicalQueuePage` é consumidora relacionada.
 
 ## Components
 
@@ -23,11 +24,11 @@ Select HTML, `Button` e classes de lista.
 
 ## Services
 
-`ReceptionService.startAttendance`, `listQueue`, `listCustomerAttendances`.
+`ReceptionService.startAttendance`, `listQueue`, `listCustomerAttendances`; `AgendaService.createEvent`, `listDay`, `listWeek`, `convertToAttendance`, `cancel`.
 
 ## Repositories
 
-`AttendanceRepository` / `LocalAttendanceRepository`.
+`AttendanceRepository` / `LocalAttendanceRepository`; `AgendaRepository` / `LocalAgendaRepository`.
 
 ## Stores / Hooks
 
@@ -35,7 +36,7 @@ Sem store/hook dedicado. Usa `currentStoreId` do App Context e estado React loca
 
 ## Models
 
-`Attendance`, `AttendanceStatus`, `AttendanceType`.
+`Attendance`, `AttendanceStatus`, `AttendanceType`; `AgendaEvent`, `AgendaEventType`, `AgendaEventStatus`.
 
 ## Permissions
 
@@ -47,14 +48,15 @@ Customers, store context e clinical.
 
 ## Public API
 
-Métodos de attendance expostos por `ReceptionService` e `AttendanceRepository`.
+Métodos de attendance expostos por `ReceptionService` e `AttendanceRepository`; agenda por `AgendaService` e `AgendaRepository`.
 
 ## Files Normally Modified
 
 - Fila/form: `AttendancePage` em `pages.tsx`.
-- Regras: `reception-service.ts`.
-- Tipos: `customer.ts`.
-- Persistência: `LocalAttendanceRepository`.
+- Agenda: `AgendaPage` em `pages.tsx`.
+- Regras: `reception-service.ts` e `agenda-service.ts`.
+- Tipos: `customer.ts` e `agenda.ts`.
+- Persistência: `LocalAttendanceRepository` e `LocalAgendaRepository`.
 
 ## Avoid Modifying
 
@@ -65,6 +67,10 @@ Não duplicar cliente/loja na attendance. Não acessar Dexie na página.
 ### Alterar fila
 
 → AttendancePage + listByStore + status.
+
+### Alterar agenda ou conversão em atendimento
+
+→ AgendaPage + `agenda-service.ts` + `agenda.ts` (ranges locais dia/semana).
 
 ### Alterar tipo de atendimento
 
