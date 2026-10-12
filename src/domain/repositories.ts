@@ -1,7 +1,7 @@
 import type { CurrentStoreContext, LocalSession, OrganizationSettings, Store, User } from "./access";
 import type { AgendaEvent } from "./agenda";
 import type { Attendance, Customer } from "./customer";
-import type { ClinicalRecord, ClinicalVersion } from "./clinical";
+import type { ClinicalRecord, ClinicalVersion, Prescription } from "./clinical";
 import type { Sale } from "./sales";
 import type { WorkOrder, WorkOrderStatus } from "./work-order";
 import type { InventoryItem, InventoryMovement } from "./inventory";
@@ -53,6 +53,12 @@ export interface ClinicalRepository {
   putAttachmentContent(attachmentId: string, content: string): Promise<void>;
   getAttachmentContent(attachmentId: string): Promise<string | undefined>;
   deleteAttachmentContent(attachmentId: string): Promise<void>;
+}
+
+// Append-only: versions are stored next to each other so retification never rewrites the original.
+export interface PrescriptionRepository {
+  listByAttendance(attendanceId: string, storeId: string): Promise<Prescription[]>;
+  save(prescription: Prescription, storeId: string): Promise<Prescription>;
 }
 
 export interface SaleRepository {

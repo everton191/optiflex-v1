@@ -1,6 +1,6 @@
 export type WorkOrderStatus = "OPEN" | "IN_PRODUCTION" | "READY" | "DELIVERED" | "CANCELLED";
 
-export type WorkOrderEventType = "CREATED" | "STATUS" | "SCHEDULE" | "CANCELLED" | "INPUTS";
+export type WorkOrderEventType = "CREATED" | "STATUS" | "SCHEDULE" | "CANCELLED" | "INPUTS" | "LABORATORY";
 
 export interface WorkOrderEvent {
   id: string;
@@ -23,6 +23,7 @@ export interface WorkOrder {
   updatedBy?: string;
   dueAt?: string;
   notes?: string;
+  laboratory?: string;
   cancelReason?: string;
   events?: WorkOrderEvent[];
 }
@@ -41,6 +42,7 @@ export const workOrderEventLabels: Record<WorkOrderEventType, string> = {
   SCHEDULE: "Prazo e observações",
   CANCELLED: "Cancelamento",
   INPUTS: "Insumos registrados",
+  LABORATORY: "Laboratório informado",
 };
 
 export const workOrderTransitions: Record<WorkOrderStatus, readonly WorkOrderStatus[]> = {

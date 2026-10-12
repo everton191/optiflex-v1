@@ -138,6 +138,28 @@ describe("work order inputs", () => {
   });
 });
 
+describe("laboratory", () => {
+  it("stores the laboratory with an audited event and author", async () => {
+    repository.update.mockImplementation(async (order) => order);
+    const updated = await service.setLaboratory(openOrder, "  Laboratório Óptico Sul  ", "Operador");
+    expect(updated).toMatchObject({ laboratory: "Laboratório Óptico Sul", updatedBy: "Operador" });
+    expect(updated.updatedAt).toBeTruthy();
+    expect(repository.update).toHaveBeenCalledOnce();
+    expect(repository.update.mock.calls[0][1]).toBe("OPEN");
+    expect(updated.events?.[0]).toMatchObject({ type: "LABORATORY", author: "Operador" });
+    expect(updated.events?.[0].note).toContain("Laboratório Óptico Sul");
+  });
+
+  it("rejects empty laboratory, duplicate value, finished orders and a missing author", async () => {
+    await expect(service.setLaboratory(openOrder, "   ", "Operador")).rejects.toThrow("Informe o laboratório");
+    await expect(service.setLaboratory({ ...openOrder, laboratory: "Sul" }, "Sul", "Operador")).rejects.toThrow("já está registrado");
+    await expect(service.setLaboratory({ ...openOrder, status: "DELIVERED" }, "Sul", "Operador")).rejects.toThrow("antes da entrega");
+    await expect(service.setLaboratory({ ...openOrder, status: "CANCELLED" }, "Sul", "Operador")).rejects.toThrow("antes da entrega");
+    await expect(service.setLaboratory(openOrder, "Sul", "  ")).rejects.toThrow("responsável");
+    expect(repository.update).not.toHaveBeenCalled();
+  });
+});
+
 describe("listing", () => {
   it("delegates the store listing to the repository", async () => {
     repository.listByStore.mockResolvedValue([openOrder]);

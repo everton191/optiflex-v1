@@ -62,6 +62,17 @@ export class WorkOrderService {
     return this.repository.update(updated, order.status);
   }
 
+  async setLaboratory(order: WorkOrder, laboratory: string, author: string): Promise<WorkOrder> {
+    if (!author.trim()) throw new Error("Informe o responsável pela alteração.");
+    if (order.status === "DELIVERED" || order.status === "CANCELLED") throw new Error("Laboratório só pode ser informado antes da entrega.");
+    const trimmed = laboratory.trim();
+    if (!trimmed) throw new Error("Informe o laboratório responsável pela montagem.");
+    if (order.laboratory === trimmed) throw new Error("Este laboratório já está registrado na ordem.");
+    const at = new Date().toISOString();
+    const updated: WorkOrder = { ...order, laboratory: trimmed, updatedAt: at, updatedBy: author.trim(), events: [...(order.events ?? []), { id: `os-event-${crypto.randomUUID()}`, type: "LABORATORY", note: `Laboratório: ${trimmed}`, author: author.trim(), at }] };
+    return this.repository.update(updated, order.status);
+  }
+
   async recordInputs(order: WorkOrder, items: readonly WorkOrderInput[], author: string): Promise<WorkOrder> {
     if (!author.trim()) throw new Error("Informe o responsável pela alteração.");
     if (order.status === "DELIVERED" || order.status === "CANCELLED") throw new Error("Insumos só podem ser registrados antes da entrega.");

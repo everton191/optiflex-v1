@@ -49,3 +49,99 @@ export function assertValidAttachment(input: { name: string; mimeType: string; s
   if (input.size > ATTACHMENT_MAX_BYTES) throw new Error(`Arquivo excede o limite de ${ATTACHMENT_MAX_BYTES / (1024 * 1024)} MB.`);
   if (typeof input.content !== "string" || !input.content || input.content.length % 4 !== 0 || !/^[A-Za-z0-9+/]+={0,2}$/.test(input.content)) throw new Error("Não foi possível ler o arquivo. Tente novamente.");
 }
+
+export interface PrescriptionEye {
+  sphere?: number;
+  cylinder?: number;
+  axis?: number;
+  add?: number;
+}
+
+// Append-only document: issued versions are never rewritten; retification adds a new version linked to the previous one.
+export interface Prescription {
+  id: string;
+  attendanceId: string;
+  customerId: string;
+  storeId: string;
+  version: number;
+  author: string;
+  issuedAt: string;
+  od: PrescriptionEye;
+  oe: PrescriptionEye;
+  notes?: string;
+  retifies?: string;
+  retificationReason?: string;
+}
+
+export interface PrescriptionInput {
+  attendanceId: string;
+  customerId: string;
+  storeId: string;
+  od: PrescriptionEye;
+  oe: PrescriptionEye;
+  notes?: string;
+}
+
+function assertEyeDegrees(eye: PrescriptionEye): void {
+  for (const key of ["sphere", "cylinder", "add"] as const) {
+    const value = eye[key];
+    if (value !== undefined && !Number.isFinite(value)) throw new Error("Grau inválido na prescrição.");
+  }
+  const axis = eye.axis;
+  if (axis !== undefined && (!Number.isFinite(axis) || axis < 0 || axis > 180)) throw new Error("O eixo deve estar entre 0° e 180°.");
+}
+
+function normalizeEye(eye: PrescriptionEye): PrescriptionEye {
+  const normalized: PrescriptionEye = {};
+  for (const key of ["sphere", "cylinder", "axis", "add"] as const) if (eye[key] !== undefined) normalized[key] = eye[key];
+  return normalized;
+}
+
+function hasEyeValue(eye: PrescriptionEye): boolean {
+  return (["sphere", "cylinder", "axis", "add"] as const).some((key) => eye[key] !== undefined);
+}
+
+function assertPrescriptionInput(input: PrescriptionInput, author: string, now: string): string {
+  const trimmedAuthor = author.trim();
+  if (!trimmedAuthor) throw new Error("Informe o responsável pela prescrição.");
+  for (const [field, value] of [["atendimento", input.attendanceId], ["cliente", input.customerId], ["loja", input.storeId]] as const) {
+    if (!value || !value.trim()) throw new Error(`Prescrição sem ${field}.`);
+  }
+  if (!Number.isFinite(Date.parse(now))) throw new Error("Data da prescrição inválida.");
+  assertEyeDegrees(input.od);
+  assertEyeDegrees(input.oe);
+  if (!hasEyeValue(input.od) && !hasEyeValue(input.oe) && !input.notes?.trim()) throw new Error("Informe ao menos um grau (OD/OE) ou uma observação.");
+  return trimmedAuthor;
+}
+
+export function issuePrescription(input: PrescriptionInput, author: string, now = new Date().toISOString()): Prescription {
+  const trimmedAuthor = assertPrescriptionInput(input, author, now);
+  return {
+    id: `rx-${crypto.randomUUID()}`,
+    attendanceId: input.attendanceId.trim(),
+    customerId: input.customerId.trim(),
+    storeId: input.storeId.trim(),
+    version: 1,
+    author: trimmedAuthor,
+    issuedAt: now,
+    od: normalizeEye(input.od),
+    oe: normalizeEye(input.oe),
+    notes: input.notes?.trim() || undefined,
+  };
+}
+
+export function retifyPrescription(current: Prescription, input: PrescriptionInput, reason: string, author: string, now = new Date().toISOString()): Prescription {
+  const trimmedReason = reason.trim();
+  if (!trimmedReason) throw new Error("Informe o motivo da retificação.");
+  if (!Number.isSafeInteger(current.version) || current.version < 1) throw new Error("Prescrição base inválida.");
+  if (input.attendanceId.trim() !== current.attendanceId || input.customerId.trim() !== current.customerId || input.storeId.trim() !== current.storeId) {
+    throw new Error("A retificação deve apontar para o mesmo atendimento, cliente e loja da prescrição original.");
+  }
+  const next = issuePrescription(input, author, now);
+  return { ...next, version: current.version + 1, retifies: current.id, retificationReason: trimmedReason };
+}
+
+export function activePrescription(prescriptions: readonly Prescription[]): Prescription | undefined {
+  const retified = new Set(prescriptions.map((prescription) => prescription.retifies).filter((id): id is string => Boolean(id)));
+  return prescriptions.filter((prescription) => !retified.has(prescription.id)).sort((a, b) => b.version - a.version)[0];
+}
