@@ -10,13 +10,15 @@ UI em `src/app/pages.tsx`; tipos em `src/domain/customer.ts` e `src/domain/agend
 
 ## Routes
 
-- `/atendimentos`.
+- `/atendimentos` (fila).
+- `/atendimentos/novo` (`attendance.create`): cliente, tipo, profissional, prioridade e observações.
+- `/atendimentos/:attendanceId` (`attendance.read`): detalhe acessível por URL direta + transições básicas.
 - `/agenda` (dia/semana).
 - Origem comum: `/clientes/:customerId` e `/clientes/novo`.
 
 ## Main Pages
 
-`AttendancePage`, `AgendaPage`. `ClinicalQueuePage` é consumidora relacionada.
+`AttendancePage`, `AttendanceNewPage`, `AttendanceDetailPage`, `AgendaPage`. `ClinicalQueuePage` é consumidora relacionada.
 
 ## Components
 
@@ -24,7 +26,7 @@ Select HTML, `Button` e classes de lista.
 
 ## Services
 
-`ReceptionService.startAttendance`, `listQueue`, `listCustomerAttendances`; `AgendaService.createEvent`, `listDay`, `listWeek`, `convertToAttendance`, `cancel`.
+`ReceptionService.startAttendance` (tipo/notas/profissional/prioridade), `getAttendance`, `transitionAttendance`, `listQueue`, `listCustomerAttendances`; `AgendaService.createEvent`, `listDay`, `listWeek`, `convertToAttendance`, `cancel`.
 
 ## Repositories
 
@@ -36,7 +38,7 @@ Sem store/hook dedicado. Usa `currentStoreId` do App Context e estado React loca
 
 ## Models
 
-`Attendance`, `AttendanceStatus`, `AttendanceType`; `AgendaEvent`, `AgendaEventType`, `AgendaEventStatus`.
+`Attendance`, `AttendanceStatus`, `AttendanceType`, `AttendancePriority`, `attendanceTransitions`; `AgendaEvent`, `AgendaEventType`, `AgendaEventStatus`.
 
 ## Permissions
 
@@ -67,6 +69,14 @@ Não duplicar cliente/loja na attendance. Não acessar Dexie na página.
 ### Alterar fila
 
 → AttendancePage + listByStore + status.
+
+### Criar atendimento completo (tipo, profissional, prioridade, notas)
+
+→ AttendanceNewPage + `startAttendance`.
+
+### Detalhe e transições de status
+
+→ AttendanceDetailPage + `transitionAttendance` + `attendanceTransitions` em `customer.ts`.
 
 ### Alterar agenda ou conversão em atendimento
 

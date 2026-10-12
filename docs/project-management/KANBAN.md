@@ -56,7 +56,7 @@ Classificação de inventário (Etapa 4) no corpo de cada card:
 
 - Issues totais: **155** (8 épicas + 147 tarefas).
 - Tarefas por fase: F1=14 · F2=18 · F3=20 · F4=20 · F5=19 · F6=19 · F7=19 · F8=18.
-- Tarefas por status (revisado em 08/10/2026; F1-09, F2-04, F7-02, F1-11, F3-09, F3-14, F1-02, F1-06, F4-16, F2-05, F4-10, F4-18, F4-12, F2-06, F3-01, F8-06, F8-07, F1-07, F3-17, F2-11 e F2-02 concluídas no mesmo dia): DONE=39 · IN PROGRESS=0 · READY=19 · TESTING=0 · CODE REVIEW=0 · BACKLOG=39 · BLOCKED=50.
+- Tarefas por status (revisado em 08/10/2026; F1-09, F2-04, F7-02, F1-11, F3-09, F3-14, F1-02, F1-06, F4-16, F2-05, F4-10, F4-18, F4-12, F2-06, F3-01, F8-06, F8-07, F1-07, F3-17, F2-11, F2-02 e F3-02 concluídas no mesmo dia): DONE=40 · IN PROGRESS=0 · READY=18 · TESTING=0 · CODE REVIEW=0 · BACKLOG=39 · BLOCKED=50.
 - Bloqueios: **50 tarefas** bloqueadas — 47 por dependência de fase futura/externa + **3 reclassificadas em 08/10** (F4-13 #70, F8-03 #137, F3-20 #57: status desatualizado, decisão externa já registrada).
 - **Revisão de dependências 08/10/2026:** 7 ciclos detectados (SCC/Tarjan sobre este arquivo) e corrigidos em KANBAN + corpos das issues; **0 ciclos remanescentes**. Detalhe antes/depois em `DEPENDENCIES.md`.
 
@@ -120,8 +120,8 @@ Regra de ouro: **nunca mover para DONE sem evidência verificável** (comando de
 |---|---|---|---|---|---|
 | E3 | [ÉPICA FASE 3 — OPERAÇÃO DA ÓTICA](https://github.com/everton191/optiflex-v1/issues/3) | fase 3 | IN PROGRESS | p1 | — |
 | F3-01 | [Agenda e recepção](https://github.com/everton191/optiflex-v1/issues/40) | Attendance | DONE | p1 | F2-04 (usuários/profissionais; entregue em `679951f` — agenda dia/semana, conversão em atendimento sem redigitar cliente, Dexie v12). |
-| F3-02 | [Cadastro de atendimento](https://github.com/everton191/optiflex-v1/issues/41) | Attendance | READY | p1 | F2-04 (profissionais). |
-| F3-03 | [Fila de atendimento](https://github.com/everton191/optiflex-v1/issues/42) | Attendance | READY | p1 | F3-02. |
+| F3-02 | [Cadastro de atendimento](https://github.com/everton191/optiflex-v1/issues/41) | Attendance | DONE | p1 | F2-04 (profissionais; entregue em `8daab89` — `/atendimentos/novo` com tipo/profissional/prioridade/notas, detalhe `/atendimentos/:attendanceId` por URL direta e transições básicas). |
+| F3-03 | [Fila de atendimento](https://github.com/everton191/optiflex-v1/issues/42) | Attendance | READY | p1 | F3-02 (feito em `8daab89`). |
 | F3-04 | [Histórico clínico do cliente](https://github.com/everton191/optiflex-v1/issues/43) | Customers | BACKLOG | p1 | F2-09, F3-06, F1-11. |
 | F3-05 | [Receitas ópticas (documento e impressão)](https://github.com/everton191/optiflex-v1/issues/44) | Clinical | READY | p1 | F3-06 (campos estruturados). |
 | F3-06 | [Prescrição estruturada](https://github.com/everton191/optiflex-v1/issues/45) | Clinical | READY | p1 | F1-07, F3-07. |
@@ -271,16 +271,16 @@ Ordem recomendada para a próxima sessão de desenvolvimento (status READY/IN PR
 
 | # | ID | Issue | Tarefa | Prioridade | Dependências | Justificativa |
 |---|---|---|---|---|---|---|
-| 1 | F3-02 | #41 | [Attendance] Cadastro de atendimento | P1 | F2-04 (feito) | Dependência (profissionais) entregue; é o passo seguinte da fila de atendimento. |
+| 1 | F3-03 | #42 | [Attendance] Fila de atendimento | P1 | F3-02 (feito) | Cadastro completo entregue; segue a cadeia F3-02→F3-03 para a fila rica. |
 | 2 | F2-07 | #29 | [Customers] Validação de CPF/CNPJ | P2 | F2-06 (feito) | Edição entregue; validadores de documento são o complemento natural do cadastro. |
 | 3 | F3-10 | #49 | [Sales] Orçamentos detalhados | P1 | F1-09 (feito) | Precisão monetária pronta; enriquece orçamento sem nova dependência. |
 | 4 | F4-11 | #68 | [Cash] PIX, dinheiro e cartão | P1 | F4-10, F1-09 (feitos) | Formas de pagamento e precisão monetária prontas; complementa o caixa entregue. |
 | 5 | F2-14 | #35 | [Inventory] Códigos, preços e custos | P1 | F2-11, F1-06 (feito) | Catálogo (F2-11) entregue; margem usa preço/custo já em `InventoryItem`. |
-| 6 | F3-03 | #42 | [Attendance] Fila de atendimento | P1 | F3-02 | Fluxo de atendimento completo após cadastro; segue a cadeia F3-02→F3-03. |
-| 7 | F3-07 | #46 | [Clinical] Campos de grau OD/OE, cilindro, eixo e adição | P1 | F1-07 (feito) | Modelo `Prescription`/`PrescriptionEye` entregue; primeiro uso estruturado dos campos. |
-| 8 | F8-10 | #144 | [Infraestrutura] Recuperação de dados | P1 | F3-09 (feito) | Anexos duráveis entregues; recuperação fecha o ciclo de dados antes do piloto. |
-| 9 | F8-02 | #136 | [Infraestrutura] Testes de integração | P1 | F8-01 (feito) | Base unitária consolidada (241 casos); integração cobre os fluxos críticos antes do piloto. |
-| 10 | F7-01 | #116 | [Ux] Design system consolidado | P1 | nenhuma | Sem dependências; padroniza componentes usados por todas as telas já entregues. |
+| 6 | F3-07 | #46 | [Clinical] Campos de grau OD/OE, cilindro, eixo e adição | P1 | F1-07 (feito) | Modelo `Prescription`/`PrescriptionEye` entregue; primeiro uso estruturado dos campos. |
+| 7 | F8-10 | #144 | [Infraestrutura] Recuperação de dados | P1 | F3-09 (feito) | Anexos duráveis entregues; recuperação fecha o ciclo de dados antes do piloto. |
+| 8 | F8-02 | #136 | [Infraestrutura] Testes de integração | P1 | F8-01 (feito) | Base unitária consolidada (247 casos); integração cobre os fluxos críticos antes do piloto. |
+| 9 | F7-01 | #116 | [Ux] Design system consolidado | P1 | nenhuma | Sem dependências; padroniza componentes usados por todas as telas já entregues. |
+| 10 | F1-03 | #11 | [Infraestrutura] Separação gradual de páginas por módulo | P2 | nenhuma | Sem dependências; reduz o custo das próximas telas à medida que os módulos crescem. |
 
 Os `#?` devem ser resolvidos pela tabela acima (coluna ID → link da issue). Os números já estão fixados nas tabelas das fases; para referência rápida: consulte `DEPENDENCIES.md`.
 

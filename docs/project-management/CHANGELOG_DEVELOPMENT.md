@@ -4,6 +4,18 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `8daab89` + docs — Cadastro completo de atendimento com detalhe e transições (F3-02)
+
+- `src/domain/customer.ts`: `Attendance` + `professionalId?`/`priority?` (`NORMAL`/`URGENT`, padrão `NORMAL` em novo registro), `AttendancePriority`, `isAttendancePriority` e `attendanceTransitions` (DRAFT→WAITING/CANCELLED, WAITING→IN_PROGRESS/CANCELLED, IN_PROGRESS→FINISHED/CANCELLED; fechados não reabrem).
+- `src/domain/reception-service.ts`: `startAttendance` ganhou `options { professionalId, priority }` (trim + defaults), novos `getAttendance` e `transitionAttendance` (erro "Atendimento não encontrado." / "Status atual não permite esta transição.").
+- `src/domain/repositories.ts` + `local-repositories.ts`: `AttendanceRepository.get(id)` com escopo de loja (`canAccessRecordSafe` → indefinido fora do acesso).
+- `src/app/router.tsx` + `route-guards.ts`: rotas `/atendimentos/novo` (`attendance.create`) e `/atendimentos/:attendanceId` (`attendance.read`) na fonte única — matriz de guards 17→19.
+- `src/app/pages.tsx`: `AttendanceNewPage` (cliente/tipo/profissional/prioridade/observações → navega para o detalhe; aceita `?customer=`), `AttendanceDetailPage` (dados completos + botões Iniciar/Finalizar/Cancelar condicionados a `attendance.create`), fila com botão "Novo atendimento", linhas da fila linkam ao detalhe (não clínicos) com badge "Urgente", histórico do cliente com link "Ver detalhe".
+- `src/domain/agenda-service.ts`: conversão de evento agenda→atendimento herda `professionalId` do evento.
+- `src/domain/backup.ts`: validação de `priority` (`NORMAL`/`URGENT` quando presente; legado sem o campo continua válido).
+- Testes: `reception-service.test.ts` +5 (registro completo, lookup, transições válidas/inválidas), `permission-routes.test.ts` 19 rotas + `attendance.create` na matriz dos 4 perfis criadores, `database.test.ts` persiste tipo/notas/profissional/prioridade após reopen, `backup.test.ts` +1 (prioridade válida/inválida/legada), `agenda-service.test.ts` espera o profissional na conversão; **247/247** (27 arquivos), build 0, tsc 0.
+- Card: F3-02/#41 → DONE (critérios: detalhe acessível por URL direta; tipo/nota persistem após reload).
+
 ### `c4e4e31` + docs — CRUD de lojas com inativação não destrutiva (F2-02)
 
 - `src/domain/administration-service.ts`: `StoreInput` + `createStore`/`updateStore`/`setStoreActive` — nome obrigatório e único (case-insensitive), inativação exige ao menos uma loja ativa, **bloqueia a loja atual** (troque antes) e só altera `active` (nada é apagado); status igual é no-op.
