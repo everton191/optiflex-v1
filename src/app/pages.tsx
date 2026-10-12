@@ -3,7 +3,7 @@ import { Link, Navigate, useNavigate, useParams, useSearchParams } from "react-r
 import { useAppContext, useSession } from "./providers";
 import { Button, Card, Input } from "../design-system/components";
 import { allPermissions, hasPermission, roleDefinitions, sessionUserState } from "../domain/access";
-import type { RoleKey, User } from "../domain/access";
+import type { RoleKey, Store, User } from "../domain/access";
 import type { Attendance, Customer } from "../domain/customer";
 import type { AgendaEvent } from "../domain/agenda";
 import { agendaEventStatusLabels, agendaEventTypeLabels } from "../domain/agenda";
@@ -133,6 +133,66 @@ export function UsersPage() {
         </div>}
       </article>;
     })}</div>
+  </div>;
+}
+
+export function StoresPage() {
+  const { stores, currentStoreId, createStore, updateStore, setStoreActive } = useAppContext();
+  const session = useSession();
+  const canManage = hasPermission(session.role, "stores.manage");
+  const [formOpen, setFormOpen] = useState(false);
+  const [editing, setEditing] = useState<Store>();
+  const [name, setName] = useState("");
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const pending = useRef(false);
+
+  function resetForm(open: boolean) { setFormOpen(open); setEditing(undefined); setName(""); }
+  function editStore(store: Store) { setFormOpen(true); setEditing(store); setName(store.name); }
+
+  async function run(action: () => Promise<string>, fallback: string) {
+    if (pending.current || !canManage) return;
+    pending.current = true; setMessage(""); setError("");
+    try { setMessage(await action()); } catch (reason) { setError(reason instanceof Error ? reason.message : fallback); } finally { pending.current = false; }
+  }
+
+  async function saveStore(event: React.FormEvent) {
+    event.preventDefault();
+    await run(async () => {
+      if (editing) { await updateStore(editing.id, { name }); resetForm(false); return "Loja atualizada."; }
+      await createStore({ name }); resetForm(false); return "Filial criada e já disponível no seletor de loja.";
+    }, "Não foi possível salvar a loja.");
+  }
+
+  async function toggleActive(store: Store) {
+    await run(async () => { await setStoreActive(store.id, !store.active); return store.active ? "Loja inativada. Os dados permanecem no sistema." : "Loja reativada."; }, "Não foi possível alterar o status da loja.");
+  }
+
+  return <div className="page">
+    <div className="page-title">
+      <div><p className="eyebrow">Administração</p><h1>Lojas</h1><p className="page-intro">Cadastre filiais, renomeie ou inative sem apagar histórico: a loja inativa sai do seletor e volta intacta ao reativar.</p></div>
+      {canManage && <Button type="button" onClick={() => resetForm(!formOpen || Boolean(editing))}>{formOpen && !editing ? "Fechar" : "Nova loja"}</Button>}
+    </div>
+    {message && <p className="notice success" role="status">{message}</p>}
+    {error && <p className="notice error-text" role="alert">{error}</p>}
+
+    {canManage && formOpen && <form className="settings-form" onSubmit={saveStore}>
+      <label>Nome da loja<Input value={name} onChange={(event) => setName(event.target.value)} required /></label>
+      <div className="form-actions">
+        <Button type="submit">{editing ? "Salvar alterações" : "Criar filial"}</Button>
+        <Button type="button" onClick={() => resetForm(false)}>Cancelar</Button>
+      </div>
+      <p className="help-text">{editing ? "Renomear não afeta vendas, estoque ou usuários vinculados." : "A nova loja entra no seletor do topo na hora e pode receber usuários em Usuários."}</p>
+    </form>}
+
+    <div className="list-card">{stores.map((store) => <article className="list-row" key={store.id}>
+      <div><strong>{store.name}</strong><span>{store.id === currentStoreId ? "Loja atual" : store.active ? "Ativa" : "Inativa"}</span></div>
+      <div><span className={`badge ${store.active ? "" : "is-out"}`}>{store.active ? "Ativa" : "Inativa"}</span>
+        {canManage && <><Button type="button" onClick={() => editStore(store)}>Editar</Button>
+        <Button type="button" disabled={store.id === currentStoreId && store.active} onClick={() => void toggleActive(store)}>{store.active ? "Inativar" : "Reativar"}</Button></>}
+      </div>
+    </article>)}</div>
+    <p className="help-text">A loja atual não pode ser inativada — troque de loja antes. Inativar não apaga vendas, estoque, movimentos nem vínculos de usuários.</p>
   </div>;
 }
 

@@ -6,8 +6,8 @@ import type { User } from "./access";
 
 // Expected permission set per role: the guard matrix asserted against routeGuards and actions.
 const expectedRoutePermissions: Record<RoleKey, readonly Permission[]> = {
-  OWNER: ["dashboard.view", "customers.read", "customers.manage", "attendance.read", "clinical.workspace.access", "cash.read", "inventory.read", "sales.read", "users.read", "roles.read", "settings.manage"],
-  NETWORK_ADMINISTRATOR: ["dashboard.view", "customers.read", "customers.manage", "attendance.read", "cash.read", "inventory.read", "sales.read", "users.read", "roles.read", "settings.manage"],
+  OWNER: ["dashboard.view", "customers.read", "customers.manage", "attendance.read", "clinical.workspace.access", "cash.read", "inventory.read", "sales.read", "stores.manage", "users.read", "roles.read", "settings.manage"],
+  NETWORK_ADMINISTRATOR: ["dashboard.view", "customers.read", "customers.manage", "attendance.read", "cash.read", "inventory.read", "sales.read", "stores.manage", "users.read", "roles.read", "settings.manage"],
   STORE_MANAGER: ["dashboard.view", "customers.read", "customers.manage", "attendance.read", "cash.read", "inventory.read", "sales.read", "users.read"],
   RECEPTIONIST: ["dashboard.view", "customers.read", "customers.manage", "attendance.read"],
   CLINICAL_PROFESSIONAL: ["dashboard.view", "customers.read", "attendance.read", "clinical.workspace.access"],
@@ -20,7 +20,7 @@ const expectedRoutePermissions: Record<RoleKey, readonly Permission[]> = {
 
 describe("route guard matrix for all ten profiles", () => {
   it("exposes exactly one known permission per guarded route", () => {
-    expect(routeGuards).toHaveLength(16);
+    expect(routeGuards).toHaveLength(17);
     for (const guard of routeGuards) expect(allPermissions).toContain(guard.permission);
     const indexGuards = routeGuards.filter((guard) => guard.index);
     expect(indexGuards).toHaveLength(1);

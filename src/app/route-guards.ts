@@ -21,6 +21,7 @@ export const routeGuards: readonly RouteGuard[] = [
   { path: "estoque", permission: "inventory.read" },
   { path: "ordens-servico", permission: "sales.read" },
   { path: "ordens-servico/:orderId", permission: "sales.read" },
+  { path: "admin/lojas", permission: "stores.manage" },
   { path: "admin/usuarios", permission: "users.read" },
   { path: "admin/perfis", permission: "roles.read" },
   { path: "admin/configuracoes", permission: "settings.manage" }

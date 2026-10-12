@@ -10,7 +10,18 @@ export interface UserInput {
   password?: string;
 }
 
+export interface StoreInput {
+  name: string;
+}
+
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function storeNameOf(input: StoreInput, stores: readonly Store[], excludeStoreId?: string): string {
+  const name = input.name.trim();
+  if (!name) throw new Error("Informe o nome da loja.");
+  if (stores.some((store) => store.id !== excludeStoreId && store.name.trim().toLowerCase() === name.toLowerCase())) throw new Error("Já existe uma loja com este nome.");
+  return name;
+}
 
 function validateUserInput(input: UserInput, users: readonly User[], stores: readonly Store[], excludeUserId?: string): Pick<User, "name" | "email" | "role" | "scope" | "storeIds"> {
   const name = input.name.trim();
@@ -42,6 +53,37 @@ export class AdministrationService {
     const store = (await this.repository.listStores()).find((item) => item.id === storeId && item.active);
     if (!store) throw new Error("Loja inválida ou inativa.");
     await this.repository.saveCurrentStore({ id: "current", storeId });
+  }
+
+  async createStore(input: StoreInput): Promise<Store> {
+    const stores = await this.repository.listStores();
+    const store: Store = { id: `store-${crypto.randomUUID()}`, name: storeNameOf(input, stores), active: true };
+    await this.repository.saveStore(store);
+    return store;
+  }
+
+  async updateStore(id: string, input: StoreInput): Promise<Store> {
+    const stores = await this.repository.listStores();
+    const existing = stores.find((store) => store.id === id);
+    if (!existing) throw new Error("Loja não encontrada.");
+    const store: Store = { ...existing, name: storeNameOf(input, stores, id) };
+    await this.repository.saveStore(store);
+    return store;
+  }
+
+  async setStoreActive(id: string, active: boolean): Promise<Store> {
+    const stores = await this.repository.listStores();
+    const existing = stores.find((store) => store.id === id);
+    if (!existing) throw new Error("Loja não encontrada.");
+    if (existing.active === active) return existing;
+    if (!active) {
+      if (stores.filter((store) => store.active).length <= 1) throw new Error("Mantenha ao menos uma loja ativa.");
+      const current = await this.repository.getCurrentStore();
+      if (current.storeId === id) throw new Error("Troque de loja antes de inativar a loja atual.");
+    }
+    const store: Store = { ...existing, active };
+    await this.repository.saveStore(store);
+    return store;
   }
 
   async createUser(input: UserInput): Promise<User> {

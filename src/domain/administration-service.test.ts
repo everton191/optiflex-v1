@@ -80,6 +80,72 @@ describe("active status", () => {
   });
 });
 
+describe("store creation", () => {
+  it("creates an active branch with the trimmed name", async () => {
+    repository.saveStore.mockResolvedValue(undefined);
+    const created = await service.createStore({ name: "  Loja Norte " });
+    expect(created).toMatchObject({ name: "Loja Norte", active: true });
+    expect(created.id).toMatch(/^store-/);
+    expect(repository.saveStore).toHaveBeenCalledWith(created);
+  });
+
+  it("rejects a blank name and a duplicate name regardless of case", async () => {
+    await expect(service.createStore({ name: "   " })).rejects.toThrow("Informe o nome da loja.");
+    await expect(service.createStore({ name: " loja centro " })).rejects.toThrow("Já existe uma loja com este nome.");
+    expect(repository.saveStore).not.toHaveBeenCalled();
+  });
+});
+
+describe("store editing", () => {
+  it("renames a store keeping id and status", async () => {
+    repository.saveStore.mockResolvedValue(undefined);
+    const updated = await service.updateStore("store-centro", { name: " Centro Premium " });
+    expect(updated).toMatchObject({ id: "store-centro", name: "Centro Premium", active: true });
+    expect(repository.saveStore).toHaveBeenCalledWith(updated);
+  });
+
+  it("rejects unknown ids, blank names and duplicates of another store", async () => {
+    await expect(service.updateStore("store-missing", { name: "Loja Nova" })).rejects.toThrow("Loja não encontrada.");
+    await expect(service.updateStore("store-centro", { name: " " })).rejects.toThrow("Informe o nome da loja.");
+    await expect(service.updateStore("store-centro", { name: "LOJA SHOPPING" })).rejects.toThrow("Já existe uma loja com este nome.");
+    expect(repository.saveStore).not.toHaveBeenCalled();
+  });
+});
+
+describe("store inactivation", () => {
+  const inactiveStores: Store[] = [{ id: "store-centro", name: "Loja Centro", active: true }, { id: "store-shopping", name: "Loja Shopping", active: false }];
+
+  it("inactivates without deleting and blocks selection until reactivated", async () => {
+    repository.saveStore.mockResolvedValue(undefined);
+    repository.getCurrentStore.mockResolvedValue({ id: "current", storeId: "store-centro" });
+    const off = await service.setStoreActive("store-shopping", false);
+    expect(off).toMatchObject({ id: "store-shopping", active: false });
+    repository.listStores.mockResolvedValue(inactiveStores);
+    await expect(service.selectStore("store-shopping")).rejects.toThrow("Loja inválida ou inativa.");
+    await expect(service.selectStore("store-centro")).resolves.toBeUndefined();
+    const on = await service.setStoreActive("store-shopping", true);
+    expect(on).toMatchObject({ id: "store-shopping", active: true });
+    expect(repository.saveStore).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps at least one active store and protects the current store", async () => {
+    repository.getCurrentStore.mockResolvedValue({ id: "current", storeId: "store-centro" });
+    repository.listStores.mockResolvedValue([{ id: "store-only", name: "Única", active: true }]);
+    await expect(service.setStoreActive("store-only", false)).rejects.toThrow("Mantenha ao menos uma loja ativa.");
+    repository.listStores.mockResolvedValue(stores);
+    await expect(service.setStoreActive("store-centro", false)).rejects.toThrow("Troque de loja antes de inativar a loja atual.");
+    await expect(service.setStoreActive("store-missing", false)).rejects.toThrow("Loja não encontrada.");
+    expect(repository.saveStore).not.toHaveBeenCalled();
+  });
+
+  it("is a no-op when the status already matches", async () => {
+    const same = await service.setStoreActive("store-centro", true);
+    expect(same).toMatchObject({ id: "store-centro", active: true });
+    expect(repository.saveStore).not.toHaveBeenCalled();
+    expect(repository.getCurrentStore).not.toHaveBeenCalled();
+  });
+});
+
 describe("credentials", () => {
   it("stores a salted hash and keeps it when the edit omits the password", async () => {
     const created = await service.createUser({ ...input, name: "Nova", email: "nova@opticore.local", password: "senha-segura-123" });

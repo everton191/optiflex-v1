@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import type { LocalSession, OrganizationSettings, Store, User } from "../domain/access";
 import { isSessionExpired, syncSessionRole } from "../domain/access";
 import { buildAccessContext, canAccessStore, setAccessContext } from "../domain/access-context";
-import { AdministrationService, type UserInput } from "../domain/administration-service";
+import { AdministrationService, type StoreInput, type UserInput } from "../domain/administration-service";
 import { AuthenticationService } from "../domain/authentication-service";
 import { LocalAdministrationRepository, LocalSessionRepository, LocalSettingsRepository } from "../infrastructure/storage/local-repositories";
 import { Button } from "../design-system/components";
@@ -18,6 +18,9 @@ interface AppContextValue {
   setNavigationLocked(locked: boolean): void;
   saveSettings(settings: OrganizationSettings): Promise<void>;
   selectStore(storeId: string): Promise<void>;
+  createStore(input: StoreInput): Promise<Store>;
+  updateStore(id: string, input: StoreInput): Promise<Store>;
+  setStoreActive(id: string, active: boolean): Promise<Store>;
   createUser(input: UserInput): Promise<User>;
   updateUser(id: string, input: UserInput): Promise<User>;
   setUserActive(id: string, active: boolean): Promise<User>;
@@ -52,7 +55,8 @@ export function AppProviders({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!session || !users.length || !stores.length || !currentStoreId) return;
-    if (canAccessStore(buildAccessContext(session, users, currentStoreId), currentStoreId)) return;
+    const current = stores.find((store) => store.id === currentStoreId);
+    if (current?.active && canAccessStore(buildAccessContext(session, users, currentStoreId), currentStoreId)) return;
     const fallback = stores.find((store) => store.active && canAccessStore(buildAccessContext(session, users, store.id), store.id));
     if (!fallback) return;
     let active = true;
@@ -115,6 +119,10 @@ export function AppProviders({ children }: { children: ReactNode }) {
       return synced;
     });
   }
+  async function refreshStores() { setStores(await administrationService.listStores()); }
+  async function createStore(input: StoreInput) { const store = await administrationService.createStore(input); await refreshStores(); return store; }
+  async function updateStore(id: string, input: StoreInput) { const store = await administrationService.updateStore(id, input); await refreshStores(); return store; }
+  async function setStoreActive(id: string, active: boolean) { const store = await administrationService.setStoreActive(id, active); await refreshStores(); return store; }
   async function createUser(input: UserInput) { const user = await administrationService.createUser(input); await refreshUsers(); return user; }
   async function updateUser(id: string, input: UserInput) { const user = await administrationService.updateUser(id, input); await refreshUsers(); return user; }
   async function setUserActive(id: string, active: boolean) { const user = await administrationService.setUserActive(id, active, session?.userName); await refreshUsers(); return user; }
@@ -129,7 +137,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
 
   if (loadError) return <main className="page"><h1>Não foi possível abrir seus dados</h1><p role="alert">Confira se este navegador permite salvar dados e tente novamente. Seus registros não foram apagados.</p><Button type="button" onClick={() => setAttempt((value) => value + 1)}>Tentar novamente</Button></main>;
   if (!isReady) return <main className="app-loading" role="status">Abrindo seus dados…</main>;
-  return <AppContext.Provider value={{ settings, session, isReady, stores, users, currentStoreId, saveSettings, selectStore, createUser, updateUser, setUserActive, login, loginDemo, logout, changePassword, navigationLocked, setNavigationLocked }}>{children}</AppContext.Provider>;
+  return <AppContext.Provider value={{ settings, session, isReady, stores, users, currentStoreId, saveSettings, selectStore, createStore, updateStore, setStoreActive, createUser, updateUser, setUserActive, login, loginDemo, logout, changePassword, navigationLocked, setNavigationLocked }}>{children}</AppContext.Provider>;
 }
 
 export function useAppContext(): AppContextValue {
