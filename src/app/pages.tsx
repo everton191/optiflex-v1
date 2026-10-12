@@ -171,7 +171,7 @@ export function CustomerProfilePage() {
   if (loading) return <div className="page" role="status">Carregando cliente…</div>;
   if (error) return <div className="page"><p role="alert">{error}</p><Button type="button" onClick={() => setAttempt((value) => value + 1)}>Tentar novamente</Button></div>;
   if (!customer) return <div className="page"><h1>Cliente não encontrado</h1></div>;
-  return <div className="page"><p className="eyebrow">Cliente</p><div className="page-title"><div><h1>{customer.name}</h1><p className="page-intro">{customer.phone || "Sem telefone"} · {customer.cpf || "Sem CPF"}</p></div>{hasPermission(session.role, "attendance.create") && <Link className="button" to={`/atendimentos?customer=${customer.id}`}>Novo atendimento</Link>}</div><h2 className="section-title">Histórico de atendimentos</h2><div className="list-card">{history.length ? history.map((item) => <article className="list-row" key={item.id}><div><strong>{attendanceTypeLabels[item.type]}</strong><span>{new Date(item.createdAt).toLocaleString("pt-BR")}</span>{hasPermission(session.role, "clinical.workspace.access") && item.status !== "CANCELLED" && (item.storeId === currentStoreId ? <Link to={`/clinico/atendimento/${item.id}`}>Ver consulta e versões</Link> : <small>Consulta de outra loja — selecione a loja correspondente para acessar.</small>)}</div><span className="badge">{attendanceStatusLabels[item.status]}</span></article>) : <p className="empty-state">Nenhum atendimento registrado.</p>}</div></div>;
+  return <div className="page"><p className="eyebrow">Cliente</p><div className="page-title"><div><h1>{customer.name}</h1><p className="page-intro">{customer.phone || "Sem telefone"} · {customer.cpf || "Sem CPF"}{customer.email ? ` · ${customer.email}` : ""}{customer.birthDate ? ` · ${new Date(customer.birthDate).toLocaleDateString("pt-BR")}` : ""}</p></div><div className="page-title-actions">{hasPermission(session.role, "customers.manage") && <Link className="button secondary" to={`/clientes/${customer.id}/editar`}>Editar cadastro</Link>}{hasPermission(session.role, "attendance.create") && <Link className="button" to={`/atendimentos?customer=${customer.id}`}>Novo atendimento</Link>}</div></div><h2 className="section-title">Histórico de atendimentos</h2><div className="list-card">{history.length ? history.map((item) => <article className="list-row" key={item.id}><div><strong>{attendanceTypeLabels[item.type]}</strong><span>{new Date(item.createdAt).toLocaleString("pt-BR")}</span>{hasPermission(session.role, "clinical.workspace.access") && item.status !== "CANCELLED" && (item.storeId === currentStoreId ? <Link to={`/clinico/atendimento/${item.id}`}>Ver consulta e versões</Link> : <small>Consulta de outra loja — selecione a loja correspondente para acessar.</small>)}</div><span className="badge">{attendanceStatusLabels[item.status]}</span></article>) : <p className="empty-state">Nenhum atendimento registrado.</p>}</div></div>;
 }
 
 export function CustomerNewPage() {
@@ -190,6 +190,40 @@ export function CustomerNewPage() {
     finally { pending.current = false; setSaving(false); }
   }
   return <div className="page"><p className="eyebrow">Recepção</p><h1>Novo cliente</h1><form className="settings-form" onSubmit={submit}><label>Nome completo<Input value={name} onChange={(event) => setName(event.target.value)} disabled={saving} required /></label><label>Telefone<Input value={phone} onChange={(event) => setPhone(event.target.value)} disabled={saving} /></label><label>CPF<Input value={cpf} onChange={(event) => setCpf(event.target.value)} disabled={saving} /></label>{error && <p role="alert" className="error-text">{error}</p>}<Button type="submit" disabled={saving}>{saving ? "Salvando…" : canStart ? "Salvar e iniciar atendimento" : "Salvar cliente"}</Button></form></div>;
+}
+
+export function CustomerEditPage() {
+  const session = useSession();
+  const navigate = useNavigate(); const { customerId = "" } = useParams();
+  const [name, setName] = useState(""); const [phone, setPhone] = useState(""); const [cpf, setCpf] = useState("");
+  const [email, setEmail] = useState(""); const [birthDate, setBirthDate] = useState("");
+  const [loading, setLoading] = useState(true); const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(""); const [attempt, setAttempt] = useState(0); const pending = useRef(false);
+  useEffect(() => {
+    let active = true;
+    setLoading(true); setError("");
+    void receptionService.getCustomer(customerId)
+      .then((customer) => {
+        if (!active) return;
+        if (!customer) { setError("Cliente não encontrado."); return; }
+        setName(customer.name); setPhone(customer.phone ?? ""); setCpf(customer.cpf ?? ""); setEmail(customer.email ?? ""); setBirthDate(customer.birthDate ?? "");
+      })
+      .catch(() => { if (active) setError("Não foi possível abrir este cliente."); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [customerId, attempt]);
+  async function submit(event: React.FormEvent) {
+    event.preventDefault();
+    if (pending.current || !hasPermission(session.role, "customers.manage")) return;
+    pending.current = true; setSaving(true); setError("");
+    try {
+      await receptionService.updateCustomer(customerId, { name, phone, cpf, email, birthDate });
+      navigate(`/clientes/${customerId}`);
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "Não foi possível salvar as alterações. Tente novamente."); }
+    finally { pending.current = false; setSaving(false); }
+  }
+  if (loading) return <div className="page" role="status">Carregando cliente…</div>;
+  return <div className="page"><p className="eyebrow">Cliente</p><h1>Editar cadastro</h1>{error && !saving && <p role="alert" className="error-text">{error} <Button type="button" onClick={() => setAttempt((value) => value + 1)}>Tentar novamente</Button></p>}<form className="settings-form" onSubmit={submit}><label>Nome completo<Input value={name} onChange={(event) => setName(event.target.value)} disabled={saving} required /></label><label>Telefone<Input value={phone} onChange={(event) => setPhone(event.target.value)} disabled={saving} /></label><label>CPF<Input value={cpf} onChange={(event) => setCpf(event.target.value)} disabled={saving} /></label><label>E-mail<Input type="email" value={email} onChange={(event) => setEmail(event.target.value)} disabled={saving} /></label><label>Data de nascimento<Input type="date" value={birthDate} onChange={(event) => setBirthDate(event.target.value)} disabled={saving} /></label>{error && saving && <p role="alert" className="error-text">{error}</p>}<div className="form-actions"><Button type="submit" disabled={saving}>{saving ? "Salvando…" : "Salvar alterações"}</Button><Button type="button" onClick={() => navigate(`/clientes/${customerId}`)} disabled={saving}>Cancelar</Button></div></form></div>;
 }
 
 export function AttendancePage() {

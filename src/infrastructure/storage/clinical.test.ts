@@ -149,3 +149,16 @@ describe("clinical attachments", () => {
     expect(await service.readAttachmentContent(attachment.id, context)).toBe(file.content);
   });
 });
+
+describe("customer update durability", () => {
+  it("persists edited contacts after reopening and keeps the profile consistent", async () => {
+    const reception = new ReceptionService(new LocalCustomerRepository(), new LocalAttendanceRepository());
+    const customer = await reception.createCustomer({ name: "Cliente edição", phone: "1111" });
+    const updated = await reception.updateCustomer(customer.id, { name: "Cliente editado", phone: "2222", cpf: "333", email: "novo@exemplo.com", birthDate: "1992-03-10" });
+    database.close();
+    await database.open();
+    expect(await reception.getCustomer(customer.id)).toMatchObject({ id: customer.id, createdAt: customer.createdAt, name: "Cliente editado", phone: "2222", cpf: "333", email: "novo@exemplo.com", birthDate: "1992-03-10" });
+    expect(await reception.listCustomers("editado")).toHaveLength(1);
+    expect(updated.id).toBe(customer.id);
+  });
+});

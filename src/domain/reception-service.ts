@@ -10,7 +10,15 @@ export class ReceptionService {
   async createCustomer(input: Omit<Customer, "id" | "createdAt">): Promise<Customer> {
     const name = input.name.trim();
     if (!name) throw new Error("Informe o nome do cliente.");
-    const customer = { ...input, name, phone: input.phone?.trim() || undefined, cpf: input.cpf?.trim() || undefined, id: id("customer"), createdAt: new Date().toISOString() };
+    const customer = { ...input, name, phone: input.phone?.trim() || undefined, cpf: input.cpf?.trim() || undefined, email: input.email?.trim() || undefined, birthDate: input.birthDate?.trim() || undefined, id: id("customer"), createdAt: new Date().toISOString() };
+    await this.customers.save(customer); return customer;
+  }
+  async updateCustomer(customerId: string, input: Pick<Customer, "name" | "phone" | "cpf" | "email" | "birthDate">): Promise<Customer> {
+    const existing = await this.customers.get(customerId);
+    if (!existing) throw new Error("Cliente não encontrado.");
+    const name = input.name?.trim();
+    if (!name) throw new Error("Informe o nome do cliente.");
+    const customer: Customer = { ...existing, name, phone: input.phone?.trim() || undefined, cpf: input.cpf?.trim() || undefined, email: input.email?.trim() || undefined, birthDate: input.birthDate?.trim() || undefined };
     await this.customers.save(customer); return customer;
   }
   async startAttendance(customerId: string, storeId: string, type: AttendanceType, receptionNotes?: string): Promise<Attendance> {
