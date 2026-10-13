@@ -4,6 +4,14 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `a536bb0` + docs — Troco em dinheiro e referência PIX no caixa (F4-11)
+
+- `src/domain/cash.ts`: helper puro `receiptPlan(received, pending)` → `{ appliedCents, changeCents }` (centavos via `toCents`, `applied = min(recebido, pendente)`, troco `max(0, excedente)` sem drift de arredondamento).
+- `src/domain/cash-service.ts`: `CashService.receive` ganha `reference?: string` opcional — trim vazio vira `undefined`; preenchido fora de PIX rejeita com "Referência de pagamento é válida apenas para PIX."; valor aceito é gravado em `CashEntry.reason` (exibido em "Movimentos registrados").
+- `src/app/pages.tsx` (`CashDeskPage`): em dinheiro, preview de troco em tempo real ao digitar o valor e mensagem "Recebimento registrado. Troco: R$ X."; em PIX, input "Referência PIX (opcional)" por venda; a UI envia sempre o valor **aplicado** (`receiptPlan`) — `recordReceipt` continua autoridade contra `paid + amount > total`; totais por forma seguem em `.method-totals`.
+- Testes: `cash-service.test.ts` +2 (`receiptPlan` com roundings `100.10-80.05`, `0.1+0.2`, `0.3/0.1` e casos de igual/menor; reference PIX grava `reason` trimmado, `CASH` sem reference não grava, `CASH`/`DEBIT` com reference rejeitam); **268/268** (29 arquivos), build 0, tsc 0.
+- Card: F4-11/#68 → DONE (critérios: troco correto com precisão de centavos e mensagem exibida; referência PIX opcional exibida nos movimentos; regras documentadas em `docs/product/OPTICAL_BUSINESS_RULES.md`; PIX automático/parcelamento fora do escopo).
+
 ### `3820338` + docs — Ciclo de vida completo do orçamento: estados, edição, filtro e impressão (F3-10)
 
 - `src/domain/sales.ts`: `QuoteStatus` (`DRAFT`/`SENT`/`ACCEPTED`/`REJECTED`/`EXPIRED`) em `Sale.quoteStatus?` (ausente = rascunho, compatível com dados legados), `quoteStatusLabels`, `quoteTransitions` (rascunho → enviado → aceito/recusado/expirado; aceito/recusado/expirado terminais) e `quoteStatusOf`; `Sale.status` permanece `QUOTE` — confirmação/cancelamento/backup validados da Fase E intactos.

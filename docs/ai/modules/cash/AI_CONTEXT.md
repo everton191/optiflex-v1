@@ -13,6 +13,8 @@
 - Suprimento e sangria com motivo obrigatório e autor na aba Sessão (F4-16, `6a59f2b`).
 - Estorno de venda cancelada via `CashEntryType.REFUND` com motivo/autor da venda; `cashTotals.refunds` reduz o saldo esperado e aparece na aba Sessão quando maior que zero (F4-18, `9f0fdfc`).
 - Pagamentos parciais: `SalePaymentStatus.PARTIAL`, input de valor na aba Recebimentos (placeholder = saldo pendente; vazio = total), saldo durável após reload (F4-12, `60e2ca4`).
+- Troco em dinheiro calculado por `receiptPlan` (aplicado/troco em centavos, sem drift); caixa grava só o valor aplicado à venda; troco exibido em tempo real e na mensagem de confirmação (F4-11, `a536bb0`).
+- Referência PIX opcional por venda (input só com PIX); guardada em `CashEntry.reason` e exibida nos movimentos; rejeitada fora de PIX (F4-11, `a536bb0`).
 - Aba Vendas inclui seletor opcional de itens de estoque; a confirmação baixa o saldo em transação (Fase E).
 
 ## Current Decisions
@@ -30,6 +32,8 @@
 - Sangria/suprimento usam `CashMovementType` (`RECEIPT` e `REFUND` são rejeitados em `recordMovement`); motivo é obrigatório (trim); sangria maior que o saldo esperado é rejeitada na transação de `LocalCashRepository.recordMovement`.
 - `CashEntry.reason?`/`author?` são opcionais (sem bump de schema); backup valida `reason` (string não vazia quando presente) e `author` (string quando presente).
 - `REFUND` é criado apenas por `LocalSaleRepository.cancel` dentro da transação de cancelamento; exige sessão de caixa aberta quando a venda tem recebimentos; entradas legadas sem forma são reembolsadas sem `paymentMethod` (método só é copiado quando há um único método de recebimento).
+- A UI envia para `receive` o valor **aplicado** (`min(recebido, pendente)` via `receiptPlan`), nunca o valor recebido em excesso — `recordReceipt` segue sendo a autoridade que rejeita `paid + amount > total`.
+- `reference` em `receive` é validado no service: preenchido fora de PIX lança "Referência de pagamento é válida apenas para PIX."; trim vazio vira `undefined` e não grava `reason`.
 
 ## Known Problems
 
@@ -43,13 +47,14 @@
 ## Important Files Right Now
 
 - `CashDeskPage` em `src/app/pages.tsx`.
-- `src/domain/cash-service.ts`, `src/domain/cash.ts` (`cashTotals`) — centavos via `src/domain/money.ts` (F1-09).
+- `src/domain/cash-service.ts`, `src/domain/cash.ts` (`cashTotals`, `receiptPlan`) — centavos via `src/domain/money.ts` (F1-09).
 - `LocalCashRepository` (transações de abertura, recebimento e fechamento).
 - `Sale.paymentStatus` em `src/domain/sales.ts`.
 - `src/domain/access.ts`.
 
 ## Recent Structural Changes
 
+- F4-11 (`a536bb0`): `receiptPlan` (troco em centavos), `receive(..., reference?)` com PIX-only, input de referência PIX e preview/mensagem de troco na UI; regras em `docs/product/OPTICAL_BUSINESS_RULES.md`.
 - F4-12 (`60e2ca4`): `SalePaymentStatus.PARTIAL`, `recordReceipt` grava PARTIAL quando parcial, backup aceita PARTIAL, input de valor na aba Recebimentos, saldo durável após reload.
 - F4-18 (`9f0fdfc`): `CashEntryType.REFUND`, `CashTotals.refunds`, estorno criado por `LocalSaleRepository.cancel` (transação com venda+estoque+caixa), exibição de Estornos na aba Sessão, backup valida `REFUND`.
 - F4-10 (`7f1d6e4`): `DEBIT`/`CREDIT` em `PaymentMethod`, `paymentMethodOptions`, `receive` exige forma, `cashTotals.byMethod`, detalhamento por forma no fechamento.
@@ -57,7 +62,7 @@
 - F1-06 (`b0f72d1`): `PaymentMethod` + `CashEntry.paymentMethod`, select na aba Recebimentos, backup valida valores.
 - Fechamento de caixa com conferência contado/esperado/diferença.
 - Extrato durável de movimentos por loja.
-- Testes: `src/domain/cash-service.test.ts` (15) e `src/infrastructure/storage/cash.test.ts` (10).
+- Testes: `src/domain/cash-service.test.ts` (10, inclui `receiptPlan` e PIX-only) e `src/infrastructure/storage/cash.test.ts` (7).
 
 ## Be Careful With
 
@@ -67,4 +72,4 @@
 
 ## Next Likely Task
 
-Edição de clientes (F2-06) ou catálogo de produtos (F2-11).
+F2-14 códigos/preços (#35) ou campos de grau OD/OE (F3-07/#46), conforme a fila do KANBAN.

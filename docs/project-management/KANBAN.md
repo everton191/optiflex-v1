@@ -56,7 +56,7 @@ Classificação de inventário (Etapa 4) no corpo de cada card:
 
 - Issues totais: **155** (8 épicas + 147 tarefas).
 - Tarefas por fase: F1=14 · F2=18 · F3=20 · F4=20 · F5=19 · F6=19 · F7=19 · F8=18.
-- Tarefas por status (revisado em 08/10/2026; F1-09, F2-04, F7-02, F1-11, F3-09, F3-14, F1-02, F1-06, F4-16, F2-05, F4-10, F4-18, F4-12, F2-06, F3-01, F8-06, F8-07, F1-07, F3-17, F2-11, F2-02, F3-02, F3-03, F2-07 e F3-10 concluídas no mesmo dia): DONE=43 · IN PROGRESS=0 · READY=15 · TESTING=0 · CODE REVIEW=0 · BACKLOG=39 · BLOCKED=50.
+- Tarefas por status (revisado em 08/10/2026; F1-09, F2-04, F7-02, F1-11, F3-09, F3-14, F1-02, F1-06, F4-16, F2-05, F4-10, F4-18, F4-12, F2-06, F3-01, F8-06, F8-07, F1-07, F3-17, F2-11, F2-02, F3-02, F3-03, F2-07, F3-10 e F4-11 concluídas no mesmo dia): DONE=44 · IN PROGRESS=0 · READY=14 · TESTING=0 · CODE REVIEW=0 · BACKLOG=39 · BLOCKED=50.
 - Bloqueios: **50 tarefas** bloqueadas — 47 por dependência de fase futura/externa + **3 reclassificadas em 08/10** (F4-13 #70, F8-03 #137, F3-20 #57: status desatualizado, decisão externa já registrada).
 - **Revisão de dependências 08/10/2026:** 7 ciclos detectados (SCC/Tarjan sobre este arquivo) e corrigidos em KANBAN + corpos das issues; **0 ciclos remanescentes**. Detalhe antes/depois em `DEPENDENCIES.md`.
 
@@ -155,7 +155,7 @@ Regra de ouro: **nunca mover para DONE sem evidência verificável** (comando de
 | F4-08 | [Abertura de caixa](https://github.com/everton191/optiflex-v1/issues/65) | Cash | DONE | p1 | — |
 | F4-09 | [Recebimentos](https://github.com/everton191/optiflex-v1/issues/66) | Cash | DONE | p0 | — |
 | F4-10 | [Formas de pagamento](https://github.com/everton191/optiflex-v1/issues/67) | Cash | DONE | p1 | F4-9, F1-08 (feitos; entregue em `7f1d6e4` — forma obrigatória, `DEBIT`/`CREDIT`, `byMethod` no fechamento). |
-| F4-11 | [PIX, dinheiro e cartão](https://github.com/everton191/optiflex-v1/issues/68) | Cash | BACKLOG | p1 | F4-10, F1-09. |
+| F4-11 | [PIX, dinheiro e cartão](https://github.com/everton191/optiflex-v1/issues/68) | Cash | DONE | p1 | F4-10, F1-09. |
 | F4-12 | [Pagamentos parciais](https://github.com/everton191/optiflex-v1/issues/69) | Cash | DONE | p1 | F4-9, F4-10 (feitos; entregue em `60e2ca4` — status `PARTIAL`, input de valor na aba Recebimentos, saldo durável). |
 | F4-13 | [Parcelamentos](https://github.com/everton191/optiflex-v1/issues/70) | Cash | BLOCKED | p1 | F4-12, F1-09, F1-10 + decisão P4 (juros/multas/prazo). |
 | F4-14 | [Crediário e carnês](https://github.com/everton191/optiflex-v1/issues/71) | Cash | BACKLOG | p2 | F4-13, F7-13. |
@@ -271,16 +271,16 @@ Ordem recomendada para a próxima sessão de desenvolvimento (status READY/IN PR
 
 | # | ID | Issue | Tarefa | Prioridade | Dependências | Justificativa |
 |---|---|---|---|---|---|---|
-| 1 | F4-11 | #68 | [Cash] PIX, dinheiro e cartão | P1 | F4-10, F1-09 (feitos) | Formas de pagamento e precisão monetárias prontas; complementa o caixa entregue. |
-| 2 | F2-14 | #35 | [Inventory] Códigos, preços e custos | P1 | F2-11, F1-06 (feito) | Catálogo (F2-11) entregue; margem usa preço/custo já em `InventoryItem`. |
-| 3 | F3-07 | #46 | [Clinical] Campos de grau OD/OE, cilindro, eixo e adição | P1 | F1-07 (feito) | Modelo `Prescription`/`PrescriptionEye` entregue; primeiro uso estruturado dos campos. |
-| 4 | F8-10 | #144 | [Infraestrutura] Recuperação de dados | P1 | F3-09 (feito) | Anexos duráveis entregues; recuperação fecha o ciclo de dados antes do piloto. |
-| 5 | F8-02 | #136 | [Infraestrutura] Testes de integração | P1 | F8-01 (feito) | Base unitária consolidada (266 casos); integração cobre os fluxos críticos antes do piloto. |
-| 6 | F7-01 | #116 | [Ux] Design system consolidado | P1 | nenhuma | Sem dependências; padroniza componentes usados por todas as telas já entregues. |
-| 7 | F1-05 | #13 | [Infraestrutura] Identificadores de organizações e filiais | P1 | F1-08 (feito) | Migração de schema entregue; identificadores estabilizam org/filiais antes da escala multiempresa. |
-| 8 | F1-03 | #11 | [Infraestrutura] Separação gradual de páginas por módulo | P2 | nenhuma | Sem dependências; reduz o custo das próximas telas à medida que os módulos crescem. |
-| 9 | F7-03 | #118 | [Dashboard] Dashboard por função e estados de painel | P2 | F4-20, F1-11 (feitos) | Caixa e sessões prontos; consolida indicadores já entregues por perfil. |
-| 10 | F2-08 | #30 | [Customers] Prevenção de duplicidades | P2 | F2-07 (feito) | Validação de CPF entregue; comparação por documento/nome fecha o ciclo do cadastro. |
+| 1 | F2-14 | #35 | [Inventory] Códigos, preços e custos | P1 | F2-11, F1-06 (feito) | Catálogo (F2-11) entregue; margem usa preço/custo já em `InventoryItem`. |
+| 2 | F3-07 | #46 | [Clinical] Campos de grau OD/OE, cilindro, eixo e adição | P1 | F1-07 (feito) | Modelo `Prescription`/`PrescriptionEye` entregue; primeiro uso estruturado dos campos. |
+| 3 | F8-10 | #144 | [Infraestrutura] Recuperação de dados | P1 | F3-09 (feito) | Anexos duráveis entregues; recuperação fecha o ciclo de dados antes do piloto. |
+| 4 | F8-02 | #136 | [Infraestrutura] Testes de integração | P1 | F8-01 (feito) | Base unitária consolidada (268 casos); integração cobre os fluxos críticos antes do piloto. |
+| 5 | F7-01 | #116 | [Ux] Design system consolidado | P1 | nenhuma | Sem dependências; padroniza componentes usados por todas as telas já entregues. |
+| 6 | F1-05 | #13 | [Infraestrutura] Identificadores de organizações e filiais | P1 | F1-08 (feito) | Migração de schema entregue; identificadores estabilizam org/filiais antes da escala multiempresa. |
+| 7 | F1-03 | #11 | [Infraestrutura] Separação gradual de páginas por módulo | P2 | nenhuma | Sem dependências; reduz o custo das próximas telas à medida que os módulos crescem. |
+| 8 | F7-03 | #118 | [Dashboard] Dashboard por função e estados de painel | P2 | F4-20, F1-11 (feitos) | Caixa e sessões prontos; consolida indicadores já entregues por perfil. |
+| 9 | F2-08 | #30 | [Customers] Prevenção de duplicidades | P2 | F2-07 (feito) | Validação de CPF entregue; comparação por documento/nome fecha o ciclo do cadastro. |
+| 10 | F7-05 | #120 | [Ux] Navegação mobile | P1 | F7-04 (feito) | Navegação desktop entregue; adaptação mobile fecha a base de UX antes do piloto. |
 
 Os `#?` devem ser resolvidos pela tabela acima (coluna ID → link da issue). Os números já estão fixados nas tabelas das fases; para referência rápida: consulte `DEPENDENCIES.md`.
 
