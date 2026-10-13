@@ -3,7 +3,7 @@ import { Button, Input } from "../design-system/components";
 import { hasPermission } from "../domain/access";
 import { InventoryService } from "../domain/inventory-service";
 import type { InventoryItem, InventoryMovement, InventoryMovementType, ProductCategory, ProductCategoryFilter } from "../domain/inventory";
-import { filterByCategory, productCategories, productCategoryLabels, stockState } from "../domain/inventory";
+import { filterByCategory, marginCents, productCategories, productCategoryLabels, stockState } from "../domain/inventory";
 import { LocalInventoryRepository } from "../infrastructure/storage/local-repositories";
 import { useAppContext, useSession } from "./providers";
 
@@ -102,7 +102,7 @@ export function InventoryPage() {
 
     {canManage && formOpen && <form className="inventory-form" onSubmit={saveProduct}>
       <label>Produto<Input value={name} onChange={(event) => setName(event.target.value)} required /></label>
-      <label>Código<Input value={code} onChange={(event) => setCode(event.target.value)} placeholder="Opcional" /></label>
+      <label>Código<Input value={code} onChange={(event) => setCode(event.target.value)} placeholder="Barras ou interno" required /></label>
       <label>Categoria<select aria-label="Categoria do produto" value={category} onChange={(event) => setCategory(event.target.value as ProductCategory)} required><option value="">Selecione</option>{productCategories.map((value) => <option key={value} value={value}>{productCategoryLabels[value]}</option>)}</select></label>
       {!editing && <label>Saldo inicial<Input type="number" min="0" step="1" value={quantity} onChange={(event) => setQuantity(event.target.value)} placeholder="0" /></label>}
       <label>Estoque mínimo<Input type="number" min="0" step="1" value={minimum} onChange={(event) => setMinimum(event.target.value)} placeholder="0" /></label>
@@ -136,8 +136,9 @@ export function InventoryPage() {
     </div>
     <div className="list-card compact-list">{loading ? <p role="status" className="empty-state">Carregando estoque…</p> : visibleItems.length ? visibleItems.map((item) => {
       const state = stockState(item);
+      const margin = item.defaultPrice !== undefined && item.cost !== undefined ? marginCents(item.defaultPrice, item.cost) : undefined;
       return <article className="list-row" key={item.id}>
-        <div><strong>{item.category ? `${productCategoryLabels[item.category]} · ` : ""}{item.name}</strong><span>{item.brand ? `Marca ${item.brand} · ` : ""}{item.material ? `${item.material} · ` : ""}{item.code ? `Código ${item.code} · ` : ""}Mínimo {item.minimumQuantity}{item.defaultPrice !== undefined ? ` · Preço R$ ${item.defaultPrice.toFixed(2)}` : ""}{item.cost !== undefined ? ` · Custo R$ ${item.cost.toFixed(2)}` : ""}</span>{item.description && <span className="help-text">{item.description}</span>}</div>
+        <div><strong>{item.category ? `${productCategoryLabels[item.category]} · ` : ""}{item.name}</strong><span>{item.brand ? `Marca ${item.brand} · ` : ""}{item.material ? `${item.material} · ` : ""}{item.code ? `Código ${item.code} · ` : ""}Mínimo {item.minimumQuantity}{item.defaultPrice !== undefined ? ` · Preço R$ ${item.defaultPrice.toFixed(2)}` : ""}{canManage && item.cost !== undefined ? ` · Custo R$ ${item.cost.toFixed(2)}` : ""}{canManage && margin !== undefined ? ` · Margem R$ ${(margin / 100).toFixed(2)}` : ""}</span>{item.description && <span className="help-text">{item.description}</span>}</div>
         <div>
           <span className={`badge ${stateClasses[state]}`}>{item.quantity} disponíveis · {stateLabels[state]}</span>
           {canManage && <Button type="button" onClick={() => { resetProductForm(false); setEditing(undefined); setMoving(item); setMoveType("IN"); setMoveQuantity(""); setMoveReason(""); }}>Movimentar</Button>}

@@ -1,3 +1,5 @@
+import { toCents } from "./money";
+
 export const productCategories = ["FRAME", "LENS", "ACCESSORY"] as const;
 export type ProductCategory = (typeof productCategories)[number];
 export const productCategoryLabels: Record<ProductCategory, string> = { FRAME: "Armação", LENS: "Lente", ACCESSORY: "Acesso" };
@@ -50,4 +52,9 @@ export function stockState(item: Pick<InventoryItem, "quantity" | "minimumQuanti
 
 export function movementDelta(movement: Pick<InventoryMovement, "type" | "quantity">): number {
   return movement.type === "OUT" ? -movement.quantity : movement.quantity;
+}
+
+export function marginCents(defaultPrice: number, cost: number): number | undefined {
+  if (!Number.isFinite(defaultPrice) || !Number.isFinite(cost)) return undefined;
+  return toCents(defaultPrice) - toCents(cost);
 }
