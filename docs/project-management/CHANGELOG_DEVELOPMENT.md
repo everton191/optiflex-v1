@@ -4,6 +4,15 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `1f17aeb` + docs — Códigos únicos, margem e preço padrão no caixa (F2-14)
+
+- `src/domain/inventory.ts`: helper puro `marginCents(defaultPrice, cost)` → margem em centavos (`toCents`, sem drift; `undefined` se algum valor não for finito).
+- `src/domain/inventory-service.ts`: `create`/`update` exigem `code` não vazio ("Informe o código do produto.") e únicos por loja via `listByStore` ("Código já cadastrado nesta loja."; trim + comparação sem distinção de maiúsculas; na edição o próprio `id` é excluído). Itens legados sem código continuam válidos até serem editados.
+- `src/app/InventoryWorkspace.tsx`: campo Código obrigatório (placeholder "Barras ou interno"); custo e margem na lista só com `inventory.manage` (vendedor/AUDITOR não veem — risco do card).
+- `src/app/pages.tsx` (`CashDeskPage`): selecionar produto no seletor de itens pré-preenche o preço unitário com `defaultPrice` (continua editável).
+- Testes: `inventory-service.test.ts` +5 (código obrigatório/branco, duplicidade sem distinção de maiúsculas em create/update, próprio código na edição, margem com roundings `0.1+0.2`/negativa/NaN), storage `inventory.test.ts` e `sale-stock.test.ts` com códigos nos seeds; **272/272** (29 arquivos), build 0, tsc 0.
+- Card: F2-14/#35 → DONE (critérios: código duplicado rejeitado; preço padrão pré-preenche item da venda; custo exibido só com permissão; tabelas múltiplas e histórico de preço fora do escopo).
+
 ### `a536bb0` + docs — Troco em dinheiro e referência PIX no caixa (F4-11)
 
 - `src/domain/cash.ts`: helper puro `receiptPlan(received, pending)` → `{ appliedCents, changeCents }` (centavos via `toCents`, `applied = min(recebido, pendente)`, troco `max(0, excedente)` sem drift de arredondamento).
