@@ -74,3 +74,12 @@ export function cashTotals(openingBalance: number, entries: readonly CashEntry[]
 export function paidCents(entries: readonly CashEntry[], saleId: string): number {
   return entries.reduce((total, entry) => entry.saleId === saleId && entry.type === "RECEIPT" ? total + toCents(entry.amount) : total, 0);
 }
+
+export interface ReceiptPlan { appliedCents: number; changeCents: number }
+
+export function receiptPlan(receivedAmount: number, pendingAmount: number): ReceiptPlan {
+  const received = toCents(receivedAmount);
+  const pending = toCents(pendingAmount);
+  const appliedCents = Math.min(received, pending);
+  return { appliedCents, changeCents: Math.max(0, received - appliedCents) };
+}

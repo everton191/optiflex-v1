@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CashService } from "./cash-service";
-import { cashTotals } from "./cash";
+import { cashTotals, receiptPlan } from "./cash";
 import type { CashEntry, CashSession } from "./cash";
 import type { Sale } from "./sales";
 
@@ -112,6 +112,30 @@ describe("per-method totals", () => {
     const totals = cashTotals(0, [entry({ amount: 0.1, paymentMethod: "PIX" }), entry({ amount: 0.2, paymentMethod: "PIX" })]);
     expect(totals.byMethod.PIX).toBe(0.3);
     expect(totals.receipts).toBe(0.3);
+  });
+});
+
+describe("payment method rules", () => {
+  it("computes applied amount and change in cents without rounding drift", () => {
+    expect(receiptPlan(100, 80)).toEqual({ appliedCents: 8000, changeCents: 2000 });
+    expect(receiptPlan(80.05, 80.05)).toEqual({ appliedCents: 8005, changeCents: 0 });
+    expect(receiptPlan(50, 80)).toEqual({ appliedCents: 5000, changeCents: 0 });
+    expect(receiptPlan(0.3, 0.1)).toEqual({ appliedCents: 10, changeCents: 20 });
+    expect(receiptPlan(0.1 + 0.2, 0.3)).toEqual({ appliedCents: 30, changeCents: 0 });
+    expect(receiptPlan(100.1, 80.05)).toEqual({ appliedCents: 8005, changeCents: 2005 });
+  });
+
+  it("stores an optional reference only for PIX", async () => {
+    repository.current.mockResolvedValue(activeSession);
+    sales.get.mockResolvedValue(confirmedSale);
+    repository.recordReceipt.mockImplementation(async (entry: CashEntry) => entry);
+    const entry = await service.receive("store-centro", "sale-1", 300, "PIX", "  E2E123  ");
+    expect(entry).toMatchObject({ paymentMethod: "PIX", reason: "E2E123" });
+    const cash = await service.receive("store-centro", "sale-1", 300, "CASH");
+    expect(cash.reason).toBeUndefined();
+    await expect(service.receive("store-centro", "sale-1", 300, "CASH", "ref")).rejects.toThrow("apenas para PIX");
+    await expect(service.receive("store-centro", "sale-1", 300, "DEBIT", "ref")).rejects.toThrow("apenas para PIX");
+    expect(repository.recordReceipt).toHaveBeenCalledTimes(2);
   });
 });
 

@@ -18,18 +18,20 @@ export class CashService {
     return this.repository.openSession({ id: `cash-${crypto.randomUUID()}`, storeId, openingBalance, openedAt: new Date().toISOString() });
   }
 
-  async receive(storeId: string, saleId: string, amount: number, paymentMethod: PaymentMethod): Promise<CashEntry> {
+  async receive(storeId: string, saleId: string, amount: number, paymentMethod: PaymentMethod, reference?: string): Promise<CashEntry> {
     this.store(storeId);
     if (paymentMethod === undefined) throw new Error("Informe a forma de pagamento.");
     assertValidPaymentMethod(paymentMethod);
     if (!isMoney(amount) || toCents(amount) <= 0) throw new Error("Informe um valor válido.");
     const method = assertValidPaymentMethod(paymentMethod);
+    const motive = reference?.trim() || undefined;
+    if (motive && method !== "PIX") throw new Error("Referência de pagamento é válida apenas para PIX.");
     const session = await this.repository.current(storeId);
     if (!session) throw new Error("Abra o caixa antes de registrar recebimentos.");
     const sale = await this.sales.get(saleId);
     if (!sale || sale.storeId !== storeId) throw new Error("Venda não encontrada nesta loja.");
     if (sale.status !== "CONFIRMED") throw new Error("Somente vendas confirmadas podem ser recebidas.");
-    return this.repository.recordReceipt({ id: `cash-entry-${crypto.randomUUID()}`, sessionId: session.id, storeId, saleId, type: "RECEIPT", amount, paymentMethod: method, createdAt: new Date().toISOString() });
+    return this.repository.recordReceipt({ id: `cash-entry-${crypto.randomUUID()}`, sessionId: session.id, storeId, saleId, type: "RECEIPT", amount, paymentMethod: method, reason: motive, createdAt: new Date().toISOString() });
   }
 
   async recordMovement(storeId: string, type: CashMovementType, amount: number, reason: string, author?: string): Promise<CashEntry> {
