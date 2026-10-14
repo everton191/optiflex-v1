@@ -4,6 +4,16 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `c2f0c27` + docs — Refração estruturada OD/OE com persistência e backup (F3-07)
+
+- `src/domain/clinical-service.ts`: `ClinicalService` ganha `PrescriptionRepository` no construtor + `issuePrescription` (monta `PrescriptionInput` com `attendanceId`/`storeId` do contexto, autora = `session.userName`, domínio valida eixo 0–180/graus) e `listPrescriptions` (guarda de `clinical.workspace.access`).
+- `src/infrastructure/storage/local-repositories.ts`: `LocalPrescriptionRepository` (`listByAttendance` com guarda de loja pelo atendimento; `save` append-only com `assertStoreAccess`/`assertRecordAccess`).
+- `src/infrastructure/storage/database.ts`: Dexie **v13** com tabela `prescriptions` (`id, attendanceId, customerId, storeId, issuedAt`).
+- `src/domain/backup.ts` + `local-backup.ts`: `prescriptions` em `backupTables`, `schema: 13` (schemas 10–12 importam com a tabela vazia), validação de `od`/`oe` (objetos, graus finitos, eixo 0–180), `version` ≥ 1 e links para atendimento/cliente/loja.
+- `src/app/ClinicalWorkspace.tsx`: seção "Refração (OD/OE)" com inputs esf/cil/eixo/ad por olho + observações, erros do domínio exibidos, lista de prescrições com marcação da ativa (`activePrescription`) e autora/data.
+- Testes: `clinical.test.ts` +3 (emissão/persistência após reopen, eixo inválido/NaN/vazio rejeitados sem gravar, isolamento por loja), `backup.test.ts` +1 (schema 13, eixo/versão/autor/link inválidos, retificação aceita, `od` ausente rejeitado) e ajuste de `database.test.ts` (verno 13); **276/276** (29 arquivos), build 0, tsc 0.
+- Card: F3-07/#46 → DONE (critérios: eixo inválido rejeitado; OD/OE preenchidos e persistem; testes de faixa; cálculo automático e decisões de tratamento fora do escopo; regras em `OPTICAL_BUSINESS_RULES.md`).
+
 ### `1f17aeb` + docs — Códigos únicos, margem e preço padrão no caixa (F2-14)
 
 - `src/domain/inventory.ts`: helper puro `marginCents(defaultPrice, cost)` → margem em centavos (`toCents`, sem drift; `undefined` se algum valor não for finito).

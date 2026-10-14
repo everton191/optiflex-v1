@@ -6,7 +6,7 @@ Abrir atendimentos da fila, editar prontuário e registrar anamnese, exame, soli
 
 ## Directory
 
-Páginas em `src/app/pages.tsx`; domínio em `clinical.ts` e `clinical-service.ts`; persistência no repository clínico; codec de arquivos em `src/infrastructure/storage/attachment-codec.ts`.
+Páginas em `src/app/pages.tsx` e `src/app/ClinicalWorkspace.tsx`; domínio em `clinical.ts` e `clinical-service.ts`; persistência no repository clínico e no `LocalPrescriptionRepository`; codec de arquivos em `src/infrastructure/storage/attachment-codec.ts`.
 
 ## Routes
 
@@ -23,11 +23,11 @@ Páginas em `src/app/pages.tsx`; domínio em `clinical.ts` e `clinical-service.t
 
 ## Services
 
-`ClinicalService.load`, `save`, `finalize`, `history`, `storeAttachment`, `readAttachmentContent`, `dropAttachmentContent`. Upload/exclusão passam pelo `ClinicalDraft.attach`/`detach` (autosave com a mesma fila de escrita do texto).
+`ClinicalService.load`, `save`, `finalize`, `history`, `storeAttachment`, `readAttachmentContent`, `dropAttachmentContent`, `listPrescriptions`, `issuePrescription` (monta o input com `attendanceId`/`storeId` do contexto, autora com `session.userName` e grava via `PrescriptionRepository` — F3-07). Upload/exclusão passam pelo `ClinicalDraft.attach`/`detach` (autosave com a mesma fila de escrita do texto).
 
 ## Repositories
 
-`ClinicalRepository` / `LocalClinicalRepository`.
+`ClinicalRepository` / `LocalClinicalRepository`; `PrescriptionRepository` / `LocalPrescriptionRepository` (`listByAttendance` com guarda de loja no atendimento, `save` append-only — F3-07).
 
 ## Stores / Hooks
 
@@ -37,7 +37,7 @@ Sem store/hook. O rascunho fica em `useState` até salvar.
 
 `ClinicalRecord`, `ClinicalAttachment` (metadados + `category` opcional: EXAM/IMAGE/DOCUMENT), `ClinicalAttachmentContent` (conteúdo em base64). Validação em `clinical.ts`: `ATTACHMENT_ALLOWED_MIME_TYPES` (PDF/JPG/PNG), `ATTACHMENT_MAX_BYTES` (5 MB), `assertValidAttachment`/`assertValidAttachmentCategory`.
 
-`Prescription` + `PrescriptionEye` (F1-07, `41f0bfd`): documento append-only de versões (`version`, `author`, `issuedAt`, OD/OE com `sphere`/`cylinder`/`axis`/`add`, `notes`). Retificação: `retifyPrescription(current, input, reason, author)` cria a próxima versão com `retifies`/`retificationReason` sem reescrever o original; `activePrescription(list)` resolve a vigente. Validação em `issuePrescription` (autor, ids, data, eixo 0–180, ao menos um grau ou observação). Contrato `PrescriptionRepository` (append-only, `listByAttendance`/`save`) em `repositories.ts` — implementação local e persistência vêm com F3-06.
+`Prescription` + `PrescriptionEye` (F1-07, `41f0bfd`): documento append-only de versões (`version`, `author`, `issuedAt`, OD/OE com `sphere`/`cylinder`/`axis`/`add`, `notes`). Retificação: `retifyPrescription(current, input, reason, author)` cria a próxima versão com `retifies`/`retificationReason` sem reescrever o original; `activePrescription(list)` resolve a vigente. Validação em `issuePrescription` (autor, ids, data, eixo 0–180, ao menos um grau ou observação). Implementação local e persistência entregues na F3-07 (`c2f0c27`): tabela `prescriptions` (Dexie v13), UI por olho na `ClinicalWorkspacePage` (seção "Refração (OD/OE)") e backup com `schema: 13` (schemas 10–12 importam com `prescriptions: []`).
 
 ## Permissions
 
@@ -45,7 +45,7 @@ Sem store/hook. O rascunho fica em `useState` até salvar.
 
 ## Dependencies
 
-Attendance fornece `attendanceId`; storage usa `clinicalRecords` e a tabela `attachments` (conteúdo por id).
+Attendance fornece `attendanceId`; storage usa `clinicalRecords`, `clinicalVersions`, a tabela `prescriptions` (Dexie v13) e a tabela `attachments` (conteúdo por id).
 
 ## Public API
 
@@ -71,7 +71,7 @@ Não criar módulos fictícios separados para prescription/exams: hoje são camp
 
 ### Alterar prescrição
 
-→ ClinicalWorkspacePage + ClinicalRecord + regra de finalize.
+→ ClinicalWorkspacePage (campo texto do ClinicalRecord e seção "Refração (OD/OE)") + ClinicalRecord + regra de finalize; prescrição estruturada: `clinical.ts` (`issuePrescription`) + `LocalPrescriptionRepository`.
 
 ### Alterar regras de anexo (tipo/tamanho/categoria)
 
