@@ -2,7 +2,7 @@ import Dexie, { type EntityTable } from "dexie";
 import type { CurrentStoreContext, LocalSession, OrganizationSettings, Store, User } from "../../domain/access";
 import type { AgendaEvent } from "../../domain/agenda";
 import type { Attendance, Customer } from "../../domain/customer";
-import type { ClinicalAttachmentContent, ClinicalRecord, ClinicalVersion } from "../../domain/clinical";
+import type { ClinicalAttachmentContent, ClinicalRecord, ClinicalVersion, Prescription } from "../../domain/clinical";
 import type { Sale } from "../../domain/sales";
 import type { WorkOrder } from "../../domain/work-order";
 import type { InventoryItem, InventoryMovement } from "../../domain/inventory";
@@ -19,6 +19,7 @@ export class OpticoreDatabase extends Dexie {
   agendaEvents!: EntityTable<AgendaEvent, "id">;
   clinicalRecords!: EntityTable<ClinicalRecord, "attendanceId">;
   clinicalVersions!: EntityTable<ClinicalVersion, "id">;
+  prescriptions!: EntityTable<Prescription, "id">;
   attachments!: EntityTable<ClinicalAttachmentContent, "id">;
   sales!: EntityTable<Sale, "id">;
   workOrders!: EntityTable<WorkOrder, "id">;
@@ -49,6 +50,7 @@ export class OpticoreDatabase extends Dexie {
     });
     this.version(11).stores({ attachments: "id" });
     this.version(12).stores({ agendaEvents: "id, storeId, professionalId, status, startsAt" });
+    this.version(13).stores({ prescriptions: "id, attendanceId, customerId, storeId, issuedAt" });
   }
 }
 

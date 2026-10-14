@@ -1,10 +1,10 @@
 import { hasPermission, type LocalSession } from "./access";
-import { assertValidAttachment, assertValidAttachmentCategory, type ClinicalAttachment, type ClinicalAttachmentCategory, type ClinicalRecord } from "./clinical";
-import type { ClinicalRepository } from "./repositories";
+import { assertValidAttachment, assertValidAttachmentCategory, issuePrescription, type ClinicalAttachment, type ClinicalAttachmentCategory, type ClinicalRecord, type Prescription, type PrescriptionEye } from "./clinical";
+import type { ClinicalRepository, PrescriptionRepository } from "./repositories";
 
 export interface ClinicalContext { storeId: string; session: LocalSession; }
 export class ClinicalService {
-  constructor(private readonly repository: ClinicalRepository) {}
+  constructor(private readonly repository: ClinicalRepository, private readonly prescriptions: PrescriptionRepository) {}
   private authorize(context: ClinicalContext) {
     if (!context.storeId || !context.session.userName || !hasPermission(context.session.role, "clinical.workspace.access")) throw new Error("Acesso clínico não permitido.");
   }
@@ -29,6 +29,15 @@ export class ClinicalService {
   history(attendanceId: string, context: ClinicalContext) {
     this.authorize(context);
     return this.repository.history(attendanceId, context.storeId);
+  }
+  listPrescriptions(attendanceId: string, context: ClinicalContext): Promise<Prescription[]> {
+    this.authorize(context);
+    return this.prescriptions.listByAttendance(attendanceId, context.storeId);
+  }
+  async issuePrescription(input: { customerId: string; od: PrescriptionEye; oe: PrescriptionEye; notes?: string }, attendanceId: string, context: ClinicalContext): Promise<Prescription> {
+    this.authorize(context);
+    const prescription = issuePrescription({ attendanceId, storeId: context.storeId, customerId: input.customerId, od: input.od, oe: input.oe, notes: input.notes }, context.session.userName);
+    return this.prescriptions.save(prescription, context.storeId);
   }
   async storeAttachment(file: { name: string; mimeType: string; size: number; content: string }, category: ClinicalAttachmentCategory, context: ClinicalContext): Promise<ClinicalAttachment> {
     this.authorize(context);

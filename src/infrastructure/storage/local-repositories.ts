@@ -2,13 +2,13 @@ import type { CurrentStoreContext, LocalSession, OrganizationSettings, Store, Us
 import { assertRecordAccess, assertStoreAccess, canAccessRecord, getActiveAccessContext } from "../../domain/access-context";
 import type { AgendaEvent } from "../../domain/agenda";
 import type { Attendance, Customer } from "../../domain/customer";
-import type { ClinicalRecord } from "../../domain/clinical";
+import type { ClinicalRecord, Prescription } from "../../domain/clinical";
 import type { Sale } from "../../domain/sales";
 import type { WorkOrder, WorkOrderStatus } from "../../domain/work-order";
 import type { InventoryItem, InventoryMovement } from "../../domain/inventory";
 import type { CashEntry, CashSession } from "../../domain/cash";
 import { cashTotals } from "../../domain/cash";
-import type { AdministrationRepository, AgendaRepository, AttendanceRepository, CashCloseInput, CashRepository, ClinicalRepository, CustomerRepository, InventoryRepository, SaleRepository, SessionRepository, SettingsRepository, WorkOrderRepository } from "../../domain/repositories";
+import type { AdministrationRepository, AgendaRepository, AttendanceRepository, CashCloseInput, CashRepository, ClinicalRepository, CustomerRepository, InventoryRepository, PrescriptionRepository, SaleRepository, SessionRepository, SettingsRepository, WorkOrderRepository } from "../../domain/repositories";
 import { database } from "./database";
 
 const defaultSettings: OrganizationSettings = {
@@ -156,6 +156,25 @@ export class LocalClinicalRepository implements ClinicalRepository {
   }
   async deleteAttachmentContent(attachmentId: string): Promise<void> {
     await database.attachments.delete(attachmentId);
+  }
+}
+
+export class LocalPrescriptionRepository implements PrescriptionRepository {
+  async listByAttendance(attendanceId: string, storeId: string): Promise<Prescription[]> {
+    assertStoreAccess(storeId);
+    return database.transaction("r", database.attendances, database.prescriptions, async () => {
+      const attendance = await database.attendances.get(attendanceId);
+      if (!attendance || attendance.storeId !== storeId) throw new Error("Atendimento não encontrado nesta loja.");
+      assertRecordAccess(attendance);
+      return database.prescriptions.where("attendanceId").equals(attendanceId).reverse().sortBy("issuedAt");
+    });
+  }
+  async save(prescription: Prescription, storeId: string): Promise<Prescription> {
+    assertStoreAccess(storeId);
+    if (prescription.storeId !== storeId) throw new Error("Prescrição incompatível com a loja.");
+    assertRecordAccess(prescription);
+    await database.prescriptions.put(prescription);
+    return prescription;
   }
 }
 

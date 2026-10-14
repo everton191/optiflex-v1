@@ -2,16 +2,26 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useBlocker, useParams } from "react-router-dom";
 import { Button, Card, Input } from "../design-system/components";
 import { ClinicalService } from "../domain/clinical-service";
-import { ATTACHMENT_MAX_BYTES, ATTACHMENT_TYPE_LABEL, attachmentCategoryKeys, clinicalAttachmentCategoryLabels, type ClinicalAttachment, type ClinicalAttachmentCategory, type ClinicalVersion } from "../domain/clinical";
+import { ATTACHMENT_MAX_BYTES, ATTACHMENT_TYPE_LABEL, activePrescription, attachmentCategoryKeys, clinicalAttachmentCategoryLabels, type ClinicalAttachment, type ClinicalAttachmentCategory, type ClinicalVersion, type Prescription } from "../domain/clinical";
 import type { Customer } from "../domain/customer";
 import { base64ToBlob, fileToBase64 } from "../infrastructure/storage/attachment-codec";
-import { LocalClinicalRepository } from "../infrastructure/storage/local-repositories";
+import { LocalClinicalRepository, LocalPrescriptionRepository } from "../infrastructure/storage/local-repositories";
 import { ClinicalDraft } from "./clinical-draft";
 import { useAppContext, useSession } from "./providers";
 
-const service = new ClinicalService(new LocalClinicalRepository());
+const service = new ClinicalService(new LocalClinicalRepository(), new LocalPrescriptionRepository());
 const fields = [["anamnesis", "Anamnese"], ["examination", "Exame"], ["requests", "Solicitações"], ["prescription", "Prescrição"]] as const;
 const formatAttachmentSize = (size: number) => size >= 1024 * 1024 ? `${(size / (1024 * 1024)).toFixed(1)} MB` : size >= 1024 ? `${Math.round(size / 1024)} KB` : `${size} B`;
+const parseDegree = (raw: string) => raw.trim() === "" ? undefined : Number(raw);
+const formatDegree = (value: number | undefined) => value === undefined ? "" : value.toFixed(2);
+const formatEye = (label: string, eye: Prescription["od"]) => {
+  const parts: string[] = [];
+  if (eye.sphere !== undefined) parts.push(`esf ${formatDegree(eye.sphere)}`);
+  if (eye.cylinder !== undefined) parts.push(`cil ${formatDegree(eye.cylinder)}`);
+  if (eye.axis !== undefined) parts.push(`eixo ${eye.axis}°`);
+  if (eye.add !== undefined) parts.push(`ad ${formatDegree(eye.add)}`);
+  return `${label}: ${parts.length ? parts.join(" · ") : "sem grau"}`;
+};
 
 export function ClinicalWorkspacePage() {
   const { attendanceId = "" } = useParams();
@@ -28,6 +38,10 @@ function ClinicalWorkspace({ attendanceId }: { attendanceId: string }) {
   const [error, setError] = useState(""); const [attempt, setAttempt] = useState(0);
   const [busy, setBusy] = useState(false); const [confirm, setConfirm] = useState(false); const [reason, setReason] = useState("");
   const [file, setFile] = useState<File>(); const [category, setCategory] = useState<ClinicalAttachmentCategory>("EXAM"); const [attachmentError, setAttachmentError] = useState("");
+  const [prescriptions, setPrescriptions] = useState<Prescription[]>([]); const [rxError, setRxError] = useState("");
+  const [odSphere, setOdSphere] = useState(""); const [odCylinder, setOdCylinder] = useState(""); const [odAxis, setOdAxis] = useState(""); const [odAdd, setOdAdd] = useState("");
+  const [oeSphere, setOeSphere] = useState(""); const [oeCylinder, setOeCylinder] = useState(""); const [oeAxis, setOeAxis] = useState(""); const [oeAdd, setOeAdd] = useState("");
+  const [rxNotes, setRxNotes] = useState("");
   const [, render] = useState(0); const alive = useRef(true); const pending = useRef(false); const fileInput = useRef<HTMLInputElement>(null);
   const context = { storeId: currentStoreId, session };
   const blocker = useBlocker(Boolean(draft?.dirty || busy));
@@ -36,8 +50,8 @@ function ClinicalWorkspace({ attendanceId }: { attendanceId: string }) {
   }
   useEffect(() => {
     alive.current = true; let active = true;
-    void Promise.all([service.load(attendanceId, context), service.history(attendanceId, context)])
-      .then(([loaded, history]) => { if (active) { setDraft(wrap(loaded.record)); setCustomer(loaded.customer); setVersions(history); setError(""); } })
+    void Promise.all([service.load(attendanceId, context), service.history(attendanceId, context), service.listPrescriptions(attendanceId, context)])
+      .then(([loaded, history, rxList]) => { if (active) { setDraft(wrap(loaded.record)); setCustomer(loaded.customer); setVersions(history); setPrescriptions(rxList); setError(""); } })
       .catch((failure) => { if (active) setError(failure instanceof Error ? failure.message : "Não foi possível abrir a consulta."); });
     return () => { active = false; alive.current = false; };
   }, [attendanceId, currentStoreId, session.role, session.userName, attempt]);
@@ -99,6 +113,23 @@ function ClinicalWorkspace({ attendanceId }: { attendanceId: string }) {
     } catch (failure) { setAttachmentError(failure instanceof Error ? failure.message : "Não foi possível excluir o anexo."); }
     finally { pending.current = false; setBusy(false); }
   }
+  async function submitPrescription(event: FormEvent) {
+    event.preventDefault();
+    if (pending.current) return;
+    pending.current = true; setBusy(true); setRxError("");
+    try {
+      await service.issuePrescription({
+        customerId: customer?.id ?? "",
+        od: { sphere: parseDegree(odSphere), cylinder: parseDegree(odCylinder), axis: parseDegree(odAxis), add: parseDegree(odAdd) },
+        oe: { sphere: parseDegree(oeSphere), cylinder: parseDegree(oeCylinder), axis: parseDegree(oeAxis), add: parseDegree(oeAdd) },
+        notes: rxNotes,
+      }, attendanceId, context);
+      setOdSphere(""); setOdCylinder(""); setOdAxis(""); setOdAdd("");
+      setOeSphere(""); setOeCylinder(""); setOeAxis(""); setOeAdd(""); setRxNotes("");
+      setPrescriptions(await service.listPrescriptions(attendanceId, context));
+    } catch (failure) { setRxError(failure instanceof Error ? failure.message : "Não foi possível emitir a prescrição."); }
+    finally { pending.current = false; setBusy(false); }
+  }
   if (!draft || !customer) return <div className="page"><h1>Abrindo consulta</h1>{error ? <><p role="alert">{error}</p><Button onClick={() => setAttempt((value) => value + 1)}>Tentar novamente</Button><Link to="/clinico">Voltar à fila</Link></> : <p role="status">Carregando os dados…</p>}</div>;
   const record = draft.record;
   return <div className="page clinical-workspace"><div className="page-title"><div><p className="eyebrow">{settings.clinicalProfessionalLabel || "Área clínica"}</p><h1>{customer.name}</h1><p>Consulta · versão {record.version ?? 1}{record.amendmentReason ? " · correção" : ""}</p></div><Link className="button" to={`/clientes/${customer.id}`}>Histórico do cliente</Link></div>
@@ -110,6 +141,26 @@ function ClinicalWorkspace({ attendanceId }: { attendanceId: string }) {
       {confirm && <Card><h2>Confirmar finalização</h2><p>Confira os campos acima. A versão será preservada e o atendimento será concluído. Alterações posteriores exigirão uma correção.</p><div className="form-actions"><Button disabled={busy} onClick={() => void run("finalize")}>Confirmar finalização</Button><Button disabled={busy} onClick={() => setConfirm(false)}>Voltar à revisão</Button></div></Card>}
       {record.finalizedAt && <Card><h2>Corrigir documento</h2><p>O original continuará no histórico. Uma nova versão será aberta para correção.</p><label>Motivo da correção<Input value={reason} disabled={busy} onChange={(event) => setReason(event.target.value)} /></label><Button disabled={busy || !reason.trim()} onClick={() => void run("amend")}>Criar nova versão</Button></Card>}
     </div>
+    <section className="clinical-refraction">
+      <h2 className="section-title">Refração (OD/OE)</h2>
+      <form className="settings-form clinical-form" onSubmit={(event) => void submitPrescription(event)}>
+        <label>OD esférico<Input type="number" step="0.01" value={odSphere} disabled={busy} placeholder="-1.25" onChange={(event) => setOdSphere(event.target.value)} /></label>
+        <label>OD cilíndrico<Input type="number" step="0.01" value={odCylinder} disabled={busy} placeholder="-0.50" onChange={(event) => setOdCylinder(event.target.value)} /></label>
+        <label>OD eixo<Input type="number" step="1" min="0" max="180" value={odAxis} disabled={busy} placeholder="0–180" onChange={(event) => setOdAxis(event.target.value)} /></label>
+        <label>OD adição<Input type="number" step="0.01" value={odAdd} disabled={busy} placeholder="+0.50" onChange={(event) => setOdAdd(event.target.value)} /></label>
+        <label>OE esférico<Input type="number" step="0.01" value={oeSphere} disabled={busy} placeholder="-1.00" onChange={(event) => setOeSphere(event.target.value)} /></label>
+        <label>OE cilíndrico<Input type="number" step="0.01" value={oeCylinder} disabled={busy} placeholder="-0.25" onChange={(event) => setOeCylinder(event.target.value)} /></label>
+        <label>OE eixo<Input type="number" step="1" min="0" max="180" value={oeAxis} disabled={busy} placeholder="0–180" onChange={(event) => setOeAxis(event.target.value)} /></label>
+        <label>OE adição<Input type="number" step="0.01" value={oeAdd} disabled={busy} placeholder="+0.50" onChange={(event) => setOeAdd(event.target.value)} /></label>
+        <label>Observações<Input value={rxNotes} disabled={busy} placeholder="Opcional (uso contínuo, observações)" onChange={(event) => setRxNotes(event.target.value)} /></label>
+        <div className="form-actions"><Button type="submit" disabled={busy}>Emitir prescrição</Button></div>
+        <p className="help-text">Graus em dioptrias; eixo em graus (0–180). A prescrição é um documento próprio: versões emitidas nunca são reescritas.</p>
+      </form>
+      {rxError && <p role="alert" className="notice error-text">{rxError}</p>}
+      <div className="list-card compact-list">{prescriptions.length ? prescriptions.map((rx) => { const active = rx.id === activePrescription(prescriptions)?.id; return <article className="list-row" key={rx.id}>
+        <div><strong>{active ? "Prescrição ativa" : `Versão ${rx.version}`}{rx.retifies ? " · retificação" : ""}</strong><span>{formatEye("OD", rx.od)} · {formatEye("OE", rx.oe)}</span>{rx.notes && <span className="help-text">{rx.notes}</span>}<span className="help-text">{rx.author} · {new Date(rx.issuedAt).toLocaleString("pt-BR")}</span></div>
+      </article>; }) : <p className="empty-state">Nenhuma prescrição estruturada emitida.</p>}</div>
+    </section>
     <section className="clinical-attachments">
       <h2 className="section-title">Anexos</h2>
       <div className="list-card compact-list">

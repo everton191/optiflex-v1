@@ -2,19 +2,21 @@ import "fake-indexeddb/auto";
 import Dexie from "dexie";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { database } from "./database";
-import { LocalAdministrationRepository, LocalAttendanceRepository, LocalClinicalRepository, LocalCustomerRepository } from "./local-repositories";
+import { LocalAdministrationRepository, LocalAttendanceRepository, LocalClinicalRepository, LocalCustomerRepository, LocalPrescriptionRepository } from "./local-repositories";
 import { ClinicalService, type ClinicalContext } from "../../domain/clinical-service";
-import { ATTACHMENT_MAX_BYTES } from "../../domain/clinical";
+import { ATTACHMENT_MAX_BYTES, activePrescription } from "../../domain/clinical";
 import { ReceptionService } from "../../domain/reception-service";
 import { ClinicalDraft } from "../../app/clinical-draft";
 
 const context: ClinicalContext = { storeId: "store-centro", session: { id: "current", role: "CLINICAL_PROFESSIONAL", userName: "Profissional teste" } };
-const service = new ClinicalService(new LocalClinicalRepository());
+const service = new ClinicalService(new LocalClinicalRepository(), new LocalPrescriptionRepository());
 let attendanceId: string;
+let customerId: string;
 beforeEach(async () => {
   await database.open(); await new LocalAdministrationRepository().initialize();
   const reception = new ReceptionService(new LocalCustomerRepository(), new LocalAttendanceRepository());
   const customer = await reception.createCustomer({ name: "Cliente teste" });
+  customerId = customer.id;
   attendanceId = (await reception.startAttendance(customer.id, context.storeId, "CONSULTATION")).id;
 });
 afterEach(async () => { vi.restoreAllMocks(); await database.delete(); });
@@ -160,5 +162,31 @@ describe("customer update durability", () => {
     expect(await reception.getCustomer(customer.id)).toMatchObject({ id: customer.id, createdAt: customer.createdAt, name: "Cliente editado", phone: "2222", cpf: "111.444.777-35", email: "novo@exemplo.com", birthDate: "1992-03-10" });
     expect(await reception.listCustomers("editado")).toHaveLength(1);
     expect(updated.id).toBe(customer.id);
+  });
+});
+
+describe("structured refraction", () => {
+  it("issues OD/OE degrees, keeps the author and survives reopening", async () => {
+    const rx = await service.issuePrescription({ customerId, od: { sphere: -1.25, cylinder: -0.5, axis: 90 }, oe: { sphere: -1, cylinder: -0.25, axis: 85, add: 0.5 }, notes: "  Uso contínuo  " }, attendanceId, context);
+    expect(rx).toMatchObject({ version: 1, author: "Profissional teste", attendanceId, customerId, storeId: "store-centro", notes: "Uso contínuo" });
+    expect(rx.od).toEqual({ sphere: -1.25, cylinder: -0.5, axis: 90 });
+    expect(rx.oe).toEqual({ sphere: -1, cylinder: -0.25, axis: 85, add: 0.5 });
+    database.close(); await database.open();
+    const listed = await service.listPrescriptions(attendanceId, context);
+    expect(listed).toHaveLength(1);
+    expect(activePrescription(listed)?.id).toBe(rx.id);
+  });
+
+  it("rejects an axis outside 0–180 and non-finite degrees before writing", async () => {
+    await expect(service.issuePrescription({ customerId, od: { axis: 181 }, oe: {} }, attendanceId, context)).rejects.toThrow("entre 0° e 180°");
+    await expect(service.issuePrescription({ customerId, od: { axis: -1 }, oe: {} }, attendanceId, context)).rejects.toThrow("entre 0° e 180°");
+    await expect(service.issuePrescription({ customerId, od: { sphere: Number.NaN }, oe: {} }, attendanceId, context)).rejects.toThrow("Grau inválido");
+    await expect(service.issuePrescription({ customerId, od: {}, oe: {} }, attendanceId, context)).rejects.toThrow("ao menos um grau");
+    expect(await database.prescriptions.count()).toBe(0);
+  });
+
+  it("scopes the prescription list to the attendance store", async () => {
+    await service.issuePrescription({ customerId, od: { sphere: -1 }, oe: {} }, attendanceId, context);
+    await expect(service.listPrescriptions(attendanceId, { ...context, storeId: "store-shopping" })).rejects.toThrow("não encontrado nesta loja");
   });
 });
