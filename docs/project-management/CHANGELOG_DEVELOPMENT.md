@@ -4,6 +4,14 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `e6bae24` + docs — Navegação mobile (F7-05)
+
+- `src/shell/AppShell.tsx`: barra inferior `.mobile-nav` reorganizada — **4 atalhos** (primeiros links visíveis por permissão) + botão **Mais** (só quando há áreas fora dos atalhos); **Mais** abre o `Drawer` do design system ("Mais áreas") com o restante do menu principal e a seção **Administração** (lojas/usuários/perfis/ajustes), que antes sumia no mobile; fecha ao clicar num link, no backdrop ou com Escape.
+- `src/styles.css`: `.mobile-more` (aparência de link + destaque `aria-expanded`), `.area-links` (lista do drawer com `active`) e `space-around` na barra nos breakpoints mobile/tablet retrato.
+- Perfis com ≤ 4 áreas e sem administração não ganham o botão Mais; filtragem é a mesma do desktop.
+- `docs/ai/04_ROUTE_MAP.md`: tabela completa (+ `/login`, `/bloqueado`, `/ordens-servico/:orderId`, `/trocar-senha`) + seção "Navegação mobile".
+- Validações: build 0, `tsc -b` 0, **293/293**. **Pendência**: teste manual em 390×844 (testes obrigatórios do card: build + manual mobile). Card: F7-05/#120 → DONE.
+
 ### `8c20023` + docs — Prevenção de duplicidades (F2-08)
 
 - `src/domain/customer.ts`: `normalizeSearchText` (remove acentos, caixa e pontuação, colapsa espaços) e `findDuplicateCustomer(customers, input, excludeId?)` — considera duplicidade **CPF idêntico** (dígitos normalizados, com ou sem máscara) **OU** nome+telefone iguais normalizados; campos vazios nunca casam (evita falso positivo em massa); `excludeId` pronto para a edição.
