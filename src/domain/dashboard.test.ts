@@ -3,7 +3,7 @@ import type { Attendance } from "./customer";
 import type { CashEntry } from "./cash";
 import type { Sale } from "./sales";
 import type { WorkOrder } from "./work-order";
-import { chartHeights, isOverdueOrder, isToday, openOrders, overdueOrders, pendingQuotes, receiptsTodayCents, salesByDay, salesTodayCents, stockAlerts, waitingQueue } from "./dashboard";
+import { chartHeights, dashboardMetricKeys, dashboardProfile, isOverdueOrder, isToday, openOrders, overdueOrders, pendingQuotes, receiptsTodayCents, returnsToday, salesByDay, salesTodayCents, stockAlerts, waitingQueue } from "./dashboard";
 
 const local = (year: number, month: number, day: number, hour = 12) => new Date(year, month - 1, day, hour).toISOString();
 const now = new Date(2026, 2, 10, 15);
@@ -87,5 +87,44 @@ describe("seven day chart", () => {
     expect(heights[5]).toBe(10);
     expect(heights[0]).toBe(8);
     expect(chartHeights(salesByDay([], now))).toEqual([0, 0, 0, 0, 0, 0, 0]);
+  });
+});
+
+describe("profile selectors", () => {
+  it("maps every role to a dashboard profile", () => {
+    expect(dashboardProfile("CLINICAL_PROFESSIONAL")).toBe("CLINICAL");
+    expect(dashboardProfile("SELLER")).toBe("SALES");
+    expect(dashboardProfile("CASHIER")).toBe("CASH");
+    expect(dashboardProfile("OWNER")).toBe("MANAGEMENT");
+    expect(dashboardProfile("NETWORK_ADMINISTRATOR")).toBe("MANAGEMENT");
+    expect(dashboardProfile("STORE_MANAGER")).toBe("MANAGEMENT");
+    expect(dashboardProfile("FINANCE")).toBe("MANAGEMENT");
+    expect(dashboardProfile("AUDITOR")).toBe("MANAGEMENT");
+  });
+
+  it("keeps commercial metrics out of the clinical profile", () => {
+    const keys = dashboardMetricKeys("CLINICAL_PROFESSIONAL");
+    expect(keys).toEqual(["queue", "returns"]);
+    expect(keys).not.toContain("sales");
+    expect(keys).not.toContain("cash");
+    expect(keys).not.toContain("orders");
+  });
+
+  it("orders metrics per profile, respects permissions and caps at four", () => {
+    expect(dashboardMetricKeys("SELLER")).toEqual(["sales", "orders", "cash"]);
+    expect(dashboardMetricKeys("CASHIER")).toEqual(["cash", "sales", "orders"]);
+    expect(dashboardMetricKeys("OWNER")).toEqual(["sales", "cash", "queue", "orders"]);
+    expect(dashboardMetricKeys("STORE_MANAGER")).toEqual(["sales", "cash", "queue", "orders"]);
+    expect(dashboardMetricKeys("NETWORK_ADMINISTRATOR")).toEqual(["sales", "cash", "queue", "orders"]);
+    expect(dashboardMetricKeys("AUDITOR")).toEqual(["sales", "cash", "orders", "inventory"]);
+    expect(dashboardMetricKeys("FINANCE")).toEqual(["sales", "cash", "orders"]);
+  });
+});
+
+describe("returns", () => {
+  it("counts only return visits created today", () => {
+    const visit = (id: string, type: Attendance["type"], createdAt: string): Attendance => ({ id, customerId: "customer-1", storeId: "store-centro", type, status: "WAITING", createdAt });
+    const visits = [visit("a1", "RETURN", local(2026, 3, 10, 9)), visit("a2", "RETURN", local(2026, 3, 9, 9)), visit("a3", "CONSULTATION", local(2026, 3, 10, 10)), visit("a4", "RETURN", "data-invalida")];
+    expect(returnsToday(visits, now).map((item) => item.id)).toEqual(["a1"]);
   });
 });

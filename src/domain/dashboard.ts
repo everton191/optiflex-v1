@@ -1,3 +1,4 @@
+import { hasPermission, type Permission, type RoleKey } from "./access";
 import { isActiveQueueStatus, type Attendance } from "./customer";
 import type { CashEntry } from "./cash";
 import type { InventoryItem } from "./inventory";
@@ -30,6 +31,42 @@ export function receiptsTodayCents(entries: readonly CashEntry[], now: Date = ne
 
 export function waitingQueue(attendances: readonly Attendance[]): Attendance[] {
   return attendances.filter((attendance) => isActiveQueueStatus(attendance.status));
+}
+
+export function returnsToday(attendances: readonly Attendance[], now: Date = new Date()): Attendance[] {
+  return attendances.filter((attendance) => attendance.type === "RETURN" && isToday(attendance.createdAt, now));
+}
+
+export type DashboardProfile = "CLINICAL" | "SALES" | "CASH" | "MANAGEMENT";
+export type DashboardMetricKey = "sales" | "cash" | "queue" | "returns" | "orders" | "inventory";
+
+const metricPreference: Record<DashboardProfile, readonly DashboardMetricKey[]> = {
+  CLINICAL: ["queue", "returns", "inventory"],
+  SALES: ["sales", "orders", "cash"],
+  CASH: ["cash", "sales", "orders"],
+  MANAGEMENT: ["sales", "cash", "queue", "orders", "inventory"],
+};
+
+const metricPermissions: Record<DashboardMetricKey, Permission> = {
+  sales: "sales.read",
+  cash: "cash.read",
+  queue: "attendance.queue.read",
+  returns: "clinical.workspace.access",
+  orders: "sales.read",
+  inventory: "inventory.read",
+};
+
+export function dashboardProfile(role: RoleKey): DashboardProfile {
+  if (role === "CLINICAL_PROFESSIONAL") return "CLINICAL";
+  if (role === "SELLER") return "SALES";
+  if (role === "CASHIER") return "CASH";
+  return "MANAGEMENT";
+}
+
+export function dashboardMetricKeys(role: RoleKey): DashboardMetricKey[] {
+  return metricPreference[dashboardProfile(role)]
+    .filter((key) => hasPermission(role, metricPermissions[key]))
+    .slice(0, 4);
 }
 
 export function salesByDay(sales: readonly Sale[], now: Date = new Date()): DayBucket[] {

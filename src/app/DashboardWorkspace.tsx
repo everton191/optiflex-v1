@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Button, Card, Skeleton } from "../design-system/components";
+import { Button, Card, EmptyState, Skeleton } from "../design-system/components";
 import { hasPermission } from "../domain/access";
 import type { Attendance } from "../domain/customer";
 import type { CashEntry, CashSession } from "../domain/cash";
 import type { InventoryItem } from "../domain/inventory";
 import type { Sale } from "../domain/sales";
 import type { WorkOrder } from "../domain/work-order";
-import { chartHeights, openOrders, overdueOrders, pendingQuotes, receiptsTodayCents, salesByDay, salesTodayCents, stockAlerts, waitingQueue } from "../domain/dashboard";
+import { chartHeights, dashboardMetricKeys, openOrders, overdueOrders, pendingQuotes, receiptsTodayCents, returnsToday, salesByDay, salesTodayCents, stockAlerts, waitingQueue } from "../domain/dashboard";
 import { InventoryService } from "../domain/inventory-service";
 import { ReceptionService } from "../domain/reception-service";
 import { SalesService } from "../domain/sales-service";
@@ -30,7 +30,9 @@ export function DashboardPage() {
   const canReadCash = hasPermission(session.role, "cash.read");
   const canManageCash = hasPermission(session.role, "cash.manage");
   const canQueue = hasPermission(session.role, "attendance.queue.read");
+  const canReturns = hasPermission(session.role, "clinical.workspace.access");
   const canReadInventory = hasPermission(session.role, "inventory.read");
+  const metricKeys = dashboardMetricKeys(session.role);
   const [queue, setQueue] = useState<Attendance[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
   const [entries, setEntries] = useState<CashEntry[]>([]);
@@ -44,7 +46,7 @@ export function DashboardPage() {
   async function refresh() {
     try {
       const [loadedQueue, loadedSales, loadedEntries, loadedSession, loadedOrders, loadedItems] = await Promise.all([
-        canQueue ? receptionService.listQueue(currentStoreId) : Promise.resolve([]),
+        canQueue || canReturns ? receptionService.listQueue(currentStoreId) : Promise.resolve([]),
         canReadSales ? salesService.list(currentStoreId) : Promise.resolve([]),
         canReadCash ? cashRepository.listEntries(currentStoreId) : Promise.resolve([]),
         canReadCash ? cashRepository.current(currentStoreId) : Promise.resolve(undefined),
@@ -60,6 +62,7 @@ export function DashboardPage() {
 
   const quotes = pendingQuotes(sales);
   const waiting = waitingQueue(queue);
+  const returns = returnsToday(queue);
   const alerts = stockAlerts(items);
   const open = openOrders(orders);
   const overdue = overdueOrders(orders);
@@ -67,13 +70,15 @@ export function DashboardPage() {
   const heights = chartHeights(buckets);
   const weekCents = buckets.reduce((total, bucket) => total + bucket.cents, 0);
 
-  const metrics = [
-    { show: canReadSales, label: "Vendas hoje", value: brl(salesTodayCents(sales)), hint: plural(quotes.length, "orçamento aberto", "orçamentos abertos") },
-    { show: canReadCash, label: "Recebimentos hoje", value: brl(receiptsTodayCents(entries)), hint: cashSession ? "Caixa aberto agora" : "Caixa fechado agora" },
-    { show: canQueue, label: "Fila agora", value: String(waiting.length), hint: "aguardando ou em atendimento" },
-    { show: canReadSales, label: "OS em andamento", value: String(open.length), hint: plural(overdue.length, "ordem atrasada", "ordens atrasadas") },
-    { show: canReadInventory, label: "Estoque em alerta", value: String(alerts.length), hint: "no mínimo ou esgotados" },
-  ].filter((metric) => metric.show).slice(0, 4);
+  const metricCatalog = {
+    sales: { label: "Vendas hoje", value: brl(salesTodayCents(sales)), hint: plural(quotes.length, "orçamento aberto", "orçamentos abertos") },
+    cash: { label: "Recebimentos hoje", value: brl(receiptsTodayCents(entries)), hint: cashSession ? "Caixa aberto agora" : "Caixa fechado agora" },
+    queue: { label: "Fila agora", value: String(waiting.length), hint: "aguardando ou em atendimento" },
+    returns: { label: "Retornos hoje", value: String(returns.length), hint: plural(returns.length, "retorno agendado", "retornos agendados") },
+    orders: { label: "OS em andamento", value: String(open.length), hint: plural(overdue.length, "ordem atrasada", "ordens atrasadas") },
+    inventory: { label: "Estoque em alerta", value: String(alerts.length), hint: "no mínimo ou esgotados" },
+  } as const;
+  const metrics = metricKeys.map((key) => ({ key, ...metricCatalog[key] }));
 
   const pendencias = [
     { show: canQueue && waiting.length > 0, text: plural(waiting.length, "cliente aguardando", "clientes aguardando") + " na fila", to: "/atendimentos" },
@@ -99,13 +104,15 @@ export function DashboardPage() {
     <section className="page-title"><div><p className="eyebrow">Visão geral</p><h1>Olá, {session.userName}</h1><p className="page-intro">Acompanhe a operação de {settings.organizationName}.</p></div>{hasPermission(session.role, "customers.manage") && <Link className="button" to="/clientes/novo">Iniciar atendimento</Link>}</section>
     {error && <p className="notice error-text" role="alert">{error} <Button type="button" onClick={retry}>Tentar novamente</Button></p>}
     {loading ? <Skeleton lines={4} label="Carregando visão geral…" /> : <>
-      <div className="metric-grid">{metrics.map((metric) => <Card key={metric.label}><small>{metric.label}</small><strong>{metric.value}</strong><span className="help-text">{metric.hint}</span></Card>)}</div>
+      {metrics.length ? <div className="metric-grid">{metrics.map((metric) => <Card key={metric.key}><small>{metric.label}</small><strong>{metric.value}</strong><span className="help-text">{metric.hint}</span></Card>)}</div> : <EmptyState>Seu perfil não possui indicadores de visão geral nesta loja.</EmptyState>}
       <div className="dashboard-grid">
-        <Card>
+        {canReadSales && <Card>
           <h2>Vendas dos últimos 7 dias</h2>
-          <div className="chart-placeholder" role="img" aria-label={`Vendas confirmadas nos últimos 7 dias: ${brl(weekCents)}`}>{buckets.map((bucket, index) => <span key={bucket.key} title={`${bucket.label} ${bucket.key}: ${brl(bucket.cents)}`} style={{ height: `${heights[index]}%` }} />)}</div>
-          <p className="help-text">{brl(weekCents)} confirmados no período.</p>
-        </Card>
+          {weekCents > 0 ? <>
+            <div className="chart-placeholder" role="img" aria-label={`Vendas confirmadas nos últimos 7 dias: ${brl(weekCents)}`}>{buckets.map((bucket, index) => <span key={bucket.key} title={`${bucket.label} ${bucket.key}: ${brl(bucket.cents)}`} style={{ height: `${heights[index]}%` }} />)}</div>
+            <p className="help-text">{brl(weekCents)} confirmados no período.</p>
+          </> : <p className="empty-state">Nenhuma venda confirmada nos últimos 7 dias.</p>}
+        </Card>}
         <Card>
           <h2>Pendências</h2>
           {pendencias.length ? <ul className="pending-list">{pendencias.map((item) => <li key={item.to + item.text}><Link to={item.to}>{item.text}</Link></li>)}</ul> : <p className="empty-state">Nenhuma pendência para o seu perfil nesta loja.</p>}
