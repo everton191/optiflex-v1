@@ -4,6 +4,13 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `de67cc3` + docs — Testes de integração ponta a ponta (F8-02)
+
+- `src/infrastructure/storage/integration-flows.test.ts` (novo): 4 fluxos multi-entidade sobre IndexedDB em memória — **venda→pagamento→caixa→fechamento→OS→entrega** (PIX com referência, `PAID`, laboratório, trilha de eventos e fechamento conciliado), **cancelamento de venda paga→estoque+estorno** (IN no estoque, `REFUND`, saldo esperado), **insumos de OS→estoque→entrega** (movimentos `OUT` com autor e guarda de transição) e **pagamento fracionado** (PARTIAL→PAID, rejeição de excesso/já recebida).
+- Suíte completa em < 10 s (arquivo ~0,1 s); `database.delete()` em `afterEach`; sem duplicação dos testes unitários de cada serviço.
+- Estratégia de camadas de teste (unit × storage × fluxos integrados × backup × segurança) documentada em `docs/ai/10_AI_WORKFLOW.md`.
+- Total: **282/282** (30 arquivos), build 0, tsc 0. Card: F8-02/#136 → DONE (≥3 fluxos integrados cobertos).
+
 ### `c8dec75` + docs — Recuperação de dados: motivos de recusa e restauração protegida (F8-10)
 
 - `src/domain/backup.ts`: `validateBackup` explica o motivo de cada recusa (`invalidReason`): formato que não é backup do Opticore, versão de arquivo, schema não suportado, data de criação, estrutura de tabelas e tabelas ausentes — todos com "Nenhum dado foi substituído"; checagens de schema 10–13 ganham mensagens próprias.
