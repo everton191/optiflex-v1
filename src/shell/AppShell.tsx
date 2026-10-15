@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { useAppContext, useSession } from "../app/providers";
-import { Button } from "../design-system/components";
+import { Button, Drawer } from "../design-system/components";
 import { hasPermission, roleDefinitions, type Permission } from "../domain/access";
 import { buildAccessContext, canAccessStore } from "../domain/access-context";
 
@@ -21,6 +21,10 @@ export function AppShell() {
   const canOpen = (item: MenuItem) => !item.permission || hasPermission(session.role, item.permission);
   const visibleMainLinks = mainLinks.filter(canOpen);
   const visibleAdministrationLinks = administrationLinks.filter(canOpen);
+  const mobileShortcuts = visibleMainLinks.slice(0, 4);
+  const mobileMoreLinks = [...visibleMainLinks.slice(4), ...visibleAdministrationLinks];
+  const [moreOpen, setMoreOpen] = useState(false);
+  const closeMore = () => setMoreOpen(false);
   const roleLabel = roleDefinitions.find((role) => role.key === session.role)?.label;
   const access = buildAccessContext(session, users, currentStoreId);
   const accessibleStores = stores.filter((store) => store.active && canAccessStore(access, store.id));
@@ -31,6 +35,14 @@ export function AppShell() {
       {visibleAdministrationLinks.length > 0 && <nav className="sidebar-bottom" aria-label="Administração"><span className="nav-section-label">Administração</span>{visibleAdministrationLinks.map((link) => <NavLink key={link.to} to={link.to}>{link.label}</NavLink>)}</nav>}
     </aside>
     <main className="content"><header className="topbar"><label className="store-selector">Loja atual<select disabled={navigationLocked || switching} value={currentStoreId} onChange={(event) => void changeStore(event.target.value)}>{accessibleStores.map((store) => <option key={store.id} value={store.id}>{store.name}</option>)}</select></label>{hasPermission(session.role, "settings.manage") && <Link to="/admin/configuracoes">Ajustes</Link>}<span className="user-summary"><strong>{session.userName}</strong><small>{roleLabel}</small>{session.demo && <small className="badge">Demonstração</small>}</span><Link to="/trocar-senha">Trocar senha</Link><Button type="button" onClick={() => void logout()}>Sair</Button></header>{storeError && <p role="alert">{storeError}</p>}<Outlet /></main>
-    <nav className="mobile-nav" aria-label="Navegação móvel">{visibleMainLinks.map((link) => <NavLink key={link.to} to={link.to} end={link.to === "/"}>{link.shortLabel}</NavLink>)}</nav>
+    <nav className="mobile-nav" aria-label="Navegação móvel">{mobileShortcuts.map((link) => <NavLink key={link.to} to={link.to} end={link.to === "/"}>{link.shortLabel}</NavLink>)}{mobileMoreLinks.length > 0 && <button type="button" className="mobile-more" aria-expanded={moreOpen} onClick={() => setMoreOpen((value) => !value)}>Mais</button>}</nav>
+    <Drawer open={moreOpen} onClose={closeMore} title="Mais áreas">
+      <nav className="area-links" aria-label="Demais áreas">
+        {visibleMainLinks.length > 4 && <span className="nav-section-label">Menu</span>}
+        {visibleMainLinks.slice(4).map((link) => <NavLink key={link.to} to={link.to} end={link.to === "/"} onClick={closeMore}>{link.label}</NavLink>)}
+        {visibleAdministrationLinks.length > 0 && <span className="nav-section-label">Administração</span>}
+        {visibleAdministrationLinks.map((link) => <NavLink key={link.to} to={link.to} onClick={closeMore}>{link.label}</NavLink>)}
+      </nav>
+    </Drawer>
   </div>;
 }
