@@ -24,22 +24,28 @@ const requiredStrings: Record<BackupTable, string[]> = {
 };
 const object = (value: unknown): value is Record<string, unknown> => Boolean(value && typeof value === "object" && !Array.isArray(value));
 const invalid = () => new Error("Backup inválido ou incompatível. Nenhum dado foi substituído.");
+const invalidReason = (reason: string) => new Error(`Backup inválido: ${reason} Nenhum dado foi substituído.`);
 export function validateBackup(value: unknown): BackupSnapshot {
-  if (!object(value) || value.format !== "opticore" || value.version !== 1 || ![10, 11, 12, 13].includes(value.schema as number) || typeof value.createdAt !== "string" || !Number.isFinite(Date.parse(value.createdAt)) || !object(value.tables)) throw invalid();
+  if (!object(value)) throw invalid();
+  if (value.format !== "opticore") throw invalidReason("o arquivo não é um backup do Opticore.");
+  if (value.version !== 1) throw invalidReason("versão de arquivo desconhecida.");
+  if (![10, 11, 12, 13].includes(value.schema as number)) throw invalidReason("schema não suportado (arquivo de outra versão ou corrompido).");
+  if (typeof value.createdAt !== "string" || !Number.isFinite(Date.parse(value.createdAt))) throw invalidReason("data de criação ausente ou corrompida.");
+  if (!object(value.tables)) throw invalidReason("estrutura de tabelas ausente.");
   const importedTables = { ...value.tables };
   if (value.schema === 10) {
-    if (Object.keys(importedTables).length !== backupTables.length - 3 || "attachments" in importedTables || "agendaEvents" in importedTables || "prescriptions" in importedTables) throw invalid();
+    if (Object.keys(importedTables).length !== backupTables.length - 3 || "attachments" in importedTables || "agendaEvents" in importedTables || "prescriptions" in importedTables) throw invalidReason("o conteúdo das tabelas não corresponde ao schema 10.");
     importedTables.attachments = [];
     importedTables.agendaEvents = [];
     importedTables.prescriptions = [];
   } else if (value.schema === 11) {
-    if (Object.keys(importedTables).length !== backupTables.length - 2 || "agendaEvents" in importedTables || "prescriptions" in importedTables || !("attachments" in importedTables)) throw invalid();
+    if (Object.keys(importedTables).length !== backupTables.length - 2 || "agendaEvents" in importedTables || "prescriptions" in importedTables || !("attachments" in importedTables)) throw invalidReason("o conteúdo das tabelas não corresponde ao schema 11.");
     importedTables.agendaEvents = [];
     importedTables.prescriptions = [];
   } else if (value.schema === 12) {
-    if (Object.keys(importedTables).length !== backupTables.length - 1 || "prescriptions" in importedTables || !("attachments" in importedTables) || !("agendaEvents" in importedTables)) throw invalid();
+    if (Object.keys(importedTables).length !== backupTables.length - 1 || "prescriptions" in importedTables || !("attachments" in importedTables) || !("agendaEvents" in importedTables)) throw invalidReason("o conteúdo das tabelas não corresponde ao schema 12.");
     importedTables.prescriptions = [];
-  } else if (Object.keys(importedTables).length !== backupTables.length || !("attachments" in importedTables) || !("agendaEvents" in importedTables) || !("prescriptions" in importedTables)) throw invalid();
+  } else if (Object.keys(importedTables).length !== backupTables.length || !("attachments" in importedTables) || !("agendaEvents" in importedTables) || !("prescriptions" in importedTables)) throw invalidReason("faltam tabelas esperadas no arquivo (arquivo truncado ou corrompido).");
   for (const name of backupTables) {
     const rows = importedTables[name];
     if (!Array.isArray(rows)) throw invalid();
@@ -149,7 +155,11 @@ export class BackupService {
   }
   async inspect(file: string, password: string, role: RoleKey) {
     this.authorize(role);
-    return validateBackup(JSON.parse(await this.codec.decrypt(file, password)));
+    const content = await this.codec.decrypt(file, password);
+    let parsed: unknown;
+    try { parsed = JSON.parse(content); }
+    catch { throw new Error("Backup inválido: o conteúdo decifrado não é um arquivo válido. Nenhum dado foi substituído."); }
+    return validateBackup(parsed);
   }
   async restore(snapshot: BackupSnapshot, confirmation: string, role: RoleKey) {
     this.authorize(role);

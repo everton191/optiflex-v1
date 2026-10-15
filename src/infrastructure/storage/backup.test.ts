@@ -218,6 +218,39 @@ describe("encrypted backup and transactional restore", () => {
     expect(() => validateBackup(badState)).toThrow("inválido");
   });
 
+  it("explains why a file cannot be used before writing anything", async () => {
+    const original = await repository.snapshot();
+    const plain = new EncryptedBackupCodec();
+    await expect(service.inspect("conteúdo qualquer", password, "OWNER")).rejects.toThrow("senha");
+    const notBackup = await plain.encrypt(JSON.stringify({ hello: "world" }), password);
+    await expect(service.inspect(notBackup, password, "OWNER")).rejects.toThrow("não é um backup do Opticore");
+    const corruptJson = await plain.encrypt("{conteúdo corrompido", password);
+    await expect(service.inspect(corruptJson, password, "OWNER")).rejects.toThrow("não é um arquivo válido");
+    const badSchema = structuredClone(original);
+    badSchema.schema = 999 as never;
+    await expect(service.restore(badSchema, "RESTAURAR", "OWNER")).rejects.toThrow("schema não suportado");
+    const truncated = structuredClone(original);
+    const truncatedTables = truncated as unknown as { tables: Record<string, unknown> };
+    delete truncatedTables.tables.prescriptions;
+    await expect(service.restore(truncated, "RESTAURAR", "OWNER")).rejects.toThrow("faltam tabelas");
+    expect((await repository.snapshot()).tables).toEqual(original.tables);
+  });
+
+  it("keeps the base intact when a restore fails validation or mid-transaction", async () => {
+    const original = await repository.snapshot();
+    original.tables.customers.push({ id: "customer-rx", name: "Cliente Rx", createdAt: "2026-01-01T09:00:00.000Z" });
+    original.tables.attendances.push({ id: "attendance-rx", customerId: "customer-rx", storeId: "store-centro", type: "CONSULTATION", status: "IN_PROGRESS", createdAt: "2026-01-01T10:00:00.000Z" });
+    original.tables.prescriptions.push({ id: "rx-x", attendanceId: "attendance-rx", customerId: "customer-rx", storeId: "store-centro", version: 1, author: "Dra. Ana", issuedAt: "2026-01-01T11:00:00.000Z", od: { axis: 181 }, oe: {} });
+    await expect(repository.restore(structuredClone(original))).rejects.toThrow("inválido");
+    expect((await repository.snapshot()).tables).toEqual((await repository.snapshot()).tables);
+    original.tables.prescriptions[0].od = { axis: 90 };
+    original.tables.customers.push({ id: "customer-ok", name: "Cliente OK", createdAt: "2026-01-01T09:00:00.000Z" });
+    original.tables.customers.push({ id: "invalid-clone", name: "Clone", createdAt: "2026-01-01T09:00:00.000Z", unsupported: () => {} });
+    await expect(repository.restore(original as never)).rejects.toThrow();
+    expect((await repository.snapshot()).tables.customers.some((row) => row.id === "customer-ok")).toBe(false);
+    expect((await repository.snapshot()).tables.customers.some((row) => row.id === "customer-rx")).toBe(false);
+  });
+
   it("accepts structured prescriptions and rejects invalid degrees or broken links", async () => {
     const snapshot = await repository.snapshot();
     snapshot.tables.customers.push({ id: "customer-rx", name: "Cliente Rx", createdAt: "2026-01-01T09:00:00.000Z" });
