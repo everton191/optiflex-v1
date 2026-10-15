@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SalesService } from "./sales-service";
-import type { Sale, SaleItem } from "./sales";
+import type { Sale, SaleItem, SalePrescription } from "./sales";
 
 const repository = { listByStore: vi.fn(), get: vi.fn(), save: vi.fn(), confirm: vi.fn(), cancel: vi.fn() };
 const service = new SalesService(repository);
@@ -177,5 +177,44 @@ describe("draft quote editing", () => {
     await expect(service.updateQuote(quote({ status: "CONFIRMED" }), { customerId: "customer-1", description: "Novo", total: 10, items: [] })).rejects.toThrow("Somente orçamentos");
     await expect(service.updateQuote(quote(), { customerId: "customer-1", description: "   ", total: 0, items: [] })).rejects.toThrow("descrição e valor");
     expect(repository.save).not.toHaveBeenCalled();
+  });
+});
+
+describe("prescription handoff", () => {
+  const rx = (overrides: Partial<SalePrescription> = {}): SalePrescription => ({ prescriptionId: "rx-1", customerId: "customer-1", version: 2, usage: "DISTANCE", od: { sphere: -1.5, cylinder: -0.75, axis: 95 }, oe: { sphere: -1, cylinder: -0.25, axis: 85, add: 0.5 }, notes: "Grau conferido", ...overrides });
+  const prescriptions = { listByCustomer: vi.fn(), listByAttendance: vi.fn(), save: vi.fn() };
+
+  it("stores the snapshot on the quote so the sale never asks for the degrees again", async () => {
+    repository.save.mockResolvedValue(undefined);
+    const created = await service.createQuote("customer-1", "store-centro", "Armação + lentes", 480, [], rx());
+    expect(created.prescription).toMatchObject({ prescriptionId: "rx-1", customerId: "customer-1", version: 2, usage: "DISTANCE" });
+    expect(created.prescription?.od).toEqual({ sphere: -1.5, cylinder: -0.75, axis: 95 });
+    expect(repository.save).toHaveBeenCalledOnce();
+  });
+
+  it("rejects snapshots from another customer or with invalid version, usage or degrees", async () => {
+    await expect(service.createQuote("customer-1", "store-centro", "Venda", 100, [], rx({ customerId: "customer-2" }))).rejects.toThrow("outro cliente");
+    await expect(service.createQuote("customer-1", "store-centro", "Venda", 100, [], rx({ version: 0 }))).rejects.toThrow("Versão da prescrição");
+    await expect(service.createQuote("customer-1", "store-centro", "Venda", 100, [], rx({ usage: "CORRIDA" as never }))).rejects.toThrow("Tipo de uso inválido");
+    await expect(service.createQuote("customer-1", "store-centro", "Venda", 100, [], rx({ od: { axis: 200 } }))).rejects.toThrow("entre 0° e 180°");
+    expect(repository.save).not.toHaveBeenCalled();
+  });
+
+  it("keeps the snapshot while the customer is unchanged and drops it on a customer switch", async () => {
+    repository.save.mockResolvedValue(undefined);
+    const kept = await service.updateQuote(quote({ prescription: rx() }), { customerId: "customer-1", description: "Armação", total: 200, items: [] });
+    expect(kept.prescription?.prescriptionId).toBe("rx-1");
+    const cleared = await service.updateQuote(quote({ prescription: rx() }), { customerId: "customer-2", description: "Armação", total: 200, items: [] });
+    expect(cleared.prescription).toBeUndefined();
+    const replaced = await service.updateQuote(quote({ prescription: rx() }), { customerId: "customer-1", description: "Armação", total: 200, items: [], prescription: rx({ prescriptionId: "rx-9", version: 3 }) });
+    expect(replaced.prescription).toMatchObject({ prescriptionId: "rx-9", version: 3 });
+  });
+
+  it("exposes the customer's prescriptions when the repository is available", async () => {
+    prescriptions.listByCustomer.mockResolvedValue([{ id: "rx-1" }]);
+    const withRepo = new SalesService(repository, prescriptions);
+    await expect(withRepo.listCustomerPrescriptions("customer-1", "store-centro")).resolves.toHaveLength(1);
+    expect(prescriptions.listByCustomer).toHaveBeenCalledWith("customer-1", "store-centro");
+    await expect(service.listCustomerPrescriptions("customer-1", "store-centro")).rejects.toThrow("indisponível");
   });
 });

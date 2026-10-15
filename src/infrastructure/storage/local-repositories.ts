@@ -176,6 +176,11 @@ export class LocalPrescriptionRepository implements PrescriptionRepository {
     await database.prescriptions.put(prescription);
     return prescription;
   }
+  async listByCustomer(customerId: string, storeId: string): Promise<Prescription[]> {
+    assertStoreAccess(storeId);
+    const rows = await database.prescriptions.where("customerId").equals(customerId).reverse().sortBy("issuedAt");
+    return rows.filter((row) => row.storeId === storeId);
+  }
 }
 
 export class LocalSaleRepository implements SaleRepository {

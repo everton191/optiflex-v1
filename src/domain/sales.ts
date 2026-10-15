@@ -1,6 +1,7 @@
 import type { InventoryMovement } from "./inventory";
 import { fromCents, toCents } from "./money";
 import { defaultOrganization } from "./access";
+import { assertValidPrescriptionEye, assertValidPrescriptionUsage, type Prescription, type PrescriptionEye, type PrescriptionUsage } from "./clinical";
 
 export type SaleStatus = "QUOTE" | "CONFIRMED" | "CANCELLED";
 export type SalePaymentStatus = "PENDING" | "PARTIAL" | "PAID";
@@ -27,6 +28,31 @@ export interface SaleItem {
   unitPrice: number;
 }
 
+// Copy of the structured prescription at quote time so the sale never asks the client to retype degrees.
+export interface SalePrescription {
+  prescriptionId: string;
+  customerId: string;
+  version: number;
+  usage?: PrescriptionUsage;
+  od: PrescriptionEye;
+  oe: PrescriptionEye;
+  notes?: string;
+}
+
+export function salePrescriptionSnapshot(prescription: Prescription): SalePrescription {
+  return { prescriptionId: prescription.id, customerId: prescription.customerId, version: prescription.version, usage: prescription.usage, od: prescription.od, oe: prescription.oe, notes: prescription.notes };
+}
+
+export function assertValidSalePrescription(prescription: SalePrescription): void {
+  if (!prescription.prescriptionId?.trim()) throw new Error("Prescrição vinculada sem identificador.");
+  if (!prescription.customerId?.trim()) throw new Error("Prescrição vinculada sem cliente.");
+  if (!Number.isSafeInteger(prescription.version) || prescription.version < 1) throw new Error("Versão da prescrição vinculada inválida.");
+  if (prescription.usage !== undefined) assertValidPrescriptionUsage(prescription.usage);
+  assertValidPrescriptionEye(prescription.od);
+  assertValidPrescriptionEye(prescription.oe);
+  if (prescription.notes !== undefined && typeof prescription.notes !== "string") throw new Error("Observações da prescrição vinculada inválidas.");
+}
+
 export interface Sale {
   organizationId?: string;
   id: string;
@@ -38,6 +64,7 @@ export interface Sale {
   description: string;
   total: number;
   items?: SaleItem[];
+  prescription?: SalePrescription;
   cancelReason?: string;
   cancelledAt?: string;
   cancelledBy?: string;

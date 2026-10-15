@@ -60,6 +60,16 @@ export interface PrescriptionEye {
   add?: number;
 }
 
+export type PrescriptionUsage = "DISTANCE" | "NEAR" | "CONTINUOUS" | "MULTIFOCAL";
+
+export const prescriptionUsageLabels: Record<PrescriptionUsage, string> = { DISTANCE: "À distância", NEAR: "À perto", CONTINUOUS: "Uso contínuo", MULTIFOCAL: "Multifocal" };
+
+export const prescriptionUsageKeys = Object.keys(prescriptionUsageLabels) as PrescriptionUsage[];
+
+export function assertValidPrescriptionUsage(usage: string): asserts usage is PrescriptionUsage {
+  if (!Object.hasOwn(prescriptionUsageLabels, usage)) throw new Error("Tipo de uso inválido.");
+}
+
 // Append-only document: issued versions are never rewritten; retification adds a new version linked to the previous one.
 export interface Prescription {
   organizationId?: string;
@@ -72,6 +82,7 @@ export interface Prescription {
   issuedAt: string;
   od: PrescriptionEye;
   oe: PrescriptionEye;
+  usage?: PrescriptionUsage;
   notes?: string;
   retifies?: string;
   retificationReason?: string;
@@ -83,10 +94,11 @@ export interface PrescriptionInput {
   storeId: string;
   od: PrescriptionEye;
   oe: PrescriptionEye;
+  usage?: PrescriptionUsage;
   notes?: string;
 }
 
-function assertEyeDegrees(eye: PrescriptionEye): void {
+export function assertValidPrescriptionEye(eye: PrescriptionEye): void {
   for (const key of ["sphere", "cylinder", "add"] as const) {
     const value = eye[key];
     if (value !== undefined && !Number.isFinite(value)) throw new Error("Grau inválido na prescrição.");
@@ -112,8 +124,9 @@ function assertPrescriptionInput(input: PrescriptionInput, author: string, now: 
     if (!value || !value.trim()) throw new Error(`Prescrição sem ${field}.`);
   }
   if (!Number.isFinite(Date.parse(now))) throw new Error("Data da prescrição inválida.");
-  assertEyeDegrees(input.od);
-  assertEyeDegrees(input.oe);
+  if (input.usage !== undefined) assertValidPrescriptionUsage(input.usage);
+  assertValidPrescriptionEye(input.od);
+  assertValidPrescriptionEye(input.oe);
   if (!hasEyeValue(input.od) && !hasEyeValue(input.oe) && !input.notes?.trim()) throw new Error("Informe ao menos um grau (OD/OE) ou uma observação.");
   return trimmedAuthor;
 }
@@ -131,6 +144,7 @@ export function issuePrescription(input: PrescriptionInput, author: string, now 
     issuedAt: now,
     od: normalizeEye(input.od),
     oe: normalizeEye(input.oe),
+    usage: input.usage,
     notes: input.notes?.trim() || undefined,
   };
 }

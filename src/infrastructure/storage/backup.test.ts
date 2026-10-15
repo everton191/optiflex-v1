@@ -294,4 +294,23 @@ describe("encrypted backup and transactional restore", () => {
     const missingEye = structuredClone(snapshot); delete (missingEye.tables.prescriptions[0] as { od?: unknown }).od;
     expect(() => validateBackup(missingEye)).toThrow("inválido");
   });
+
+  it("carries the prescription snapshot on sales and rejects corrupted links", async () => {
+    const snapshot = await repository.snapshot();
+    snapshot.tables.customers.push({ id: "customer-rx", name: "Cliente Rx", createdAt: "2026-01-01T09:00:00.000Z" });
+    snapshot.tables.attendances.push({ id: "attendance-rx", customerId: "customer-rx", storeId: "store-centro", type: "CONSULTATION", status: "IN_PROGRESS", createdAt: "2026-01-01T10:00:00.000Z" });
+    snapshot.tables.prescriptions.push({ id: "rx-x", attendanceId: "attendance-rx", customerId: "customer-rx", storeId: "store-centro", version: 2, author: "Dra. Ana", issuedAt: "2026-01-01T11:00:00.000Z", od: { sphere: -1.5, cylinder: -0.75, axis: 95 }, oe: { sphere: -1, add: 0.5 }, usage: "DISTANCE", notes: "Grau conferido" });
+    snapshot.tables.sales.push({ id: "sale-rx", customerId: "customer-rx", storeId: "store-centro", status: "QUOTE", description: "Armação + lentes", total: 480, createdAt: "2026-01-01T12:00:00.000Z", prescription: { prescriptionId: "rx-x", customerId: "customer-rx", version: 2, usage: "DISTANCE", od: { sphere: -1.5, cylinder: -0.75, axis: 95 }, oe: { sphere: -1, add: 0.5 }, notes: "Grau conferido" } });
+    expect(() => validateBackup(snapshot)).not.toThrow();
+    const missingLink = structuredClone(snapshot); (missingLink.tables.sales[0] as { prescription: { prescriptionId: string } }).prescription.prescriptionId = "missing-rx";
+    expect(() => validateBackup(missingLink)).toThrow("inválido");
+    const wrongCustomer = structuredClone(snapshot); (wrongCustomer.tables.sales[0] as { prescription: { customerId: string } }).prescription.customerId = "customer-other";
+    expect(() => validateBackup(wrongCustomer)).toThrow("inválido");
+    const badUsage = structuredClone(snapshot); (badUsage.tables.sales[0] as { prescription: { usage: unknown } }).prescription.usage = "CORRIDA";
+    expect(() => validateBackup(badUsage)).toThrow("inválido");
+    const badAxis = structuredClone(snapshot); (badAxis.tables.sales[0] as { prescription: { od: { axis: unknown } } }).prescription.od.axis = 200;
+    expect(() => validateBackup(badAxis)).toThrow("inválido");
+    const badVersion = structuredClone(snapshot); (badVersion.tables.sales[0] as { prescription: { version: unknown } }).prescription.version = 0;
+    expect(() => validateBackup(badVersion)).toThrow("inválido");
+  });
 });

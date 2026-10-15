@@ -3,7 +3,7 @@ import { errorMessage } from "../domain/errors";
 import { Link, useBlocker, useParams } from "react-router-dom";
 import { Button, Card, Input } from "../design-system/components";
 import { ClinicalService } from "../domain/clinical-service";
-import { ATTACHMENT_MAX_BYTES, ATTACHMENT_TYPE_LABEL, activePrescription, attachmentCategoryKeys, clinicalAttachmentCategoryLabels, type ClinicalAttachment, type ClinicalAttachmentCategory, type ClinicalVersion, type Prescription } from "../domain/clinical";
+import { ATTACHMENT_MAX_BYTES, ATTACHMENT_TYPE_LABEL, activePrescription, attachmentCategoryKeys, clinicalAttachmentCategoryLabels, prescriptionUsageKeys, prescriptionUsageLabels, type ClinicalAttachment, type ClinicalAttachmentCategory, type ClinicalVersion, type Prescription, type PrescriptionUsage } from "../domain/clinical";
 import type { Customer } from "../domain/customer";
 import { base64ToBlob, fileToBase64 } from "../infrastructure/storage/attachment-codec";
 import { LocalClinicalRepository, LocalPrescriptionRepository } from "../infrastructure/storage/local-repositories";
@@ -42,7 +42,8 @@ function ClinicalWorkspace({ attendanceId }: { attendanceId: string }) {
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]); const [rxError, setRxError] = useState("");
   const [odSphere, setOdSphere] = useState(""); const [odCylinder, setOdCylinder] = useState(""); const [odAxis, setOdAxis] = useState(""); const [odAdd, setOdAdd] = useState("");
   const [oeSphere, setOeSphere] = useState(""); const [oeCylinder, setOeCylinder] = useState(""); const [oeAxis, setOeAxis] = useState(""); const [oeAdd, setOeAdd] = useState("");
-  const [rxNotes, setRxNotes] = useState("");
+  const [rxNotes, setRxNotes] = useState(""); const [rxUsage, setRxUsage] = useState("");
+  const [retifying, setRetifying] = useState<Prescription>(); const [retificationReason, setRetificationReason] = useState("");
   const [, render] = useState(0); const alive = useRef(true); const pending = useRef(false); const fileInput = useRef<HTMLInputElement>(null);
   const context = { storeId: currentStoreId, session };
   const blocker = useBlocker(Boolean(draft?.dirty || busy));
@@ -114,21 +115,30 @@ function ClinicalWorkspace({ attendanceId }: { attendanceId: string }) {
     } catch (failure) { setAttachmentError(errorMessage(failure, "Não foi possível excluir o anexo.")); }
     finally { pending.current = false; setBusy(false); }
   }
+  function resetRxForm() {
+    setOdSphere(""); setOdCylinder(""); setOdAxis(""); setOdAdd("");
+    setOeSphere(""); setOeCylinder(""); setOeAxis(""); setOeAdd("");
+    setRxNotes(""); setRxUsage(""); setRetifying(undefined); setRetificationReason("");
+  }
+  function startRetification(rx: Prescription) {
+    setRxError(""); setRetifying(rx); setRetificationReason("");
+    setOdSphere(formatDegree(rx.od.sphere)); setOdCylinder(formatDegree(rx.od.cylinder)); setOdAxis(rx.od.axis === undefined ? "" : String(rx.od.axis)); setOdAdd(formatDegree(rx.od.add));
+    setOeSphere(formatDegree(rx.oe.sphere)); setOeCylinder(formatDegree(rx.oe.cylinder)); setOeAxis(rx.oe.axis === undefined ? "" : String(rx.oe.axis)); setOeAdd(formatDegree(rx.oe.add));
+    setRxNotes(rx.notes ?? ""); setRxUsage(rx.usage ?? "");
+  }
   async function submitPrescription(event: FormEvent) {
     event.preventDefault();
     if (pending.current) return;
     pending.current = true; setBusy(true); setRxError("");
+    const od = { sphere: parseDegree(odSphere), cylinder: parseDegree(odCylinder), axis: parseDegree(odAxis), add: parseDegree(odAdd) };
+    const oe = { sphere: parseDegree(oeSphere), cylinder: parseDegree(oeCylinder), axis: parseDegree(oeAxis), add: parseDegree(oeAdd) };
+    const usage = rxUsage ? rxUsage as PrescriptionUsage : undefined;
     try {
-      await service.issuePrescription({
-        customerId: customer?.id ?? "",
-        od: { sphere: parseDegree(odSphere), cylinder: parseDegree(odCylinder), axis: parseDegree(odAxis), add: parseDegree(odAdd) },
-        oe: { sphere: parseDegree(oeSphere), cylinder: parseDegree(oeCylinder), axis: parseDegree(oeAxis), add: parseDegree(oeAdd) },
-        notes: rxNotes,
-      }, attendanceId, context);
-      setOdSphere(""); setOdCylinder(""); setOdAxis(""); setOdAdd("");
-      setOeSphere(""); setOeCylinder(""); setOeAxis(""); setOeAdd(""); setRxNotes("");
+      if (retifying) await service.retifyPrescription(retifying, { od, oe, usage, notes: rxNotes }, retificationReason, context);
+      else await service.issuePrescription({ customerId: customer?.id ?? "", od, oe, usage, notes: rxNotes }, attendanceId, context);
+      resetRxForm();
       setPrescriptions(await service.listPrescriptions(attendanceId, context));
-    } catch (failure) { setRxError(errorMessage(failure, "Não foi possível emitir a prescrição.")); }
+    } catch (failure) { setRxError(errorMessage(failure, retifying ? "Não foi possível retificar a prescrição." : "Não foi possível emitir a prescrição.")); }
     finally { pending.current = false; setBusy(false); }
   }
   if (!draft || !customer) return <div className="page"><h1>Abrindo consulta</h1>{error ? <><p role="alert">{error}</p><Button onClick={() => setAttempt((value) => value + 1)}>Tentar novamente</Button><Link to="/clinico">Voltar à fila</Link></> : <p role="status">Carregando os dados…</p>}</div>;
@@ -153,13 +163,16 @@ function ClinicalWorkspace({ attendanceId }: { attendanceId: string }) {
         <label>OE cilíndrico<Input type="number" step="0.01" value={oeCylinder} disabled={busy} placeholder="-0.25" onChange={(event) => setOeCylinder(event.target.value)} /></label>
         <label>OE eixo<Input type="number" step="1" min="0" max="180" value={oeAxis} disabled={busy} placeholder="0–180" onChange={(event) => setOeAxis(event.target.value)} /></label>
         <label>OE adição<Input type="number" step="0.01" value={oeAdd} disabled={busy} placeholder="+0.50" onChange={(event) => setOeAdd(event.target.value)} /></label>
-        <label>Observações<Input value={rxNotes} disabled={busy} placeholder="Opcional (uso contínuo, observações)" onChange={(event) => setRxNotes(event.target.value)} /></label>
-        <div className="form-actions"><Button type="submit" disabled={busy}>Emitir prescrição</Button></div>
+        <label>Tipo de uso<select value={rxUsage} disabled={busy} onChange={(event) => setRxUsage(event.target.value)}><option value="">Não informado</option>{prescriptionUsageKeys.map((key) => <option key={key} value={key}>{prescriptionUsageLabels[key]}</option>)}</select></label>
+        <label>Observações<Input value={rxNotes} disabled={busy} placeholder="Opcional (observações clínicas)" onChange={(event) => setRxNotes(event.target.value)} /></label>
+        {retifying && <Card><h3>Retificando a versão {retifying.version}</h3><p>A versão {retifying.version} ({retifying.author} · {new Date(retifying.issuedAt).toLocaleString("pt-BR")}) permanece no histórico com autor, data e motivo. A nova versão fica ativa.</p><label>Motivo da retificação<Input value={retificationReason} disabled={busy} placeholder="Ex.: grau conferido na revisão" onChange={(event) => setRetificationReason(event.target.value)} /></label></Card>}
+        <div className="form-actions"><Button type="submit" disabled={busy || (Boolean(retifying) && !retificationReason.trim())}>{retifying ? `Retificar (versão ${retifying.version + 1})` : "Emitir prescrição"}</Button>{retifying && <Button type="button" disabled={busy} onClick={() => { resetRxForm(); }}>Cancelar retificação</Button>}</div>
         <p className="help-text">Graus em dioptrias; eixo em graus (0–180). A prescrição é um documento próprio: versões emitidas nunca são reescritas.</p>
       </form>
       {rxError && <p role="alert" className="notice error-text">{rxError}</p>}
       <div className="list-card compact-list">{prescriptions.length ? prescriptions.map((rx) => { const active = rx.id === activePrescription(prescriptions)?.id; return <article className="list-row" key={rx.id}>
-        <div><strong>{active ? "Prescrição ativa" : `Versão ${rx.version}`}{rx.retifies ? " · retificação" : ""}</strong><span>{formatEye("OD", rx.od)} · {formatEye("OE", rx.oe)}</span>{rx.notes && <span className="help-text">{rx.notes}</span>}<span className="help-text">{rx.author} · {new Date(rx.issuedAt).toLocaleString("pt-BR")}</span></div>
+        <div><strong>{active ? "Prescrição ativa" : `Versão ${rx.version}`}{rx.retifies ? " · retificação" : ""}{rx.usage ? ` · ${prescriptionUsageLabels[rx.usage]}` : ""}</strong><span>{formatEye("OD", rx.od)} · {formatEye("OE", rx.oe)}</span>{rx.notes && <span className="help-text">{rx.notes}</span>}{rx.retificationReason && <span className="help-text">Motivo da retificação: {rx.retificationReason}</span>}<span className="help-text">{rx.author} · {new Date(rx.issuedAt).toLocaleString("pt-BR")}</span></div>
+        {active && !busy && <div><Button type="button" onClick={() => startRetification(rx)}>Retificar</Button></div>}
       </article>; }) : <p className="empty-state">Nenhuma prescrição estruturada emitida.</p>}</div>
     </section>
     <section className="clinical-attachments">

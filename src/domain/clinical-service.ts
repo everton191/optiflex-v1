@@ -1,5 +1,5 @@
 import { hasPermission, type LocalSession } from "./access";
-import { assertValidAttachment, assertValidAttachmentCategory, issuePrescription, type ClinicalAttachment, type ClinicalAttachmentCategory, type ClinicalRecord, type Prescription, type PrescriptionEye } from "./clinical";
+import { assertValidAttachment, assertValidAttachmentCategory, issuePrescription, retifyPrescription, type ClinicalAttachment, type ClinicalAttachmentCategory, type ClinicalRecord, type Prescription, type PrescriptionEye, type PrescriptionUsage } from "./clinical";
 import type { ClinicalRepository, PrescriptionRepository } from "./repositories";
 
 export interface ClinicalContext { storeId: string; session: LocalSession; }
@@ -34,9 +34,15 @@ export class ClinicalService {
     this.authorize(context);
     return this.prescriptions.listByAttendance(attendanceId, context.storeId);
   }
-  async issuePrescription(input: { customerId: string; od: PrescriptionEye; oe: PrescriptionEye; notes?: string }, attendanceId: string, context: ClinicalContext): Promise<Prescription> {
+  async issuePrescription(input: { customerId: string; od: PrescriptionEye; oe: PrescriptionEye; usage?: PrescriptionUsage; notes?: string }, attendanceId: string, context: ClinicalContext): Promise<Prescription> {
     this.authorize(context);
-    const prescription = issuePrescription({ attendanceId, storeId: context.storeId, customerId: input.customerId, od: input.od, oe: input.oe, notes: input.notes }, context.session.userName);
+    const prescription = issuePrescription({ attendanceId, storeId: context.storeId, customerId: input.customerId, od: input.od, oe: input.oe, usage: input.usage, notes: input.notes }, context.session.userName);
+    return this.prescriptions.save(prescription, context.storeId);
+  }
+  async retifyPrescription(current: Prescription, input: { od: PrescriptionEye; oe: PrescriptionEye; usage?: PrescriptionUsage; notes?: string }, reason: string, context: ClinicalContext): Promise<Prescription> {
+    this.authorize(context);
+    if (current.storeId !== context.storeId) throw new Error("Prescrição de outra loja.");
+    const prescription = retifyPrescription(current, { attendanceId: current.attendanceId, customerId: current.customerId, storeId: current.storeId, od: input.od, oe: input.oe, usage: input.usage, notes: input.notes }, reason, context.session.userName);
     return this.prescriptions.save(prescription, context.storeId);
   }
   async storeAttachment(file: { name: string; mimeType: string; size: number; content: string }, category: ClinicalAttachmentCategory, context: ClinicalContext): Promise<ClinicalAttachment> {

@@ -2,6 +2,7 @@ import { rolePermissions, type RoleKey } from "./access";
 import { paymentMethodLabels } from "./cash";
 import { isAttendancePriority } from "./customer";
 import { isProductCategory } from "./inventory";
+import { prescriptionUsageLabels } from "./clinical";
 import { quoteStatusLabels } from "./sales";
 import { workOrderEventLabels, workOrderStatusLabels } from "./work-order";
 
@@ -80,6 +81,18 @@ export function validateBackup(value: unknown): BackupSnapshot {
       if (name === "inventoryItems" && row.category !== undefined && !isProductCategory(row.category)) throw invalid();
       if (name === "attendances" && row.priority !== undefined && !isAttendancePriority(row.priority)) throw invalid();
       if (name === "sales" && row.items !== undefined && (!Array.isArray(row.items) || row.items.some((item) => !object(item) || typeof item.inventoryItemId !== "string" || typeof item.name !== "string" || typeof item.quantity !== "number" || !Number.isFinite(item.quantity) || item.quantity <= 0 || typeof item.unitPrice !== "number" || !Number.isFinite(item.unitPrice) || item.unitPrice < 0))) throw invalid();
+      if (name === "sales" && row.prescription !== undefined) {
+        const rx = row.prescription;
+        if (!object(rx) || typeof rx.prescriptionId !== "string" || !rx.prescriptionId.trim() || typeof rx.customerId !== "string" || !rx.customerId.trim() || !Number.isSafeInteger(rx.version) || (rx.version as number) < 1) throw invalid();
+        if (rx.usage !== undefined && !Object.hasOwn(prescriptionUsageLabels, rx.usage as string)) throw invalid();
+        if (rx.notes !== undefined && typeof rx.notes !== "string") throw invalid();
+        for (const field of ["od", "oe"]) {
+          const eye = rx[field];
+          if (!object(eye)) throw invalid();
+          for (const key of ["sphere", "cylinder", "add"]) if (eye[key] !== undefined && (typeof eye[key] !== "number" || !Number.isFinite(eye[key] as number))) throw invalid();
+          if (eye.axis !== undefined && (typeof eye.axis !== "number" || !Number.isFinite(eye.axis as number) || (eye.axis as number) < 0 || (eye.axis as number) > 180)) throw invalid();
+        }
+      }
       if (name === "cashSessions") {
         for (const field of ["expectedBalance", "closingBalance"]) if (row[field] !== undefined && (typeof row[field] !== "number" || !Number.isFinite(row[field]) || (row[field] as number) < 0)) throw invalid();
         if (row.difference !== undefined && (typeof row.difference !== "number" || !Number.isFinite(row.difference))) throw invalid();
@@ -128,6 +141,11 @@ export function validateBackup(value: unknown): BackupSnapshot {
   const sales = new Map(tables.sales.map((row) => [row.id, row]));
   const inventoryItems = new Map(tables.inventoryItems.map((row) => [row.id, row]));
   for (const row of tables.sales) for (const item of (row.items ?? []) as Record<string, unknown>[]) if (inventoryItems.get(item.inventoryItemId as string)?.storeId !== row.storeId) throw invalid();
+  const prescriptions = new Map(tables.prescriptions.map((row) => [row.id, row]));
+  for (const row of tables.sales) if (row.prescription !== undefined) {
+    const linked = prescriptions.get((row.prescription as { prescriptionId: string }).prescriptionId);
+    if (!linked || linked.customerId !== (row.prescription as { customerId: string }).customerId || linked.storeId !== row.storeId) throw invalid();
+  }
   if (tables.cashEntries.some((row) => row.saleId !== undefined && sales.get(row.saleId)?.storeId !== row.storeId)) throw invalid();
   for (const row of tables.clinicalVersions) {
     if (row.id !== `${row.attendanceId}:${row.version ?? 1}` || !Number.isFinite(Date.parse(row.finalizedAt as string))) throw invalid();

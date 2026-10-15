@@ -189,4 +189,24 @@ describe("structured refraction", () => {
     await service.issuePrescription({ customerId, od: { sphere: -1 }, oe: {} }, attendanceId, context);
     await expect(service.listPrescriptions(attendanceId, { ...context, storeId: "store-shopping" })).rejects.toThrow("não encontrado nesta loja");
   });
+
+  it("retifies through the service keeping the original author, date and reason visible", async () => {
+    const original = await service.issuePrescription({ customerId, od: { sphere: -1.25 }, oe: {}, usage: "CONTINUOUS" }, attendanceId, context);
+    const retified = await service.retifyPrescription(original, { od: { sphere: -1.75 }, oe: {}, usage: "DISTANCE" }, "  Grau conferido  ", context);
+    expect(retified).toMatchObject({ version: 2, retifies: original.id, retificationReason: "Grau conferido", author: "Profissional teste", usage: "DISTANCE" });
+    const listed = await service.listPrescriptions(attendanceId, context);
+    const originalRow = listed.find((item) => item.id === original.id);
+    expect(originalRow).toMatchObject({ version: 1, author: "Profissional teste", issuedAt: original.issuedAt, usage: "CONTINUOUS" });
+    expect(originalRow?.retifies).toBeUndefined();
+    expect(activePrescription(listed)?.id).toBe(retified.id);
+    await expect(service.retifyPrescription(original, { od: { sphere: -1.75 }, oe: {} }, "   ", context)).rejects.toThrow("motivo da retificação");
+  });
+
+  it("lists a customer's prescriptions for the sale desk, scoped by store", async () => {
+    await service.issuePrescription({ customerId, od: { sphere: -1 }, oe: {}, notes: "Longe" }, attendanceId, context);
+    const repository = new LocalPrescriptionRepository();
+    expect(await repository.listByCustomer(customerId, "store-centro")).toHaveLength(1);
+    expect(await repository.listByCustomer("customer-inexistente", "store-centro")).toHaveLength(0);
+    expect(await repository.listByCustomer(customerId, "store-shopping")).toHaveLength(0);
+  });
 });
