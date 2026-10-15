@@ -7,7 +7,7 @@ Nenhuma versão é liberada com apenas "build verde".
 
 - [ ] Branch e escopo revisados (`git log` da release, `git status` limpo).
 - [ ] Toda feature ligada a Issue com `status/done` e evidência de teste no card.
-- [ ] `npm.cmd test` → 100% verde (números atuais: 288/288 em `66dc070`).
+- [ ] `npm.cmd test` → 100% verde (números atuais: 293/293 em `8c20023`).
 - [ ] `npm.cmd run build` → exit 0.
 - [ ] `npx.cmd tsc -b --pretty false` → exit 0.
 - [ ] Login/sessão intactos (`/login`, `Sair`, expiração de 12 h) após mudanças em `access`/`providers`/`router`.

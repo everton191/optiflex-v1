@@ -4,6 +4,12 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `8c20023` + docs — Prevenção de duplicidades (F2-08)
+
+- `src/domain/customer.ts`: `normalizeSearchText` (remove acentos, caixa e pontuação, colapsa espaços) e `findDuplicateCustomer(customers, input, excludeId?)` — considera duplicidade **CPF idêntico** (dígitos normalizados, com ou sem máscara) **OU** nome+telefone iguais normalizados; campos vazios nunca casam (evita falso positivo em massa); `excludeId` pronto para a edição.
+- `CustomerNewPage` (`CustomersWorkspace.tsx`): carrega a base de clientes no mount; no envio, se houver duplicata, **não salva** — mostra aviso (`.notice`, `role="alert"`) com o cadastro encontrado (nome/telefone/CPF) e dois caminhos: "Revisar cadastro" (limpa o aviso) ou "Cadastrar mesmo assim", que abre campo **Motivo** obrigatório antes do envio; editar os campos limpa o aviso e reavalia na próxima tentativa. Sem bloqueio absoluto (escopo).
+- 5 testes novos em `customer.test.ts` (normalização, CPF com máscara diferente, nome+telefone, casos sem duplicata, `excludeId`) — **293/293**, build 0, tsc 0. Fora de escopo: mesclagem automática, auditoria (F1-10). Card: F2-08/#30 → DONE.
+
 ### `66dc070` + docs — Dashboard por função e estados de painel (F7-03)
 
 - `src/domain/dashboard.ts`: seletores puros novos — `dashboardProfile` (CLINICAL/SALES/CASH/MANAGEMENT por papel), `dashboardMetricKeys` (ordem de métricas por perfil, filtrada por permissão, teto de 4) e `returnsToday` (retornos criados hoje).
