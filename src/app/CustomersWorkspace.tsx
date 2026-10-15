@@ -4,6 +4,7 @@ import { useAppContext, useSession } from "./providers";
 import { Button, EmptyState, Input, PageHeader, Search, Skeleton } from "../design-system/components";
 import { hasPermission } from "../domain/access";
 import type { Attendance, Customer } from "../domain/customer";
+import { findDuplicateCustomer } from "../domain/customer";
 import { ReceptionService } from "../domain/reception-service";
 import { LocalAttendanceRepository, LocalCustomerRepository } from "../infrastructure/storage/local-repositories";
 import { attendanceStatusLabels, attendanceTypeLabels } from "./ReceptionWorkspace";
@@ -49,10 +50,20 @@ export function CustomerNewPage() {
   const session = useSession();
   const navigate = useNavigate(); const [name, setName] = useState(""); const [phone, setPhone] = useState(""); const [cpf, setCpf] = useState("");
   const [saving, setSaving] = useState(false); const [error, setError] = useState(""); const pending = useRef(false);
+  const [known, setKnown] = useState<Customer[]>([]); const [duplicate, setDuplicate] = useState<Customer>();
+  const [override, setOverride] = useState(false); const [overrideReason, setOverrideReason] = useState("");
   const canStart = hasPermission(session.role, "attendance.create");
+  useEffect(() => { void receptionService.listCustomers("").then((items) => setKnown(items)).catch(() => setKnown([])); }, []);
+  function change(setter: (value: string) => void) {
+    return (event: React.ChangeEvent<HTMLInputElement>) => { setter(event.target.value); setDuplicate(undefined); setOverride(false); setOverrideReason(""); };
+  }
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     if (pending.current || !hasPermission(session.role, "customers.manage")) return;
+    if (!override) {
+      const found = findDuplicateCustomer(known, { name, phone, cpf });
+      if (found) { setDuplicate(found); setError(""); return; }
+    }
     pending.current = true; setSaving(true); setError("");
     try {
       const customer = await receptionService.createCustomer({ name, phone, cpf });
@@ -60,7 +71,7 @@ export function CustomerNewPage() {
     } catch (reason) { setError(reason instanceof Error ? reason.message : !name.trim() ? "Informe o nome do cliente." : "Não foi possível salvar o cliente. Tente novamente."); }
     finally { pending.current = false; setSaving(false); }
   }
-  return <div className="page"><p className="eyebrow">Recepção</p><h1>Novo cliente</h1><form className="settings-form" onSubmit={submit}><label>Nome completo<Input value={name} onChange={(event) => setName(event.target.value)} disabled={saving} required /></label><label>Telefone<Input value={phone} onChange={(event) => setPhone(event.target.value)} disabled={saving} /></label><label>CPF/CNPJ<Input value={cpf} onChange={(event) => setCpf(event.target.value)} disabled={saving} /></label>{error && <p role="alert" className="error-text">{error}</p>}<Button type="submit" disabled={saving}>{saving ? "Salvando…" : canStart ? "Salvar e iniciar atendimento" : "Salvar cliente"}</Button></form></div>;
+  return <div className="page"><p className="eyebrow">Recepção</p><h1>Novo cliente</h1><form className="settings-form" onSubmit={submit}><label>Nome completo<Input value={name} onChange={change(setName)} disabled={saving} required /></label><label>Telefone<Input value={phone} onChange={change(setPhone)} disabled={saving} /></label><label>CPF/CNPJ<Input value={cpf} onChange={change(setCpf)} disabled={saving} /></label>{duplicate && <div className="notice" role="alert"><p>Possível cliente duplicado: <strong>{duplicate.name}</strong>{duplicate.phone ? ` · ${duplicate.phone}` : ""}{duplicate.cpf ? ` · ${duplicate.cpf}` : ""} já está cadastrado. Cadastrar de novo quebra histórico e financeiro.</p>{override ? <label>Motivo para cadastrar mesmo assim<Input value={overrideReason} onChange={(event) => setOverrideReason(event.target.value)} disabled={saving} required /></label> : <div className="form-actions"><Button type="button" onClick={() => setOverride(true)} disabled={saving}>Cadastrar mesmo assim</Button><Button type="button" onClick={() => { setDuplicate(undefined); setOverride(false); }} disabled={saving}>Revisar cadastro</Button></div>}</div>}{error && <p role="alert" className="error-text">{error}</p>}<Button type="submit" disabled={saving}>{saving ? "Salvando…" : canStart ? "Salvar e iniciar atendimento" : "Salvar cliente"}</Button></form></div>;
 }
 
 export function CustomerEditPage() {

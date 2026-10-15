@@ -93,3 +93,23 @@ export function isValidDocument(value: string): boolean {
   if (digits.length === 14) return isValidCNPJ(digits);
   return false;
 }
+
+export function normalizeSearchText(value: string): string {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\w\s]/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function normalizePhoneDigits(value: string): string {
+  return (value ?? "").replace(/\D/g, "");
+}
+
+export function findDuplicateCustomer(customers: readonly Customer[], input: Pick<Customer, "name" | "phone" | "cpf">, excludeId?: string): Customer | undefined {
+  const document = normalizeDocument(input.cpf ?? "").trim();
+  const name = normalizeSearchText(input.name ?? "");
+  const phone = normalizePhoneDigits(input.phone ?? "");
+  for (const customer of customers) {
+    if (excludeId && customer.id === excludeId) continue;
+    if (document && document === normalizeDocument(customer.cpf ?? "").trim()) return customer;
+    if (name && phone && name === normalizeSearchText(customer.name) && phone === normalizePhoneDigits(customer.phone ?? "")) return customer;
+  }
+  return undefined;
+}

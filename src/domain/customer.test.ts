@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { attendanceTransitions, isActiveQueueStatus, isValidCPF, isValidCNPJ, isValidDocument, waitingMinutes, type AttendanceStatus } from "./customer";
+import { attendanceTransitions, findDuplicateCustomer, isActiveQueueStatus, isValidCPF, isValidCNPJ, isValidDocument, normalizeSearchText, waitingMinutes, type AttendanceStatus, type Customer } from "./customer";
 
 const allStatuses: readonly AttendanceStatus[] = ["DRAFT", "WAITING", "IN_PROGRESS", "FINISHED", "CANCELLED", "NO_SHOW"];
 
@@ -66,5 +66,35 @@ describe("CPF/CNPJ validation", () => {
     expect(isValidDocument("1122233300018")).toBe(false);
     expect(isValidDocument("123")).toBe(false);
     expect(isValidDocument("")).toBe(false);
+  });
+});
+
+describe("duplicate customer detection", () => {
+  const customer = (id: string, name: string, phone?: string, cpf?: string): Customer => ({ id, name, phone, cpf, createdAt: "2026-01-01T10:00:00.000Z" });
+  const existing = [customer("c1", "José da Silva", "(11) 99999-0000", "111.444.777-35"), customer("c2", "Maria Souza", "1133334444")];
+
+  it("normalizes accents, case and punctuation for comparisons", () => {
+    expect(normalizeSearchText("  JOSE   da-Silva! ")).toBe("jose da silva");
+    expect(normalizeSearchText("María Souza")).toBe("maria souza");
+  });
+
+  it("flags the same document even with a different mask", () => {
+    expect(findDuplicateCustomer(existing, { name: "Outro Nome", phone: "988887777", cpf: "11144477735" })?.id).toBe("c1");
+    expect(findDuplicateCustomer(existing, { name: "Outro Nome", phone: "988887777", cpf: "999.888.777-66" })).toBeUndefined();
+  });
+
+  it("flags the same normalized name and phone when no document is given", () => {
+    expect(findDuplicateCustomer(existing, { name: "jose da silva", phone: "11 99999 0000" })?.id).toBe("c1");
+    expect(findDuplicateCustomer(existing, { name: "MARIA SOUZA", phone: "(11) 3333-4444" })?.id).toBe("c2");
+  });
+
+  it("stays quiet when there is no document and name or phone differ", () => {
+    expect(findDuplicateCustomer(existing, { name: "José da Silva", phone: "(11) 98888-7777" })).toBeUndefined();
+    expect(findDuplicateCustomer(existing, { name: "Ana Paula", phone: "(11) 99999-0000" })).toBeUndefined();
+    expect(findDuplicateCustomer(existing, { name: "", phone: "", cpf: "" })).toBeUndefined();
+  });
+
+  it("skips the customer being edited", () => {
+    expect(findDuplicateCustomer(existing, { name: "José da Silva", phone: "(11) 99999-0000", cpf: "111.444.777-35" }, "c1")).toBeUndefined();
   });
 });
