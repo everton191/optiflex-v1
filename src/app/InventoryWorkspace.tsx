@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Button, Input } from "../design-system/components";
+import { Button, Drawer, Input, Select } from "../design-system/components";
 import { hasPermission } from "../domain/access";
 import { InventoryService } from "../domain/inventory-service";
 import type { InventoryItem, InventoryMovement, InventoryMovementType, ProductCategory, ProductCategoryFilter } from "../domain/inventory";
@@ -103,7 +103,7 @@ export function InventoryPage() {
     {canManage && formOpen && <form className="inventory-form" onSubmit={saveProduct}>
       <label>Produto<Input value={name} onChange={(event) => setName(event.target.value)} required /></label>
       <label>Código<Input value={code} onChange={(event) => setCode(event.target.value)} placeholder="Barras ou interno" required /></label>
-      <label>Categoria<select aria-label="Categoria do produto" value={category} onChange={(event) => setCategory(event.target.value as ProductCategory)} required><option value="">Selecione</option>{productCategories.map((value) => <option key={value} value={value}>{productCategoryLabels[value]}</option>)}</select></label>
+      <Select label="Categoria" aria-label="Categoria do produto" value={category} onChange={(event) => setCategory(event.target.value as ProductCategory)} required><option value="">Selecione</option>{productCategories.map((value) => <option key={value} value={value}>{productCategoryLabels[value]}</option>)}</Select>
       {!editing && <label>Saldo inicial<Input type="number" min="0" step="1" value={quantity} onChange={(event) => setQuantity(event.target.value)} placeholder="0" /></label>}
       <label>Estoque mínimo<Input type="number" min="0" step="1" value={minimum} onChange={(event) => setMinimum(event.target.value)} placeholder="0" /></label>
       <label>Preço padrão (R$)<Input type="number" min="0" step="0.01" value={defaultPrice} onChange={(event) => setDefaultPrice(event.target.value)} placeholder="Opcional" /></label>
@@ -118,16 +118,16 @@ export function InventoryPage() {
       {editing && <p className="help-text">O saldo não é editado aqui: use Movimentar para registrar entrada, saída ou ajuste com motivo.</p>}
     </form>}
 
-    {canManage && moving && <form className="inventory-form" onSubmit={applyMovement}>
+    {canManage && <Drawer open={Boolean(moving)} onClose={resetMovement} title={moving ? `Movimentar ${moving.name}` : "Movimentar produto"}>{moving && <form className="inventory-form" onSubmit={applyMovement}>
       <p className="help-text inventory-moving">Movimentando <strong>{moving.name}</strong> · saldo atual {moving.quantity}</p>
-      <label>Tipo<select aria-label="Tipo de movimentação" value={moveType} onChange={(event) => setMoveType(event.target.value as InventoryMovementType)}><option value="IN">Entrada</option><option value="OUT">Saída</option><option value="ADJUSTMENT">Ajuste (com sinal)</option></select></label>
+      <Select label="Tipo" aria-label="Tipo de movimentação" value={moveType} onChange={(event) => setMoveType(event.target.value as InventoryMovementType)}><option value="IN">Entrada</option><option value="OUT">Saída</option><option value="ADJUSTMENT">Ajuste (com sinal)</option></Select>
       <label>Quantidade<Input type="number" step="1" value={moveQuantity} onChange={(event) => setMoveQuantity(event.target.value)} required /></label>
       <label>Motivo<Input value={moveReason} onChange={(event) => setMoveReason(event.target.value)} placeholder="Ex.: compra, venda, conferência" required /></label>
       <div className="form-actions">
         <Button type="submit">Registrar movimentação</Button>
         <Button type="button" onClick={resetMovement}>Cancelar</Button>
       </div>
-    </form>}
+    </form>}</Drawer>}
 
     <h2 className="section-title">Produtos</h2>
     <div className="status-filters" role="tablist" aria-label="Filtrar produtos por categoria">

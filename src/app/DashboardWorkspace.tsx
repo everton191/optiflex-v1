@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Button, Card } from "../design-system/components";
+import { Button, Card, Skeleton } from "../design-system/components";
 import { hasPermission } from "../domain/access";
 import type { Attendance } from "../domain/customer";
 import type { CashEntry, CashSession } from "../domain/cash";
@@ -98,7 +98,7 @@ export function DashboardPage() {
     <section className="flow-card"><p className="eyebrow">Fluxo principal do atendimento</p><div className="flow-steps">{flow.map((step, index) => <Link className="flow-step" key={step.label} to={step.to}><span>{index + 1}</span><strong>{step.label}</strong></Link>)}</div></section>
     <section className="page-title"><div><p className="eyebrow">Visão geral</p><h1>Olá, {session.userName}</h1><p className="page-intro">Acompanhe a operação de {settings.organizationName}.</p></div>{hasPermission(session.role, "customers.manage") && <Link className="button" to="/clientes/novo">Iniciar atendimento</Link>}</section>
     {error && <p className="notice error-text" role="alert">{error} <Button type="button" onClick={retry}>Tentar novamente</Button></p>}
-    {loading ? <p className="empty-state" role="status">Carregando visão geral…</p> : <>
+    {loading ? <Skeleton lines={4} label="Carregando visão geral…" /> : <>
       <div className="metric-grid">{metrics.map((metric) => <Card key={metric.label}><small>{metric.label}</small><strong>{metric.value}</strong><span className="help-text">{metric.hint}</span></Card>)}</div>
       <div className="dashboard-grid">
         <Card>
