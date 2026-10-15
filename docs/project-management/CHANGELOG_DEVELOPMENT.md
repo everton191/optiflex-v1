@@ -4,6 +4,16 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `6f2fe74` + docs — Prescrição estruturada: uso, retificação e venda (F3-06)
+
+- `src/domain/clinical.ts`: `PrescriptionUsage` (`DISTANCE`/`NEAR`/`CONTINUOUS`/`MULTIFOCAL`) com `prescriptionUsageLabels`/`prescriptionUsageKeys`/`assertValidPrescriptionUsage` ("Tipo de uso inválido."); `usage?` opcional em `Prescription`/`PrescriptionInput` (prescrições antigas sem uso continuam válidas); `assertValidPrescriptionEye` exportado.
+- `src/domain/clinical-service.ts`: `issuePrescription` aceita `usage`; novo `retifyPrescription(current, input, reason, context)` — autoriza pela loja do atendimento, valida motivo ("Informe o motivo da retificação."), delega ao domínio e grava a próxima versão com `retifies`/`retificationReason` preservando autor/data da original (CA1).
+- `src/domain/sales.ts`/`sales-service.ts`: `SalePrescription` (`prescriptionId`, `customerId`, `version`, `usage?`, OD/OE, `notes?`) + `salePrescriptionSnapshot`/`assertValidSalePrescription`; `createQuote` valida snapshot (cliente/versão/uso/eixo) e grava em `Sale.prescription` (CA2 — sem redigitação); `updateQuote` mantém o snapshot se o cliente não mudar, limpa se trocar e substitui se novo; ctor aceita `PrescriptionRepository` opcional e `listCustomerPrescriptions(customerId, storeId)` ("Consulta de prescrições indisponível." sem repositório).
+- `src/domain/repositories.ts`/`local-repositories.ts`: `PrescriptionRepository.listByCustomer` (+ `LocalPrescriptionRepository.listByCustomer` com guarda de loja).
+- `src/domain/backup.ts`: validação estrutural de `sales.prescription` (versão, uso, graus com eixo 0–180) + FK (prescrição existe, customerId/storeId batem).
+- UI: workspace clínica com seletor "Tipo de uso", botão "Retificar" na prescrição ativa (pré-preenche graus, motivo obrigatório, lista mostra uso/motivo/autor/data); caixa com seletor de prescrição do cliente no orçamento e badge "RX v{version} · uso" na linha da venda.
+- Testes novos: `prescription.test.ts` +1 (uso), `sales-service.test.ts` +4 (snapshot/validação/update/list), `clinical.test.ts` +2 (retify via serviço + `listByCustomer`), `backup.test.ts` +1 (FK/corrupção) — **305/305**, build 0, tsc 0. Dexie sem bump (campo aditivo); backup schema 13 inalterado. Card: F3-06/#45 → DONE.
+
 ### `a30f165` + docs — Tratamento global de erros (F1-12)
 
 - `src/domain/errors.ts`: helper `errorMessage(reason, fallback)` — fonte única para traduzir um erro desconhecido em mensagem exibível (Error com message não-vazia → message; caso contrário → fallback; nunca string vazia); contrato fixado por 4 testes em `errors.test.ts`.
