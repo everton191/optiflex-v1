@@ -4,6 +4,15 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `a30f165` + docs — Tratamento global de erros (F1-12)
+
+- `src/domain/errors.ts`: helper `errorMessage(reason, fallback)` — fonte única para traduzir um erro desconhecido em mensagem exibível (Error com message não-vazia → message; caso contrário → fallback; nunca string vazia); contrato fixado por 4 testes em `errors.test.ts`.
+- `src/app/RouteErrorBoundary.tsx`: boundary de rota com Card "Não foi possível exibir esta tela" + "Tentar novamente" (reset) e "Recarregar página", `console.error` no `componentDidCatch`; aplicado no `router.tsx` sobre `AppShell` e as rotas `/login` e `/bloqueado`.
+- 24 ternários `X instanceof Error ? X.message : …` unificados em `errorMessage` (11 workspaces + shell); 14 catches de carregamento (caixa, dashboard, estoque, ordens, recepção e clientes) passaram a capturar o motivo (`catch (reason)`) e expor a mensagem real; `failureMessage` local do caixa removido.
+- CA: serviços/infraestrutura sem `catch` vazio — `backup.ts`/`backup-codec.ts` rejeitam com mensagem própria, `local-repositories.ts` preserva `reason`; catches deliberados com estado visível documentados (`clinical-draft.ts`, bloqueio de saída clínica, lista de duplicados best-effort, fallback de loja em `providers.tsx`).
+- `docs/ai/07_DATA_FLOW.md`: seção "Tratamento de erros" (helper, boundary, padrão loading/error/empty, evidência de CA2 e catches deliberados).
+- Validações: build 0, `tsc -b` 0, **297/297**. **Pendência**: teste manual de falha de armazenamento (CA do card: falha simulada de IndexedDB mostra erro recuperável). Card: F1-12/#20 → DONE.
+
 ### `e6bae24` + docs — Navegação mobile (F7-05)
 
 - `src/shell/AppShell.tsx`: barra inferior `.mobile-nav` reorganizada — **4 atalhos** (primeiros links visíveis por permissão) + botão **Mais** (só quando há áreas fora dos atalhos); **Mais** abre o `Drawer` do design system ("Mais áreas") com o restante do menu principal e a seção **Administração** (lojas/usuários/perfis/ajustes), que antes sumia no mobile; fecha ao clicar num link, no backdrop ou com Escape.

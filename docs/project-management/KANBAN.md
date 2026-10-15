@@ -56,7 +56,7 @@ Classificação de inventário (Etapa 4) no corpo de cada card:
 
 - Issues totais: **155** (8 épicas + 147 tarefas).
 - Tarefas por fase: F1=14 · F2=18 · F3=20 · F4=20 · F5=19 · F6=19 · F7=19 · F8=18.
-- Tarefas por status (revisado em 08/10/2026; F1-09, F2-04, F7-02, F1-11, F3-09, F3-14, F1-02, F1-06, F4-16, F2-05, F4-10, F4-18, F4-12, F2-06, F3-01, F8-06, F8-07, F1-07, F3-17, F2-11, F2-02, F3-02, F3-03, F2-07, F3-10, F4-11, F2-14, F3-07, F8-10, F8-02, F7-01, F1-05, F1-03, F7-03, F2-08 e F7-05 concluídas no mesmo dia): DONE=54 · IN PROGRESS=0 · READY=7 · TESTING=0 · CODE REVIEW=0 · BACKLOG=36 · BLOCKED=50.
+- Tarefas por status (revisado em 08/10/2026; F1-09, F2-04, F7-02, F1-11, F3-09, F3-14, F1-02, F1-06, F4-16, F2-05, F4-10, F4-18, F4-12, F2-06, F3-01, F8-06, F8-07, F1-07, F3-17, F2-11, F2-02, F3-02, F3-03, F2-07, F3-10, F4-11, F2-14, F3-07, F8-10, F8-02, F7-01, F1-05, F1-03, F7-03, F2-08, F7-05 e F1-12 concluídas no mesmo dia): DONE=55 · IN PROGRESS=0 · READY=6 · TESTING=0 · CODE REVIEW=0 · BACKLOG=36 · BLOCKED=50.
 - Bloqueios: **50 tarefas** bloqueadas — 47 por dependência de fase futura/externa + **3 reclassificadas em 08/10** (F4-13 #70, F8-03 #137, F3-20 #57: status desatualizado, decisão externa já registrada).
 - **Revisão de dependências 08/10/2026:** 7 ciclos detectados (SCC/Tarjan sobre este arquivo) e corrigidos em KANBAN + corpos das issues; **0 ciclos remanescentes**. Detalhe antes/depois em `DEPENDENCIES.md`.
 
@@ -86,7 +86,7 @@ Regra de ouro: **nunca mover para DONE sem evidência verificável** (comando de
 | F1-09 | [Valores monetários e precisão decimal](https://github.com/everton191/optiflex-v1/issues/17) | Infraestrutura | DONE | p1 | nenhuma. Concluído 08/10/2026 (`7dc1d7b`, 115 testes). |
 | F1-10 | [Auditoria de alterações](https://github.com/everton191/optiflex-v1/issues/18) | Infraestrutura | BACKLOG | p1 | F1-02 (feito), F2-05 (permissões por loja). |
 | F1-11 | [Permissões e autorização](https://github.com/everton191/optiflex-v1/issues/19) | Access | DONE | p0 | F7-02 (login local identidade). Concluído 08/10/2026 (`a2c1369`, 149 testes). |
-| F1-12 | [Tratamento global de erros](https://github.com/everton191/optiflex-v1/issues/20) | Infraestrutura | READY | p1 | nenhuma. Ciclo corrigido 08/10: F7-11 depende de F1-12. |
+| F1-12 | [Tratamento global de erros](https://github.com/everton191/optiflex-v1/issues/20) | Infraestrutura | DONE | p1 | nenhuma. Ciclo corrigido 08/10: F7-11 depende de F1-12. Entregue em `a30f165` — helper `errorMessage` + `RouteErrorBoundary` envolvendo AppShell/login/bloqueado, 24 ternários unificados, serviços sem `catch` vazio; 297/297; teste manual de falha de storage pendente. |
 | F1-13 | [Testes de domínio](https://github.com/everton191/optiflex-v1/issues/21) | Infraestrutura | DONE | p1 | nenhuma. |
 | F1-14 | [Documentação arquitetural](https://github.com/everton191/optiflex-v1/issues/22) | Infraestrutura | DONE | p1 | nenhuma. |
 
@@ -231,7 +231,7 @@ Regra de ouro: **nunca mover para DONE sem evidência verificável** (comando de
 | F7-08 | [Tabelas e filtros](https://github.com/everton191/optiflex-v1/issues/123) | Ux | BACKLOG | p2 | F7-01. |
 | F7-09 | [Modais e diálogos](https://github.com/everton191/optiflex-v1/issues/124) | Ux | BACKLOG | p2 | F7-01. |
 | F7-10 | [Busca global](https://github.com/everton191/optiflex-v1/issues/125) | Ux | BACKLOG | p2 | F1-11, F7-01. |
-| F7-11 | [Indicadores de carregamento e erros](https://github.com/everton191/optiflex-v1/issues/126) | Ux | READY | p1 | F1-12. |
+| F7-11 | [Indicadores de carregamento e erros](https://github.com/everton191/optiflex-v1/issues/126) | Ux | READY | p1 | F1-12 (feito). |
 | F7-12 | [Notificações](https://github.com/everton191/optiflex-v1/issues/127) | Ux | BACKLOG | p2 | F4-13, F3-17, F4-04. |
 | F7-13 | [Impressões e PDFs](https://github.com/everton191/optiflex-v1/issues/128) | Ux | READY | p1 | F3-05, F3-10. Ciclo corrigido 08/10: F4-14 depende de F7-13. |
 | F7-14 | [Etiquetas e comprovantes](https://github.com/everton191/optiflex-v1/issues/129) | Ux | BACKLOG | p3 | F7-13, F2-14. |
@@ -271,16 +271,16 @@ Ordem recomendada para a próxima sessão de desenvolvimento (status READY/IN PR
 
 | # | ID | Issue | Tarefa | Prioridade | Dependências | Justificativa |
 |---|---|---|---|---|---|---|
-| 1 | F1-12 | #20 | [Infraestrutura] Tratamento global de erros | P1 | nenhuma | Promovida de BACKLOG: sem dependências e único P0 aberto da auditoria F8-07 — erros globais antes do piloto. |
-| 2 | F3-06 | #45 | [Clinical] Prescrição estruturada | P1 | F1-07, F3-07 (feitos) | Refração por olho e persistência (F3-07) prontas; estrutura o restante do prontuário clínico. |
-| 3 | F3-05 | #44 | [Clinical] Receitas ópticas (documento e impressão) | P1 | F3-06 (#2) | Entra logo atrás de F3-06; documento/impressão fecha a cadeia clínica antes do PDV. |
-| 4 | F7-11 | #126 | [Ux] Indicadores de carregamento e erros | P1 | F1-12 (#1) | Encadeia atrás de F1-12; fecha os estados de loading/erro junto com erros globais. |
-| 5 | F7-13 | #128 | [Ux] Impressões e PDFs | P1 | F3-05 (#3), F3-10 (feito) | Design system e fluxos prontos; fecha impressão de receita, orçamento, venda e OS antes do piloto. |
-| 6 | F3-08 | #47 | [Clinical] DP/DNP e altura de montagem | P1 | F3-07 (feito) | Desbloqueada por F3-07; entra à frente de F3-11, que depende dela. |
-| 7 | F3-11 | #50 | [Sales] PDV de armações e lentes | P1 | F2-11, F3-10 (feitos); F3-08 (#6) | Dependência de F3-08 em fila logo acima; começa após concluir o card anterior. |
-| 8 | F3-16 | #154 | [Work-orders] Acompanhamento da fabricação | P2 | F3-14 (feito) | Desbloqueada por F3-14; entra à frente de F3-19, que depende dela. |
-| 9 | F3-19 | #56 | [Work-orders] Entrega ao cliente | P1 | F3-16 (#8); F4-12 (feito) | Entrega fecha a cadeia OS→cliente; F3-16 em fila logo acima. |
-| 10 | F2-01 | #23 | [Administration] Cadastro completo de empresas | P1 | nenhuma | Reserva promovida: sem dependências; F2-03 depende dela (ciclo corrigido 08/10). |
+| 1 | F3-06 | #45 | [Clinical] Prescrição estruturada | P1 | F1-07, F3-07 (feitos) | Refração por olho e persistência (F3-07) prontas; estrutura o restante do prontuário clínico. |
+| 2 | F3-05 | #44 | [Clinical] Receitas ópticas (documento e impressão) | P1 | F3-06 (#1) | Entra logo atrás de F3-06; documento/impressão fecha a cadeia clínica antes do PDV. |
+| 3 | F7-11 | #126 | [Ux] Indicadores de carregamento e erros | P1 | F1-12 (feito) | Encadeia atrás de F1-12 (entregue); fecha os estados de loading/erro junto com erros globais. |
+| 4 | F7-13 | #128 | [Ux] Impressões e PDFs | P1 | F3-05 (#2), F3-10 (feito) | Design system e fluxos prontos; fecha impressão de receita, orçamento, venda e OS antes do piloto. |
+| 5 | F3-08 | #47 | [Clinical] DP/DNP e altura de montagem | P1 | F3-07 (feito) | Desbloqueada por F3-07; entra à frente de F3-11, que depende dela. |
+| 6 | F3-11 | #50 | [Sales] PDV de armações e lentes | P1 | F2-11, F3-10 (feitos); F3-08 (#5) | Dependência de F3-08 em fila logo acima; começa após concluir o card anterior. |
+| 7 | F3-16 | #154 | [Work-orders] Acompanhamento da fabricação | P2 | F3-14 (feito) | Desbloqueada por F3-14; entra à frente de F3-19, que depende dela. |
+| 8 | F3-19 | #56 | [Work-orders] Entrega ao cliente | P1 | F3-16 (#7); F4-12 (feito) | Entrega fecha a cadeia OS→cliente; F3-16 em fila logo acima. |
+| 9 | F2-01 | #23 | [Administration] Cadastro completo de empresas | P1 | nenhuma | Sem dependências; F2-03 depende dela (ciclo corrigido 08/10). |
+| 10 | F1-10 | #18 | [Infraestrutura] Auditoria de alterações | P1 | F1-02 (feito), F2-05 (feito) | Reserva promovida: dependências concluídas; libera F3-12. |
 
 Os `#?` devem ser resolvidos pela tabela acima (coluna ID → link da issue). Os números já estão fixados nas tabelas das fases; para referência rápida: consulte `DEPENDENCIES.md`.
 
