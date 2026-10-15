@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { errorMessage } from "../domain/errors";
 import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { useAppContext, useSession } from "./providers";
 import { Button, Input } from "../design-system/components";
@@ -15,12 +16,12 @@ export function LoginPage() {
     event.preventDefault();
     if (pending.current) return;
     pending.current = true; setError("");
-    try { await login(email, password); } catch (reason) { setError(reason instanceof Error ? reason.message : "Não foi possível entrar."); } finally { pending.current = false; }
+    try { await login(email, password); } catch (reason) { setError(errorMessage(reason, "Não foi possível entrar.")); } finally { pending.current = false; }
   }
   async function startDemo(userId: string) {
     if (pending.current) return;
     pending.current = true; setError("");
-    try { await loginDemo(userId); } catch (reason) { setError(reason instanceof Error ? reason.message : "Não foi possível entrar em demonstração."); } finally { pending.current = false; }
+    try { await loginDemo(userId); } catch (reason) { setError(errorMessage(reason, "Não foi possível entrar em demonstração.")); } finally { pending.current = false; }
   }
   return <main className="login-page">
     <div className="login-card">
@@ -80,7 +81,7 @@ export function ChangePasswordPage() {
       await changePassword(current, next);
       setCurrent(""); setNext(""); setConfirm("");
       setMessage("Senha atualizada. Use a nova senha no próximo login.");
-    } catch (reason) { setError(reason instanceof Error ? reason.message : "Não foi possível trocar a senha."); } finally { pending.current = false; }
+    } catch (reason) { setError(errorMessage(reason, "Não foi possível trocar a senha.")); } finally { pending.current = false; }
   }
   return <div className="page">
     <p className="eyebrow">Conta</p><h1>Trocar senha</h1>

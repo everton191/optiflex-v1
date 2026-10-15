@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { errorMessage } from "../domain/errors";
 import { Link, useBlocker, useParams } from "react-router-dom";
 import { Button, Card, Input } from "../design-system/components";
 import { ClinicalService } from "../domain/clinical-service";
@@ -52,7 +53,7 @@ function ClinicalWorkspace({ attendanceId }: { attendanceId: string }) {
     alive.current = true; let active = true;
     void Promise.all([service.load(attendanceId, context), service.history(attendanceId, context), service.listPrescriptions(attendanceId, context)])
       .then(([loaded, history, rxList]) => { if (active) { setDraft(wrap(loaded.record)); setCustomer(loaded.customer); setVersions(history); setPrescriptions(rxList); setError(""); } })
-      .catch((failure) => { if (active) setError(failure instanceof Error ? failure.message : "Não foi possível abrir a consulta."); });
+      .catch((failure) => { if (active) setError(errorMessage(failure, "Não foi possível abrir a consulta.")); });
     return () => { active = false; alive.current = false; };
   }, [attendanceId, currentStoreId, session.role, session.userName, attempt]);
   const locked = Boolean(draft?.dirty || busy);
@@ -72,7 +73,7 @@ function ClinicalWorkspace({ attendanceId }: { attendanceId: string }) {
         setDraft(wrap(record)); setConfirm(false); setReason("");
         setVersions(await service.history(attendanceId, context));
       }
-    } catch (failure) { setError(failure instanceof Error ? failure.message : "Não foi possível concluir. Tente novamente."); }
+    } catch (failure) { setError(errorMessage(failure, "Não foi possível concluir. Tente novamente.")); }
     finally { pending.current = false; setBusy(false); }
   }
   async function attach(event: FormEvent<HTMLFormElement>) {
@@ -86,7 +87,7 @@ function ClinicalWorkspace({ attendanceId }: { attendanceId: string }) {
       await draft.attach(attachment);
       setFile(undefined);
       if (fileInput.current) fileInput.current.value = "";
-    } catch (failure) { setAttachmentError(failure instanceof Error ? failure.message : "Não foi possível anexar o arquivo."); }
+    } catch (failure) { setAttachmentError(errorMessage(failure, "Não foi possível anexar o arquivo.")); }
     finally { pending.current = false; setBusy(false); }
   }
   async function openAttachment(attachment: ClinicalAttachment) {
@@ -100,7 +101,7 @@ function ClinicalWorkspace({ attendanceId }: { attendanceId: string }) {
       anchor.href = url; anchor.target = "_blank"; anchor.rel = "noopener";
       document.body.appendChild(anchor); anchor.click(); anchor.remove();
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
-    } catch (failure) { setAttachmentError(failure instanceof Error ? failure.message : "Não foi possível abrir o anexo."); }
+    } catch (failure) { setAttachmentError(errorMessage(failure, "Não foi possível abrir o anexo.")); }
   }
   async function removeAttachment(attachment: ClinicalAttachment) {
     if (!draft || pending.current || draft.record.finalizedAt) return;
@@ -110,7 +111,7 @@ function ClinicalWorkspace({ attendanceId }: { attendanceId: string }) {
       await draft.detach(attachment.id);
       const stillReferenced = versions.some((version) => version.attachments.some((item) => item.id === attachment.id));
       if (!stillReferenced) await service.dropAttachmentContent(attachment.id, context);
-    } catch (failure) { setAttachmentError(failure instanceof Error ? failure.message : "Não foi possível excluir o anexo."); }
+    } catch (failure) { setAttachmentError(errorMessage(failure, "Não foi possível excluir o anexo.")); }
     finally { pending.current = false; setBusy(false); }
   }
   async function submitPrescription(event: FormEvent) {
@@ -127,7 +128,7 @@ function ClinicalWorkspace({ attendanceId }: { attendanceId: string }) {
       setOdSphere(""); setOdCylinder(""); setOdAxis(""); setOdAdd("");
       setOeSphere(""); setOeCylinder(""); setOeAxis(""); setOeAdd(""); setRxNotes("");
       setPrescriptions(await service.listPrescriptions(attendanceId, context));
-    } catch (failure) { setRxError(failure instanceof Error ? failure.message : "Não foi possível emitir a prescrição."); }
+    } catch (failure) { setRxError(errorMessage(failure, "Não foi possível emitir a prescrição.")); }
     finally { pending.current = false; setBusy(false); }
   }
   if (!draft || !customer) return <div className="page"><h1>Abrindo consulta</h1>{error ? <><p role="alert">{error}</p><Button onClick={() => setAttempt((value) => value + 1)}>Tentar novamente</Button><Link to="/clinico">Voltar à fila</Link></> : <p role="status">Carregando os dados…</p>}</div>;

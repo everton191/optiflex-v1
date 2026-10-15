@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { errorMessage } from "../domain/errors";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAppContext, useSession } from "./providers";
 import { Button } from "../design-system/components";
@@ -42,7 +43,7 @@ export function AgendaPage() {
     const loader = view === "day" ? agendaService.listDay(currentStoreId, anchor) : agendaService.listWeek(currentStoreId, anchor);
     void Promise.all([loader, receptionService.listCustomers()])
       .then(([loadedEvents, loadedCustomers]) => { if (active) { setEvents(loadedEvents); setCustomers(loadedCustomers); } })
-      .catch(() => { if (active) setError("Não foi possível carregar a agenda desta loja."); })
+      .catch((reason) => { if (active) setError(errorMessage(reason, "Não foi possível carregar a agenda desta loja.")); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [currentStoreId, view, anchor, attempt]);
@@ -63,7 +64,7 @@ export function AgendaPage() {
       if (!mounted.current) return;
       setShowForm(false); setCustomerId(""); setProfessionalId(""); setStartsAt(""); setNotes("");
       setMessage("Evento agendado."); setAttempt((value) => value + 1);
-    } catch (reason) { if (mounted.current) setError(reason instanceof Error ? reason.message : "Não foi possível agendar o evento."); }
+    } catch (reason) { if (mounted.current) setError(errorMessage(reason, "Não foi possível agendar o evento.")); }
     finally { pending.current = false; if (mounted.current) setSaving(false); }
   }
   async function convert(item: AgendaEvent) {
@@ -74,14 +75,14 @@ export function AgendaPage() {
       if (!mounted.current) return;
       setMessage("Evento virou atendimento na fila.");
       navigate(`/atendimentos?customer=${attendance.customerId}`);
-    } catch (reason) { if (mounted.current) setError(reason instanceof Error ? reason.message : "Não foi possível converter o evento."); }
+    } catch (reason) { if (mounted.current) setError(errorMessage(reason, "Não foi possível converter o evento.")); }
     finally { pending.current = false; }
   }
   async function cancel(item: AgendaEvent) {
     if (pending.current) return;
     pending.current = true; setError(""); setMessage("");
     try { await agendaService.cancel(item.id); if (mounted.current) { setMessage("Evento cancelado."); setAttempt((value) => value + 1); } }
-    catch { if (mounted.current) setError("Não foi possível cancelar o evento."); }
+    catch (reason) { if (mounted.current) setError(errorMessage(reason, "Não foi possível cancelar o evento.")); }
     finally { pending.current = false; }
   }
   const heading = view === "day" ? anchor.toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" }) : `Semana de ${anchor.toLocaleDateString("pt-BR")}`;
@@ -136,7 +137,7 @@ function AttendanceQueue() {
     setLoading(true); setError("");
     void Promise.all([receptionService.listQueue(currentStoreId), receptionService.listCustomers()])
       .then(([loadedQueue, loadedCustomers]) => { if (active) { setQueue(loadedQueue); setCustomers(loadedCustomers); } })
-      .catch(() => { if (active) setError("Não foi possível carregar os atendimentos desta loja."); })
+      .catch((reason) => { if (active) setError(errorMessage(reason, "Não foi possível carregar os atendimentos desta loja.")); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [currentStoreId, attempt]);
@@ -150,7 +151,7 @@ function AttendanceQueue() {
       setQueue((items) => [attendance, ...items]); setCustomerId("");
       setMessage("Cliente adicionado à fila.");
       setSearchParams((params) => { params.delete("customer"); return params; }, { replace: true });
-    } catch { if (mounted.current) setError("Não foi possível adicionar à fila. Confira o cliente e tente novamente."); }
+    } catch (reason) { if (mounted.current) setError(errorMessage(reason, "Não foi possível adicionar à fila. Confira o cliente e tente novamente.")); }
     finally { pending.current = false; if (mounted.current) setSaving(false); }
   }
   async function transition(item: Attendance, to: AttendanceStatus) {
@@ -161,7 +162,7 @@ function AttendanceQueue() {
       if (!mounted.current) return;
       setQueue((items) => items.map((attendance) => attendance.id === updated.id ? updated : attendance));
       setMessage(to === "FINISHED" ? "Atendimento finalizado." : to === "NO_SHOW" ? "Atendimento marcado como falta." : to === "IN_PROGRESS" ? "Atendimento iniciado." : "Atendimento cancelado.");
-    } catch (reason) { if (mounted.current) setError(reason instanceof Error ? reason.message : "Não foi possível atualizar o atendimento."); }
+    } catch (reason) { if (mounted.current) setError(errorMessage(reason, "Não foi possível atualizar o atendimento.")); }
     finally { pending.current = false; if (mounted.current) setSaving(false); }
   }
   const active = queue.filter((item) => isActiveQueueStatus(item.status));
@@ -222,7 +223,7 @@ export function AttendanceNewPage() {
     setLoading(true); setError("");
     void receptionService.listCustomers()
       .then((loaded) => { if (active) setCustomers(loaded); })
-      .catch(() => { if (active) setError("Não foi possível carregar os clientes."); })
+      .catch((reason) => { if (active) setError(errorMessage(reason, "Não foi possível carregar os clientes.")); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [attempt]);
@@ -235,7 +236,7 @@ export function AttendanceNewPage() {
       const attendance = await receptionService.startAttendance(customerId, currentStoreId, type, notes, { professionalId: professionalId || undefined, priority });
       if (!mounted.current) return;
       navigate(`/atendimentos/${attendance.id}`, { replace: true });
-    } catch (reason) { if (mounted.current) setError(reason instanceof Error ? reason.message : "Não foi possível iniciar o atendimento."); }
+    } catch (reason) { if (mounted.current) setError(errorMessage(reason, "Não foi possível iniciar o atendimento.")); }
     finally { pending.current = false; if (mounted.current) setSaving(false); }
   }
   return <div className="page"><p className="eyebrow">Recepção</p><div className="page-title"><div><h1>Novo atendimento</h1><p className="page-intro">Informe cliente, tipo, profissional, prioridade e observações antes de enviar para a fila.</p></div><Link className="button secondary" to="/atendimentos">Voltar para a fila</Link></div>
@@ -269,7 +270,7 @@ export function AttendanceDetailPage() {
       return { loaded, owner: loaded ? await receptionService.getCustomer(loaded.customerId) : undefined };
     })()
       .then(({ loaded, owner }) => { if (active) { setAttendance(loaded); setCustomer(owner); } })
-      .catch(() => { if (active) setError("Não foi possível abrir este atendimento."); })
+      .catch((reason) => { if (active) setError(errorMessage(reason, "Não foi possível abrir este atendimento.")); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [attendanceId, attempt]);
@@ -279,7 +280,7 @@ export function AttendanceDetailPage() {
     try {
       const updated = await receptionService.transitionAttendance(attendance.id, to);
       if (mounted.current) { setAttendance(updated); setMessage("Status do atendimento atualizado."); }
-    } catch (reason) { if (mounted.current) setError(reason instanceof Error ? reason.message : "Não foi possível atualizar o atendimento."); }
+    } catch (reason) { if (mounted.current) setError(errorMessage(reason, "Não foi possível atualizar o atendimento.")); }
     finally { pending.current = false; if (mounted.current) setSaving(false); }
   }
   if (loading) return <div className="page" role="status">Carregando atendimento…</div>;
@@ -314,7 +315,7 @@ export function ClinicalQueuePage() {
     let active = true; setLoadedStore(""); setError("");
     void Promise.all([receptionService.listQueue(currentStoreId), receptionService.listCustomers()])
       .then(([items, clients]) => { if (active) { setQueue(items.filter((item) => item.status === "WAITING" || item.status === "IN_PROGRESS")); setCustomers(clients); setLoadedStore(currentStoreId); } })
-      .catch(() => { if (active) setError("Não foi possível carregar a fila."); });
+      .catch((reason) => { if (active) setError(errorMessage(reason, "Não foi possível carregar a fila.")); });
     return () => { active = false; };
   }, [currentStoreId, attempt]);
   return <div className="page"><p className="eyebrow">Área clínica</p><div className="page-title"><div><h1>Consultas em andamento</h1><p className="page-intro">Abra uma consulta ou continue um rascunho. Consultas finalizadas ficam no histórico do cliente.</p></div><Link className="button" to="/clientes">Buscar cliente</Link></div>{error && <p role="alert">{error} <Button onClick={() => setAttempt((value) => value + 1)}>Tentar novamente</Button></p>}<div className="list-card">{error ? null : loadedStore !== currentStoreId ? <p role="status">Carregando fila…</p> : queue.length ? queue.map((attendance) => <Link className="list-row list-link" key={attendance.id} to={`/clinico/atendimento/${attendance.id}`}><div><strong>{customers.find((customer) => customer.id === attendance.customerId)?.name ?? "Cliente"}</strong><span>{attendanceStatusLabels[attendance.status]}</span></div><span className="badge">{attendance.status === "IN_PROGRESS" ? "Continuar consulta" : "Abrir consulta"}</span></Link>) : <p className="empty-state">Não há consultas aguardando ou em andamento nesta loja.</p>}</div></div>;

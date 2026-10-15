@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { errorMessage } from "../domain/errors";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAppContext, useSession } from "./providers";
 import { Button, EmptyState, Input, PageHeader, Search, Skeleton } from "../design-system/components";
@@ -19,7 +20,7 @@ export function CustomersPage() {
     let active = true;
     setLoading(true); setError("");
     void receptionService.listCustomers(query).then((items) => { if (active) setCustomers(items); })
-      .catch(() => { if (active) setError("Não foi possível carregar os clientes."); })
+      .catch((reason) => { if (active) setError(errorMessage(reason, "Não foi possível carregar os clientes.")); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [query, attempt]);
@@ -36,7 +37,7 @@ export function CustomerProfilePage() {
     setLoading(true); setError("");
     void Promise.all([receptionService.getCustomer(customerId), receptionService.listCustomerAttendances(customerId)])
       .then(([loadedCustomer, loadedHistory]) => { if (active) { setCustomer(loadedCustomer); setHistory(loadedHistory); } })
-      .catch(() => { if (active) setError("Não foi possível abrir este cliente."); })
+      .catch((reason) => { if (active) setError(errorMessage(reason, "Não foi possível abrir este cliente.")); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [customerId, attempt]);
@@ -68,7 +69,7 @@ export function CustomerNewPage() {
     try {
       const customer = await receptionService.createCustomer({ name, phone, cpf });
       navigate(canStart ? `/atendimentos?customer=${customer.id}` : `/clientes/${customer.id}`);
-    } catch (reason) { setError(reason instanceof Error ? reason.message : !name.trim() ? "Informe o nome do cliente." : "Não foi possível salvar o cliente. Tente novamente."); }
+    } catch (reason) { setError(errorMessage(reason, !name.trim() ? "Informe o nome do cliente." : "Não foi possível salvar o cliente. Tente novamente.")); }
     finally { pending.current = false; setSaving(false); }
   }
   return <div className="page"><p className="eyebrow">Recepção</p><h1>Novo cliente</h1><form className="settings-form" onSubmit={submit}><label>Nome completo<Input value={name} onChange={change(setName)} disabled={saving} required /></label><label>Telefone<Input value={phone} onChange={change(setPhone)} disabled={saving} /></label><label>CPF/CNPJ<Input value={cpf} onChange={change(setCpf)} disabled={saving} /></label>{duplicate && <div className="notice" role="alert"><p>Possível cliente duplicado: <strong>{duplicate.name}</strong>{duplicate.phone ? ` · ${duplicate.phone}` : ""}{duplicate.cpf ? ` · ${duplicate.cpf}` : ""} já está cadastrado. Cadastrar de novo quebra histórico e financeiro.</p>{override ? <label>Motivo para cadastrar mesmo assim<Input value={overrideReason} onChange={(event) => setOverrideReason(event.target.value)} disabled={saving} required /></label> : <div className="form-actions"><Button type="button" onClick={() => setOverride(true)} disabled={saving}>Cadastrar mesmo assim</Button><Button type="button" onClick={() => { setDuplicate(undefined); setOverride(false); }} disabled={saving}>Revisar cadastro</Button></div>}</div>}{error && <p role="alert" className="error-text">{error}</p>}<Button type="submit" disabled={saving}>{saving ? "Salvando…" : canStart ? "Salvar e iniciar atendimento" : "Salvar cliente"}</Button></form></div>;
@@ -90,7 +91,7 @@ export function CustomerEditPage() {
         if (!customer) { setError("Cliente não encontrado."); return; }
         setName(customer.name); setPhone(customer.phone ?? ""); setCpf(customer.cpf ?? ""); setEmail(customer.email ?? ""); setBirthDate(customer.birthDate ?? "");
       })
-      .catch(() => { if (active) setError("Não foi possível abrir este cliente."); })
+      .catch((reason) => { if (active) setError(errorMessage(reason, "Não foi possível abrir este cliente.")); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [customerId, attempt]);
@@ -101,7 +102,7 @@ export function CustomerEditPage() {
     try {
       await receptionService.updateCustomer(customerId, { name, phone, cpf, email, birthDate });
       navigate(`/clientes/${customerId}`);
-    } catch (reason) { setError(reason instanceof Error ? reason.message : "Não foi possível salvar as alterações. Tente novamente."); }
+    } catch (reason) { setError(errorMessage(reason, "Não foi possível salvar as alterações. Tente novamente.")); }
     finally { pending.current = false; setSaving(false); }
   }
   if (loading) return <div className="page" role="status">Carregando cliente…</div>;

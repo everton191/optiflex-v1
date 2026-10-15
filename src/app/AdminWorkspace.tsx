@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { errorMessage } from "../domain/errors";
 import { Badge, Button, Input, PageHeader, Select, Table } from "../design-system/components";
 import { allPermissions, hasPermission, roleDefinitions } from "../domain/access";
 import type { RoleKey, Store, User } from "../domain/access";
@@ -45,7 +46,7 @@ export function UsersPage() {
   async function run(action: () => Promise<string>, fallback: string) {
     if (pending.current || !canManage) return;
     pending.current = true; setMessage(""); setError("");
-    try { setMessage(await action()); } catch (reason) { setError(reason instanceof Error ? reason.message : fallback); } finally { pending.current = false; }
+    try { setMessage(await action()); } catch (reason) { setError(errorMessage(reason, fallback)); } finally { pending.current = false; }
   }
 
   async function saveUser(event: React.FormEvent) {
@@ -117,7 +118,7 @@ export function StoresPage() {
   async function run(action: () => Promise<string>, fallback: string) {
     if (pending.current || !canManage) return;
     pending.current = true; setMessage(""); setError("");
-    try { setMessage(await action()); } catch (reason) { setError(reason instanceof Error ? reason.message : fallback); } finally { pending.current = false; }
+    try { setMessage(await action()); } catch (reason) { setError(errorMessage(reason, fallback)); } finally { pending.current = false; }
   }
 
   async function saveStore(event: React.FormEvent) {

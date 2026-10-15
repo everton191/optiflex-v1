@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate, RouterProvider } from "react-router-dom"
 import { RequirePermission, RequireSession } from "./permissions";
 import { AttendanceDetailPage, AttendanceNewPage, AttendancePage, BlockedPage, CashDeskPage, ChangePasswordPage, ClinicalQueuePage, ClinicalWorkspacePage, CustomerEditPage, CustomerNewPage, CustomerProfilePage, CustomersPage, DashboardPage, ForbiddenPage, InventoryPage, LoginPage, ProfilesPage, SettingsPage, StoresPage, UsersPage, WorkOrderDetailPage, WorkOrdersPage, AgendaPage } from "./pages";
 import { routeGuards } from "./route-guards";
+import { RouteErrorBoundary } from "./RouteErrorBoundary";
 import { AppShell } from "../shell/AppShell";
 
 const guardedPages: Record<string, React.ReactNode> = {
@@ -30,10 +31,10 @@ const guardedChildren = routeGuards.map((guard) => guard.index
   : { path: guard.path, element: <RequirePermission permission={guard.permission}>{guardedPages[guard.path!]}</RequirePermission> });
 
 const router = createBrowserRouter([
-  { path: "/login", element: <LoginPage /> },
-  { path: "/bloqueado", element: <BlockedPage /> },
+  { path: "/login", element: <RouteErrorBoundary><LoginPage /></RouteErrorBoundary> },
+  { path: "/bloqueado", element: <RouteErrorBoundary><BlockedPage /></RouteErrorBoundary> },
   { path: "/", element: <RequireSession />, children: [
-    { element: <AppShell />, children: [
+    { element: <RouteErrorBoundary><AppShell /></RouteErrorBoundary>, children: [
       ...guardedChildren,
       { path: "vendas", element: <Navigate to="/caixa" replace /> },
       { path: "pagamentos", element: <Navigate to="/caixa" replace /> },

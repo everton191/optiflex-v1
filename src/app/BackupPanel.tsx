@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { errorMessage } from "../domain/errors";
 import { useBlocker } from "react-router-dom";
 import { Button, Card, Input } from "../design-system/components";
 import { BackupService, backupTables, type BackupSnapshot } from "../domain/backup";
@@ -46,7 +47,7 @@ export function BackupPanel() {
         pending.current = false;
         window.location.reload();
       }
-    } catch (failure) { setError(failure instanceof Error ? failure.message : "Não foi possível concluir a operação."); }
+    } catch (failure) { setError(errorMessage(failure, "Não foi possível concluir a operação.")); }
     finally { pending.current = false; setBusy(false); }
   }
   return <section className="backup-panel"><h2>Backup e restauração</h2><p>Protegido por senha. Inclui os registros de todas as lojas, as versões clínicas, as prescrições estruturadas e o conteúdo dos anexos. Não há recuperação da senha.</p>

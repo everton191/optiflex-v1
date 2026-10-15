@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { errorMessage } from "../domain/errors";
 import { Link } from "react-router-dom";
 import { Button, Card, EmptyState, Skeleton } from "../design-system/components";
 import { hasPermission } from "../domain/access";
@@ -54,7 +55,7 @@ export function DashboardPage() {
         canReadInventory ? inventoryService.list(currentStoreId) : Promise.resolve([]),
       ]);
       setQueue(loadedQueue); setSales(loadedSales); setEntries(loadedEntries); setCashSession(loadedSession); setOrders(loadedOrders); setItems(loadedItems); setError("");
-    } catch { setError("Não foi possível carregar os dados desta loja."); }
+    } catch (reason) { setError(errorMessage(reason, "Não foi possível carregar os dados desta loja.")); }
     finally { setLoading(false); }
   }
   useEffect(() => { void refresh(); }, [currentStoreId, attempt]);

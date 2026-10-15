@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { errorMessage } from "../domain/errors";
 import { useAppContext, useSession } from "./providers";
 import { Button, Card, Dialog, Input, Tabs, Toast, Tooltip } from "../design-system/components";
 import { hasPermission } from "../domain/access";
@@ -51,13 +52,12 @@ export function CashDeskPage() {
   const sessionTotals = cashSession ? cashTotals(cashSession.openingBalance, sessionEntries) : undefined;
   const lastClosed = sessions.find((session) => session.closedAt);
   const customerName = (id: string) => customers.find((customer) => customer.id === id)?.name ?? "Cliente";
-  const failureMessage = (fallback: string, reason: unknown) => reason instanceof Error ? reason.message : fallback;
-  async function refresh() { try { const [loadedSession, loadedSessions, loadedEntries, loadedSales, loadedOrders, loadedCustomers, loadedInventory] = await Promise.all([cashRepository.current(currentStoreId), cashRepository.listSessions(currentStoreId), cashRepository.listEntries(currentStoreId), salesService.list(currentStoreId), workOrderService.list(currentStoreId), receptionService.listCustomers(), canManageSales ? inventoryService.list(currentStoreId) : Promise.resolve([])]); setCashSession(loadedSession); setSessions(loadedSessions); setEntries(loadedEntries); setSales(loadedSales); setOrders(loadedOrders); setCustomers(loadedCustomers); setInventoryItems(loadedInventory); setError(""); } catch { setError("Não foi possível carregar os dados desta loja."); } }
+  async function refresh() { try { const [loadedSession, loadedSessions, loadedEntries, loadedSales, loadedOrders, loadedCustomers, loadedInventory] = await Promise.all([cashRepository.current(currentStoreId), cashRepository.listSessions(currentStoreId), cashRepository.listEntries(currentStoreId), salesService.list(currentStoreId), workOrderService.list(currentStoreId), receptionService.listCustomers(), canManageSales ? inventoryService.list(currentStoreId) : Promise.resolve([])]); setCashSession(loadedSession); setSessions(loadedSessions); setEntries(loadedEntries); setSales(loadedSales); setOrders(loadedOrders); setCustomers(loadedCustomers); setInventoryItems(loadedInventory); setError(""); } catch (reason) { setError(errorMessage(reason, "Não foi possível carregar os dados desta loja.")); } }
   useEffect(() => { void refresh(); }, [currentStoreId]);
   async function run(action: () => Promise<string>, fallback: string) {
     if (pending.current) return;
     pending.current = true; setMessage(""); setError("");
-    try { setMessage(await action()); await refresh(); } catch (reason) { setError(failureMessage(fallback, reason)); } finally { pending.current = false; }
+    try { setMessage(await action()); await refresh(); } catch (reason) { setError(errorMessage(reason, fallback)); } finally { pending.current = false; }
   }
   async function openCash(event: React.FormEvent) { event.preventDefault(); await run(async () => { await cashService.open(currentStoreId, Number(openingBalance || 0)); setOpeningBalance(""); return "Caixa aberto com sucesso."; }, "Não foi possível abrir o caixa."); }
   async function closeCash(event: React.FormEvent) { event.preventDefault(); await run(async () => { const closed = await cashService.close(currentStoreId, Number(closingBalance), userSession.userName, closingNote); setClosingBalance(""); setClosingNote(""); return closed.difference ? `Caixa fechado com diferença de R$ ${closed.difference.toFixed(2)}.` : "Caixa fechado sem diferença."; }, "Não foi possível fechar o caixa."); }

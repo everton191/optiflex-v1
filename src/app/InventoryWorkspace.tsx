@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { errorMessage } from "../domain/errors";
 import { Button, Drawer, Input, Select } from "../design-system/components";
 import { hasPermission } from "../domain/access";
 import { InventoryService } from "../domain/inventory-service";
@@ -46,7 +47,7 @@ export function InventoryPage() {
     try {
       const [loadedItems, loadedMovements] = await Promise.all([service.list(currentStoreId), service.history(currentStoreId)]);
       setItems(loadedItems); setMovements(loadedMovements); setError("");
-    } catch { setError("Não foi possível carregar o estoque desta loja."); }
+    } catch (reason) { setError(errorMessage(reason, "Não foi possível carregar o estoque desta loja.")); }
     finally { setLoading(false); }
   }
   useEffect(() => { void refresh(); }, [currentStoreId, attempt]);
@@ -55,7 +56,7 @@ export function InventoryPage() {
   async function run(action: () => Promise<string>, fallback: string) {
     if (pending.current || !canManage) return;
     pending.current = true; setMessage(""); setError("");
-    try { setMessage(await action()); await refresh(); } catch (reason) { setError(reason instanceof Error ? reason.message : fallback); } finally { pending.current = false; }
+    try { setMessage(await action()); await refresh(); } catch (reason) { setError(errorMessage(reason, fallback)); } finally { pending.current = false; }
   }
   function resetProductForm(open: boolean) { setFormOpen(open); setEditing(undefined); setName(""); setCode(""); setQuantity(""); setMinimum(""); setDefaultPrice(""); setCost(""); setCategory(""); setBrand(""); setMaterial(""); setDescription(""); }
   function editProduct(item: InventoryItem) { setMoving(undefined); setFormOpen(true); setEditing(item); setName(item.name); setCode(item.code ?? ""); setQuantity(String(item.quantity)); setMinimum(String(item.minimumQuantity)); setDefaultPrice(item.defaultPrice !== undefined ? String(item.defaultPrice) : ""); setCost(item.cost !== undefined ? String(item.cost) : ""); setCategory(item.category ?? ""); setBrand(item.brand ?? ""); setMaterial(item.material ?? ""); setDescription(item.description ?? ""); }

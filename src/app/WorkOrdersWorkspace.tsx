@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { errorMessage } from "../domain/errors";
 import { Link, useParams } from "react-router-dom";
 import { Button, Input } from "../design-system/components";
 import { hasPermission } from "../domain/access";
@@ -54,7 +55,7 @@ export function WorkOrdersPage() {
     try {
       const [loadedOrders, loadedSales, loadedCustomers] = await Promise.all([service.list(currentStoreId), salesService.list(currentStoreId), receptionService.listCustomers()]);
       setOrders(loadedOrders); setSales(loadedSales); setCustomers(loadedCustomers); setError("");
-    } catch { setError("Não foi possível carregar as ordens desta loja."); }
+    } catch (reason) { setError(errorMessage(reason, "Não foi possível carregar as ordens desta loja.")); }
     finally { setLoading(false); }
   }
   useEffect(() => { void refresh(); }, [currentStoreId, attempt]);
@@ -63,7 +64,7 @@ export function WorkOrdersPage() {
   async function run(action: () => Promise<string>, fallback: string) {
     if (pending.current || !canManage) return;
     pending.current = true; setMessage(""); setError("");
-    try { setMessage(await action()); await refresh(); } catch (reason) { setError(reason instanceof Error ? reason.message : fallback); } finally { pending.current = false; }
+    try { setMessage(await action()); await refresh(); } catch (reason) { setError(errorMessage(reason, fallback)); } finally { pending.current = false; }
   }
   const customerName = (id: string) => customers.find((customer) => customer.id === id)?.name ?? "Cliente";
   const saleOf = (saleId: string) => sales.find((sale) => sale.id === saleId);
@@ -190,7 +191,7 @@ export function WorkOrderDetailPage() {
       setCustomer(await receptionService.getCustomer(found.customerId));
       setDueAt(found.dueAt ? found.dueAt.slice(0, 10) : "");
       setNotes(found.notes ?? "");
-    } catch { setError("Não foi possível carregar a ordem."); }
+    } catch (reason) { setError(errorMessage(reason, "Não foi possível carregar a ordem.")); }
     finally { setLoading(false); }
   }
   useEffect(() => { void refresh(); }, [currentStoreId, orderId, attempt]);
@@ -199,7 +200,7 @@ export function WorkOrderDetailPage() {
   async function run(action: () => Promise<string>, fallback: string) {
     if (pending.current || !canManage || !order) return;
     pending.current = true; setMessage(""); setError("");
-    try { setMessage(await action()); await refresh(); } catch (reason) { setError(reason instanceof Error ? reason.message : fallback); } finally { pending.current = false; }
+    try { setMessage(await action()); await refresh(); } catch (reason) { setError(errorMessage(reason, fallback)); } finally { pending.current = false; }
   }
   async function transition(status: WorkOrderStatus) {
     await run(async () => { await service.transition(order!, status, session.userName); return `Ordem marcada como ${workOrderStatusLabels[status].toLowerCase()}.`; }, "Não foi possível atualizar a ordem.");

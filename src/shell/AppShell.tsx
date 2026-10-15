@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { errorMessage } from "../domain/errors";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { useAppContext, useSession } from "../app/providers";
 import { Button, Drawer } from "../design-system/components";
@@ -15,7 +16,7 @@ export function AppShell() {
   const [storeError, setStoreError] = useState(""); const [switching, setSwitching] = useState(false);
   async function changeStore(id: string) {
     setSwitching(true); setStoreError("");
-    try { await selectStore(id); } catch (reason) { setStoreError(reason instanceof Error ? reason.message : "Não foi possível trocar de loja. Salve as alterações e tente novamente."); }
+    try { await selectStore(id); } catch (reason) { setStoreError(errorMessage(reason, "Não foi possível trocar de loja. Salve as alterações e tente novamente.")); }
     finally { setSwitching(false); }
   }
   const canOpen = (item: MenuItem) => !item.permission || hasPermission(session.role, item.permission);
