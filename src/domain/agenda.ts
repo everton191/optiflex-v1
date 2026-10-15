@@ -2,6 +2,7 @@ export type AgendaEventType = "CONSULTATION" | "RETURN" | "DELIVERY" | "ADJUSTME
 export type AgendaEventStatus = "SCHEDULED" | "COMPLETED" | "CANCELLED";
 
 export interface AgendaEvent {
+  organizationId?: string;
   id: string;
   storeId: string;
   customerId: string;

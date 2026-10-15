@@ -1,4 +1,7 @@
+import { defaultOrganization } from "./access";
+
 export interface ClinicalRecord {
+  organizationId?: string;
   attendanceId: string;
   anamnesis: string;
   examination: string;
@@ -59,6 +62,7 @@ export interface PrescriptionEye {
 
 // Append-only document: issued versions are never rewritten; retification adds a new version linked to the previous one.
 export interface Prescription {
+  organizationId?: string;
   id: string;
   attendanceId: string;
   customerId: string;
@@ -121,6 +125,7 @@ export function issuePrescription(input: PrescriptionInput, author: string, now 
     attendanceId: input.attendanceId.trim(),
     customerId: input.customerId.trim(),
     storeId: input.storeId.trim(),
+    organizationId: defaultOrganization.id,
     version: 1,
     author: trimmedAuthor,
     issuedAt: now,

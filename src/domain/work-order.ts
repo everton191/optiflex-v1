@@ -13,6 +13,7 @@ export interface WorkOrderEvent {
 }
 
 export interface WorkOrder {
+  organizationId?: string;
   id: string;
   saleId: string;
   customerId: string;

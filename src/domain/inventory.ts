@@ -10,6 +10,7 @@ export function isProductCategory(value: unknown): value is ProductCategory {
 }
 
 export interface InventoryItem {
+  organizationId?: string;
   id: string;
   storeId: string;
   name: string;
@@ -32,6 +33,7 @@ export function filterByCategory(items: readonly InventoryItem[], filter: Produc
 export type InventoryMovementType = "IN" | "OUT" | "ADJUSTMENT";
 
 export interface InventoryMovement {
+  organizationId?: string;
   id: string;
   itemId: string;
   storeId: string;

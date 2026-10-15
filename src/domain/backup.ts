@@ -52,6 +52,7 @@ export function validateBackup(value: unknown): BackupSnapshot {
     const keys = new Set<string>();
     for (const row of rows) {
       if (!object(row) || requiredStrings[name].some((key) => typeof row[key] !== "string")) throw invalid();
+      if ("organizationId" in row && (typeof row.organizationId !== "string" || !row.organizationId.trim())) throw invalid();
       const key = row[name === "clinicalRecords" ? "attendanceId" : "id"] as string;
       if (!key || keys.has(key)) throw invalid();
       keys.add(key);

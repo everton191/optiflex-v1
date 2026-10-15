@@ -35,6 +35,18 @@ export type Permission =
   | "inventory.read"
   | "inventory.manage";
 
+export interface Organization {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
+export const defaultOrganization: Organization = {
+  id: "org-local",
+  name: "Opticore Demo",
+  createdAt: "2026-10-08T00:00:00.000Z"
+};
+
 export interface OrganizationSettings {
   id: "current";
   organizationName: string;
@@ -53,6 +65,7 @@ export interface Store {
   id: string;
   name: string;
   active: boolean;
+  organizationId?: string;
 }
 
 export interface CurrentStoreContext {
@@ -68,6 +81,7 @@ export interface User {
   scope: Scope;
   storeIds: string[];
   active: boolean;
+  organizationId?: string;
   passwordHash?: string;
   passwordSalt?: string;
 }

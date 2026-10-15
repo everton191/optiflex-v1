@@ -1,5 +1,6 @@
 import type { Attendance, AttendancePriority, AttendanceStatus, AttendanceType, Customer } from "./customer";
 import { attendanceTransitions, isValidDocument } from "./customer";
+import { defaultOrganization } from "./access";
 import type { AttendanceRepository, CustomerRepository } from "./repositories";
 
 const id = (prefix: string) => `${prefix}-${crypto.randomUUID()}`;
@@ -18,7 +19,7 @@ export class ReceptionService {
     if (!name) throw new Error("Informe o nome do cliente.");
     const cpf = input.cpf?.trim() || undefined;
     if (cpf && !isValidDocument(cpf)) throw new Error("CPF ou CNPJ inválido.");
-    const customer = { ...input, name, phone: input.phone?.trim() || undefined, cpf, email: input.email?.trim() || undefined, birthDate: input.birthDate?.trim() || undefined, id: id("customer"), createdAt: new Date().toISOString() };
+    const customer = { ...input, name, phone: input.phone?.trim() || undefined, cpf, email: input.email?.trim() || undefined, birthDate: input.birthDate?.trim() || undefined, id: id("customer"), createdAt: new Date().toISOString(), organizationId: defaultOrganization.id };
     await this.customers.save(customer); return customer;
   }
   async updateCustomer(customerId: string, input: Pick<Customer, "name" | "phone" | "cpf" | "email" | "birthDate">): Promise<Customer> {
@@ -36,6 +37,7 @@ export class ReceptionService {
     if (!customerId || !await this.customers.get(customerId)) throw new Error("Selecione um cliente cadastrado.");
     const attendance: Attendance = {
       id: id("attendance"), customerId, storeId, type,
+      organizationId: defaultOrganization.id,
       professionalId: options?.professionalId?.trim() || undefined,
       priority: options?.priority === "URGENT" ? "URGENT" : "NORMAL",
       receptionNotes: receptionNotes?.trim() || undefined,

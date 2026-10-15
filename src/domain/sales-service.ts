@@ -1,5 +1,6 @@
 import type { QuoteStatus, Sale, SaleItem } from "./sales";
 import { itemsTotalCents, quoteStatusOf, quoteTransitions, refundStockMovementsFor, stockMovementsFor } from "./sales";
+import { defaultOrganization } from "./access";
 import type { SaleRepository } from "./repositories";
 import { fromCents, requireMoney, toCents } from "./money";
 
@@ -27,7 +28,7 @@ export class SalesService {
 
   async createQuote(customerId: string, storeId: string, description: string, total: number, items: readonly SaleItem[] = []): Promise<Sale> {
     const built = buildQuote({ customerId, description, total, items });
-    const sale: Sale = { id: `sale-${crypto.randomUUID()}`, customerId: built.customerId, storeId, status: "QUOTE", paymentStatus: "PENDING", description: built.description, total: built.total, items: built.items, createdAt: new Date().toISOString() };
+    const sale: Sale = { id: `sale-${crypto.randomUUID()}`, customerId: built.customerId, storeId, status: "QUOTE", paymentStatus: "PENDING", description: built.description, total: built.total, items: built.items, createdAt: new Date().toISOString(), organizationId: defaultOrganization.id };
     await this.repository.save(sale); return sale;
   }
 

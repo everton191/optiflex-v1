@@ -1,4 +1,4 @@
-import type { CurrentStoreContext, LocalSession, OrganizationSettings, Store, User } from "../../domain/access";
+import { defaultOrganization, type CurrentStoreContext, type LocalSession, type OrganizationSettings, type Store, type User } from "../../domain/access";
 import { assertRecordAccess, assertStoreAccess, canAccessRecord, getActiveAccessContext } from "../../domain/access-context";
 import type { AgendaEvent } from "../../domain/agenda";
 import type { Attendance, Customer } from "../../domain/customer";
@@ -17,10 +17,10 @@ const defaultSettings: OrganizationSettings = {
   clinicalProfessionalLabel: "Profissional clínico"
 };
 
-const seedStores: Store[] = [{ id: "store-centro", name: "Loja Centro", active: true }, { id: "store-shopping", name: "Loja Shopping", active: true }];
+const seedStores: Store[] = [{ id: "store-centro", name: "Loja Centro", active: true, organizationId: defaultOrganization.id }, { id: "store-shopping", name: "Loja Shopping", active: true, organizationId: defaultOrganization.id }];
 const seedUsers: User[] = [
-  { id: "user-owner", name: "Administrador local", email: "admin@opticore.local", role: "OWNER", scope: "NETWORK", storeIds: seedStores.map((store) => store.id), active: true },
-  { id: "user-clinical", name: "Profissional autorizado", email: "clinico@opticore.local", role: "CLINICAL_PROFESSIONAL", scope: "STORE", storeIds: ["store-centro"], active: true }
+  { id: "user-owner", name: "Administrador local", email: "admin@opticore.local", role: "OWNER", scope: "NETWORK", storeIds: seedStores.map((store) => store.id), active: true, organizationId: defaultOrganization.id },
+  { id: "user-clinical", name: "Profissional autorizado", email: "clinico@opticore.local", role: "CLINICAL_PROFESSIONAL", scope: "STORE", storeIds: ["store-centro"], active: true, organizationId: defaultOrganization.id }
 ];
 
 export class LocalSettingsRepository implements SettingsRepository {
@@ -126,7 +126,7 @@ export class LocalClinicalRepository implements ClinicalRepository {
       if (attendance.status === "FINISHED" && !current?.amendmentReason) throw new Error("Este atendimento já foi concluído.");
       if (action === "finalize" && !input.prescription.trim()) throw new Error("Preencha a prescrição antes de finalizar.");
       const now = new Date().toISOString();
-      const saved: ClinicalRecord = { ...input, version: current?.version ?? 1, amendmentReason: current?.amendmentReason, revision: (current?.revision ?? 0) + 1, author, updatedAt: now, finalizedAt: action === "finalize" ? now : undefined };
+      const saved: ClinicalRecord = { ...input, organizationId: input.organizationId ?? defaultOrganization.id, version: current?.version ?? 1, amendmentReason: current?.amendmentReason, revision: (current?.revision ?? 0) + 1, author, updatedAt: now, finalizedAt: action === "finalize" ? now : undefined };
       await database.clinicalRecords.put(saved);
       if (action === "finalize") {
         await database.clinicalVersions.add({ ...saved, id: `${saved.attendanceId}:${saved.version}`, finalizedAt: now });

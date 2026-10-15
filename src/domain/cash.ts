@@ -15,6 +15,7 @@ export function assertValidPaymentMethod(method?: string): PaymentMethod | undef
 }
 
 export interface CashSession {
+  organizationId?: string;
   id: string;
   storeId: string;
   openedAt: string;
@@ -28,6 +29,7 @@ export interface CashSession {
 }
 
 export interface CashEntry {
+  organizationId?: string;
   id: string;
   sessionId: string;
   storeId: string;

@@ -1,4 +1,4 @@
-import { roleDefinitions, type CurrentStoreContext, type RoleKey, type Store, type User } from "./access";
+import { defaultOrganization, roleDefinitions, type CurrentStoreContext, type RoleKey, type Store, type User } from "./access";
 import type { AdministrationRepository } from "./repositories";
 import { assertPasswordStrength, generateSalt, hashPassword } from "./password";
 
@@ -57,7 +57,7 @@ export class AdministrationService {
 
   async createStore(input: StoreInput): Promise<Store> {
     const stores = await this.repository.listStores();
-    const store: Store = { id: `store-${crypto.randomUUID()}`, name: storeNameOf(input, stores), active: true };
+    const store: Store = { id: `store-${crypto.randomUUID()}`, name: storeNameOf(input, stores), active: true, organizationId: defaultOrganization.id };
     await this.repository.saveStore(store);
     return store;
   }
@@ -89,7 +89,7 @@ export class AdministrationService {
   async createUser(input: UserInput): Promise<User> {
     const [users, stores] = await Promise.all([this.repository.listUsers(), this.repository.listStores()]);
     const credential = input.password ? await buildCredential(input.password) : undefined;
-    const user: User = { id: `user-${crypto.randomUUID()}`, ...validateUserInput(input, users, stores), active: true, ...(credential ?? {}) };
+    const user: User = { id: `user-${crypto.randomUUID()}`, organizationId: defaultOrganization.id, ...validateUserInput(input, users, stores), active: true, ...(credential ?? {}) };
     await this.repository.saveUser(user);
     return user;
   }

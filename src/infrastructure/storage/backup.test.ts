@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { BackupService, validateBackup } from "../../domain/backup";
 import { database } from "./database";
 import { LocalAdministrationRepository } from "./local-repositories";
+import { defaultOrganization } from "../../domain/access";
 import { LocalBackupRepository } from "./local-backup";
 import { EncryptedBackupCodec } from "./backup-codec";
 
@@ -30,6 +31,24 @@ describe("encrypted backup and transactional restore", () => {
     expect((await database.customers.get("test"))?.name).toBe("Nome confidencial teste");
     expect((await database.sessions.get("current"))?.role).toBe("RECEPTIONIST");
     expect((await database.attachments.get("att-1"))?.content).toBe("aGVsbG8=");
+  });
+  it("keeps organizationId through export and restore and rejects invalid stamps", async () => {
+    await database.customers.add({ id: "org-customer", name: "Cliente com organização", createdAt: new Date().toISOString(), organizationId: defaultOrganization.id });
+    const snapshot = await service.inspect(await service.create(password, "OWNER"), password, "OWNER");
+    expect(snapshot.tables.customers[0].organizationId).toBe(defaultOrganization.id);
+    expect(snapshot.tables.stores.every((store) => store.organizationId === defaultOrganization.id)).toBe(true);
+    await database.customers.clear();
+    await service.restore(snapshot, "RESTAURAR", "OWNER");
+    expect((await database.customers.get("org-customer"))?.organizationId).toBe(defaultOrganization.id);
+    const legacy = structuredClone(snapshot);
+    delete (legacy.tables.customers[0] as { organizationId?: string }).organizationId;
+    expect(() => validateBackup(legacy)).not.toThrow();
+    const invalidNumber = structuredClone(snapshot);
+    (invalidNumber.tables.customers[0] as { organizationId?: unknown }).organizationId = 123;
+    expect(() => validateBackup(invalidNumber)).toThrow("inválido");
+    const blank = structuredClone(snapshot);
+    (blank.tables.customers[0] as { organizationId?: unknown }).organizationId = "   ";
+    expect(() => validateBackup(blank)).toThrow("inválido");
   });
   it("keeps legacy backups readable and rejects corrupted attachment content", async () => {
     const snapshot = await repository.snapshot();

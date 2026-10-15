@@ -1,5 +1,6 @@
 import type { InventoryItem, InventoryMovement, InventoryMovementType, ProductCategory } from "./inventory";
 import { isProductCategory, movementDelta } from "./inventory";
+import { defaultOrganization } from "./access";
 import type { InventoryRepository } from "./repositories";
 import { isMoney } from "./money";
 
@@ -58,8 +59,8 @@ export class InventoryService {
     if (!valid(input.quantity) || !valid(input.minimumQuantity)) throw new Error("Informe saldo inicial e estoque mínimo válidos.");
     const code = requiredCode(input.code);
     assertCodeIsUnique(await this.repository.listByStore(storeId), code);
-    const item: InventoryItem = { id: `item-${crypto.randomUUID()}`, storeId, name, code, quantity: input.quantity, minimumQuantity: input.minimumQuantity, defaultPrice: optionalMoney(input.defaultPrice, "defaultPrice"), cost: optionalMoney(input.cost, "cost"), category, brand: optionalText(input.brand), material: optionalText(input.material), description: optionalText(input.description) };
-    const initial: InventoryMovement | undefined = input.quantity > 0 ? { id: `movement-${crypto.randomUUID()}`, itemId: item.id, storeId, type: "IN", quantity: input.quantity, reason: "Estoque inicial", createdAt: new Date().toISOString(), author } : undefined;
+    const item: InventoryItem = { id: `item-${crypto.randomUUID()}`, storeId, name, code, quantity: input.quantity, minimumQuantity: input.minimumQuantity, defaultPrice: optionalMoney(input.defaultPrice, "defaultPrice"), cost: optionalMoney(input.cost, "cost"), category, brand: optionalText(input.brand), material: optionalText(input.material), description: optionalText(input.description), organizationId: defaultOrganization.id };
+    const initial: InventoryMovement | undefined = input.quantity > 0 ? { id: `movement-${crypto.randomUUID()}`, itemId: item.id, storeId, type: "IN", quantity: input.quantity, reason: "Estoque inicial", createdAt: new Date().toISOString(), author, organizationId: defaultOrganization.id } : undefined;
     await this.repository.createItem(item, initial);
     return item;
   }
@@ -82,7 +83,7 @@ export class InventoryService {
     if (!Number.isFinite(quantity) || quantity === 0) throw new Error("Informe uma quantidade válida.");
     if (type !== "ADJUSTMENT" && quantity < 0) throw new Error("Informe uma quantidade maior que zero.");
     if (item.quantity + movementDelta({ type, quantity }) < 0) throw new Error("Saldo insuficiente para esta movimentação.");
-    const movement: InventoryMovement = { id: `movement-${crypto.randomUUID()}`, itemId: item.id, storeId: item.storeId, type, quantity, reason: motive, createdAt: new Date().toISOString(), author };
+    const movement: InventoryMovement = { id: `movement-${crypto.randomUUID()}`, itemId: item.id, storeId: item.storeId, type, quantity, reason: motive, createdAt: new Date().toISOString(), author, organizationId: defaultOrganization.id };
     return this.repository.applyMovement(movement);
   }
 }

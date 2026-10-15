@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable } from "dexie";
-import type { CurrentStoreContext, LocalSession, OrganizationSettings, Store, User } from "../../domain/access";
+import { defaultOrganization, type CurrentStoreContext, type LocalSession, type OrganizationSettings, type Store, type User } from "../../domain/access";
 import type { AgendaEvent } from "../../domain/agenda";
 import type { Attendance, Customer } from "../../domain/customer";
 import type { ClinicalAttachmentContent, ClinicalRecord, ClinicalVersion, Prescription } from "../../domain/clinical";
@@ -51,6 +51,12 @@ export class OpticoreDatabase extends Dexie {
     this.version(11).stores({ attachments: "id" });
     this.version(12).stores({ agendaEvents: "id, storeId, professionalId, status, startsAt" });
     this.version(13).stores({ prescriptions: "id, attendanceId, customerId, storeId, issuedAt" });
+    this.version(14).upgrade(async (transaction) => {
+      const organizationTables = ["stores", "users", "customers", "attendances", "agendaEvents", "clinicalRecords", "clinicalVersions", "prescriptions", "sales", "workOrders", "inventoryItems", "inventoryMovements", "cashSessions", "cashEntries"];
+      for (const name of organizationTables) {
+        await transaction.table(name).toCollection().modify((record: { organizationId?: string }) => { record.organizationId ??= defaultOrganization.id; });
+      }
+    });
   }
 }
 

@@ -1,4 +1,5 @@
 export interface Customer {
+  organizationId?: string;
   id: string;
   name: string;
   cpf?: string;
@@ -18,6 +19,7 @@ export function isAttendancePriority(value: unknown): value is AttendancePriorit
 }
 
 export interface Attendance {
+  organizationId?: string;
   id: string;
   customerId: string;
   storeId: string;

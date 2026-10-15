@@ -1,4 +1,5 @@
 import { attendanceTypeForAgendaEvent, dayRange, weekRange, type AgendaEvent, type AgendaEventType } from "./agenda";
+import { defaultOrganization } from "./access";
 import type { Attendance } from "./customer";
 import type { AgendaRepository, CustomerRepository } from "./repositories";
 import type { ReceptionService } from "./reception-service";
@@ -22,7 +23,7 @@ export class AgendaService {
     if (!input.customerId || !await this.customers.get(input.customerId)) throw new Error("Selecione um cliente cadastrado.");
     const startsAt = new Date(input.startsAt);
     if (Number.isNaN(startsAt.getTime())) throw new Error("Informe uma data e hora válidas.");
-    const event: AgendaEvent = { id: id("agenda"), storeId: input.storeId, customerId: input.customerId, professionalId: input.professionalId?.trim() || undefined, type: input.type, status: "SCHEDULED", startsAt: startsAt.toISOString(), notes: input.notes?.trim() || undefined, createdAt: new Date().toISOString() };
+    const event: AgendaEvent = { id: id("agenda"), storeId: input.storeId, customerId: input.customerId, professionalId: input.professionalId?.trim() || undefined, type: input.type, status: "SCHEDULED", startsAt: startsAt.toISOString(), notes: input.notes?.trim() || undefined, createdAt: new Date().toISOString(), organizationId: defaultOrganization.id };
     await this.events.save(event);
     return event;
   }

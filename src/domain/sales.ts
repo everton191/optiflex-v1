@@ -1,5 +1,6 @@
 import type { InventoryMovement } from "./inventory";
 import { fromCents, toCents } from "./money";
+import { defaultOrganization } from "./access";
 
 export type SaleStatus = "QUOTE" | "CONFIRMED" | "CANCELLED";
 export type SalePaymentStatus = "PENDING" | "PARTIAL" | "PAID";
@@ -27,6 +28,7 @@ export interface SaleItem {
 }
 
 export interface Sale {
+  organizationId?: string;
   id: string;
   customerId: string;
   storeId: string;
@@ -59,6 +61,7 @@ export function stockMovementsFor(sale: Sale): InventoryMovement[] {
     quantity: item.quantity,
     reason: `Venda: ${sale.description}`,
     createdAt: new Date().toISOString(),
+    organizationId: sale.organizationId ?? defaultOrganization.id,
   }));
 }
 
@@ -71,5 +74,6 @@ export function refundStockMovementsFor(sale: Sale): InventoryMovement[] {
     quantity: item.quantity,
     reason: `Estorno: ${sale.description}`,
     createdAt: new Date().toISOString(),
+    organizationId: sale.organizationId ?? defaultOrganization.id,
   }));
 }
