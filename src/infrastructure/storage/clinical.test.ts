@@ -209,4 +209,13 @@ describe("structured refraction", () => {
     expect(await repository.listByCustomer("customer-inexistente", "store-centro")).toHaveLength(0);
     expect(await repository.listByCustomer(customerId, "store-shopping")).toHaveLength(0);
   });
+
+  it("loads a single prescription by id for the printable document, scoped by store", async () => {
+    const issued = await service.issuePrescription({ customerId, od: { sphere: -1.25 }, oe: { add: 0.5 } }, attendanceId, context);
+    const loaded = await service.getPrescription(issued.id, context);
+    expect(loaded).toMatchObject({ id: issued.id, version: 1, storeId: "store-centro" });
+    expect(await service.getPrescription(issued.id, { ...context, storeId: "store-shopping" })).toBeUndefined();
+    expect(await service.getPrescription("rx-inexistente", context)).toBeUndefined();
+    await expect(service.getPrescription(issued.id, { ...context, session: { ...context.session, role: "SELLER" as never } })).rejects.toThrow("não permitido");
+  });
 });

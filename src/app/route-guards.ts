@@ -19,6 +19,7 @@ export const routeGuards: readonly RouteGuard[] = [
   { path: "agenda", permission: "attendance.read" },
   { path: "clinico", permission: "clinical.workspace.access" },
   { path: "clinico/atendimento/:attendanceId", permission: "clinical.workspace.access" },
+  { path: "prescricoes/:prescriptionId", permission: "clinical.workspace.access" },
   { path: "caixa", permission: "cash.read" },
   { path: "estoque", permission: "inventory.read" },
   { path: "ordens-servico", permission: "sales.read" },

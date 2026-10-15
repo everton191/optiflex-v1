@@ -20,7 +20,7 @@ const expectedRoutePermissions: Record<RoleKey, readonly Permission[]> = {
 
 describe("route guard matrix for all ten profiles", () => {
   it("exposes exactly one known permission per guarded route", () => {
-    expect(routeGuards).toHaveLength(19);
+    expect(routeGuards).toHaveLength(20);
     for (const guard of routeGuards) expect(allPermissions).toContain(guard.permission);
     const indexGuards = routeGuards.filter((guard) => guard.index);
     expect(indexGuards).toHaveLength(1);

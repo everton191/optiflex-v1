@@ -59,6 +59,7 @@ export interface ClinicalRepository {
 // Append-only: versions are stored next to each other so retification never rewrites the original.
 export interface PrescriptionRepository {
   listByAttendance(attendanceId: string, storeId: string): Promise<Prescription[]>;
+  get(id: string, storeId: string): Promise<Prescription | undefined>;
   listByCustomer(customerId: string, storeId: string): Promise<Prescription[]>;
   save(prescription: Prescription, storeId: string): Promise<Prescription>;
 }

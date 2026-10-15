@@ -182,7 +182,7 @@ describe("draft quote editing", () => {
 
 describe("prescription handoff", () => {
   const rx = (overrides: Partial<SalePrescription> = {}): SalePrescription => ({ prescriptionId: "rx-1", customerId: "customer-1", version: 2, usage: "DISTANCE", od: { sphere: -1.5, cylinder: -0.75, axis: 95 }, oe: { sphere: -1, cylinder: -0.25, axis: 85, add: 0.5 }, notes: "Grau conferido", ...overrides });
-  const prescriptions = { listByCustomer: vi.fn(), listByAttendance: vi.fn(), save: vi.fn() };
+  const prescriptions = { listByCustomer: vi.fn(), listByAttendance: vi.fn(), get: vi.fn(), save: vi.fn() };
 
   it("stores the snapshot on the quote so the sale never asks for the degrees again", async () => {
     repository.save.mockResolvedValue(undefined);

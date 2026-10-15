@@ -3,10 +3,10 @@ import { errorMessage } from "../domain/errors";
 import { Link, useBlocker, useParams } from "react-router-dom";
 import { Button, Card, Input } from "../design-system/components";
 import { ClinicalService } from "../domain/clinical-service";
-import { ATTACHMENT_MAX_BYTES, ATTACHMENT_TYPE_LABEL, activePrescription, attachmentCategoryKeys, clinicalAttachmentCategoryLabels, prescriptionUsageKeys, prescriptionUsageLabels, type ClinicalAttachment, type ClinicalAttachmentCategory, type ClinicalVersion, type Prescription, type PrescriptionUsage } from "../domain/clinical";
+import { ATTACHMENT_MAX_BYTES, ATTACHMENT_TYPE_LABEL, activePrescription, attachmentCategoryKeys, clinicalAttachmentCategoryLabels, formatPrescriptionEye, prescriptionDocument, prescriptionUsageKeys, prescriptionUsageLabels, type ClinicalAttachment, type ClinicalAttachmentCategory, type ClinicalVersion, type Prescription, type PrescriptionUsage } from "../domain/clinical";
 import type { Customer } from "../domain/customer";
 import { base64ToBlob, fileToBase64 } from "../infrastructure/storage/attachment-codec";
-import { LocalClinicalRepository, LocalPrescriptionRepository } from "../infrastructure/storage/local-repositories";
+import { LocalClinicalRepository, LocalCustomerRepository, LocalPrescriptionRepository } from "../infrastructure/storage/local-repositories";
 import { ClinicalDraft } from "./clinical-draft";
 import { useAppContext, useSession } from "./providers";
 
@@ -15,14 +15,6 @@ const fields = [["anamnesis", "Anamnese"], ["examination", "Exame"], ["requests"
 const formatAttachmentSize = (size: number) => size >= 1024 * 1024 ? `${(size / (1024 * 1024)).toFixed(1)} MB` : size >= 1024 ? `${Math.round(size / 1024)} KB` : `${size} B`;
 const parseDegree = (raw: string) => raw.trim() === "" ? undefined : Number(raw);
 const formatDegree = (value: number | undefined) => value === undefined ? "" : value.toFixed(2);
-const formatEye = (label: string, eye: Prescription["od"]) => {
-  const parts: string[] = [];
-  if (eye.sphere !== undefined) parts.push(`esf ${formatDegree(eye.sphere)}`);
-  if (eye.cylinder !== undefined) parts.push(`cil ${formatDegree(eye.cylinder)}`);
-  if (eye.axis !== undefined) parts.push(`eixo ${eye.axis}°`);
-  if (eye.add !== undefined) parts.push(`ad ${formatDegree(eye.add)}`);
-  return `${label}: ${parts.length ? parts.join(" · ") : "sem grau"}`;
-};
 
 export function ClinicalWorkspacePage() {
   const { attendanceId = "" } = useParams();
@@ -171,8 +163,8 @@ function ClinicalWorkspace({ attendanceId }: { attendanceId: string }) {
       </form>
       {rxError && <p role="alert" className="notice error-text">{rxError}</p>}
       <div className="list-card compact-list">{prescriptions.length ? prescriptions.map((rx) => { const active = rx.id === activePrescription(prescriptions)?.id; return <article className="list-row" key={rx.id}>
-        <div><strong>{active ? "Prescrição ativa" : `Versão ${rx.version}`}{rx.retifies ? " · retificação" : ""}{rx.usage ? ` · ${prescriptionUsageLabels[rx.usage]}` : ""}</strong><span>{formatEye("OD", rx.od)} · {formatEye("OE", rx.oe)}</span>{rx.notes && <span className="help-text">{rx.notes}</span>}{rx.retificationReason && <span className="help-text">Motivo da retificação: {rx.retificationReason}</span>}<span className="help-text">{rx.author} · {new Date(rx.issuedAt).toLocaleString("pt-BR")}</span></div>
-        {active && !busy && <div><Button type="button" onClick={() => startRetification(rx)}>Retificar</Button></div>}
+        <div><strong>{active ? "Prescrição ativa" : `Versão ${rx.version}`}{rx.retifies ? " · retificação" : ""}{rx.usage ? ` · ${prescriptionUsageLabels[rx.usage]}` : ""}</strong><span>{formatPrescriptionEye("OD", rx.od)} · {formatPrescriptionEye("OE", rx.oe)}</span>{rx.notes && <span className="help-text">{rx.notes}</span>}{rx.retificationReason && <span className="help-text">Motivo da retificação: {rx.retificationReason}</span>}<span className="help-text">{rx.author} · {new Date(rx.issuedAt).toLocaleString("pt-BR")}</span></div>
+        <div>{!busy && <Link className="button" to={`/prescricoes/${rx.id}`}>Imprimir</Link>}{active && !busy && <Button type="button" onClick={() => startRetification(rx)}>Retificar</Button>}</div>
       </article>; }) : <p className="empty-state">Nenhuma prescrição estruturada emitida.</p>}</div>
     </section>
     <section className="clinical-attachments">
@@ -192,5 +184,43 @@ function ClinicalWorkspace({ attendanceId }: { attendanceId: string }) {
       {attachmentError && <p role="alert" className="notice error-text">{attachmentError}</p>}
     </section>
     <h2>Versões finalizadas</h2>{versions.length ? versions.map((version) => <details className="clinical-version" key={version.id}><summary>Versão {version.version ?? 1} · {new Date(version.finalizedAt).toLocaleString("pt-BR")} · {version.author || "Registro anterior"}</summary>{version.amendmentReason && <p>Motivo: {version.amendmentReason}</p>}{fields.map(([field, label]) => <section key={field}><h3>{label}</h3><p className="preserved-text">{version[field] || "Não informado"}</p></section>)}</details>) : <p>Nenhuma versão finalizada.</p>}
+  </div>;
+}
+
+export function PrescriptionDocumentPage() {
+  const { prescriptionId = "" } = useParams();
+  const { currentStoreId, settings } = useAppContext();
+  const session = useSession();
+  const [prescription, setPrescription] = useState<Prescription>();
+  const [customer, setCustomer] = useState<Customer>();
+  const [error, setError] = useState(""); const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    let active = true;
+    const context = { storeId: currentStoreId, session };
+    void (async () => {
+      try {
+        const rx = await service.getPrescription(prescriptionId, context);
+        if (!rx) throw new Error("Prescrição não encontrada nesta loja.");
+        const found = await new LocalCustomerRepository().get(rx.customerId);
+        if (active) { setPrescription(rx); setCustomer(found); setError(""); }
+      } catch (failure) { if (active) setError(errorMessage(failure, "Não foi possível carregar a receita.")); }
+    })();
+    return () => { active = false; };
+  }, [prescriptionId, currentStoreId, session, attempt]);
+  if (error) return <div className="page"><h1>Receita óptica</h1><p role="alert" className="notice error-text">{error}</p><div className="form-actions"><Button onClick={() => setAttempt((value) => value + 1)}>Tentar novamente</Button>{prescription && <Link className="button" to={`/clinico/atendimento/${prescription.attendanceId}`}>Voltar à consulta</Link>}</div></div>;
+  if (!prescription) return <div className="page"><h1>Receita óptica</h1><p role="status">Carregando a receita…</p></div>;
+  const document = prescriptionDocument(prescription, customer?.name ?? "");
+  return <div className="page prescription-document">
+    <div className="page-title no-print"><div><p className="eyebrow">{settings.organizationName || "Opticore"}</p><h1>{document.title}</h1><p>{document.versionLine} · {document.issuedAtLine}</p></div><div className="form-actions"><Button type="button" onClick={() => window.print()}>Imprimir</Button><Link className="button" to={`/clinico/atendimento/${prescription.attendanceId}`}>Voltar à consulta</Link></div></div>
+    <Card>
+      <p><strong>Paciente:</strong> {document.patient}</p>
+      <p><strong>Profissional:</strong> {document.professional}</p>
+      {document.usage && <p><strong>Tipo de uso:</strong> {document.usage}</p>}
+      <p>{document.odLine}</p>
+      <p>{document.oeLine}</p>
+      {document.notes && <p><strong>Observações:</strong> {document.notes}</p>}
+      {document.retificationLine && <p><strong>{document.retificationLine}</strong></p>}
+      <p className="help-text no-print">Documento por versão: a receita é imutável — reimpressões sempre mostram o número da versão.</p>
+    </Card>
   </div>;
 }

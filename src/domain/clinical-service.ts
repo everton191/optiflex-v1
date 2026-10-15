@@ -34,6 +34,10 @@ export class ClinicalService {
     this.authorize(context);
     return this.prescriptions.listByAttendance(attendanceId, context.storeId);
   }
+  async getPrescription(prescriptionId: string, context: ClinicalContext): Promise<Prescription | undefined> {
+    this.authorize(context);
+    return this.prescriptions.get(prescriptionId, context.storeId);
+  }
   async issuePrescription(input: { customerId: string; od: PrescriptionEye; oe: PrescriptionEye; usage?: PrescriptionUsage; notes?: string }, attendanceId: string, context: ClinicalContext): Promise<Prescription> {
     this.authorize(context);
     const prescription = issuePrescription({ attendanceId, storeId: context.storeId, customerId: input.customerId, od: input.od, oe: input.oe, usage: input.usage, notes: input.notes }, context.session.userName);

@@ -1,4 +1,4 @@
-.shell { min-height: 100vh; display: grid; grid-template-columns: 16rem minmax(0, 1fr); }
+﻿.shell { min-height: 100vh; display: grid; grid-template-columns: 16rem minmax(0, 1fr); }
 .sidebar { background: var(--color-brand); color: white; display: flex; flex-direction: column; padding: var(--space-4); }
 .brand { display: flex; align-items: center; gap: var(--space-3); font-weight: 700; margin-bottom: var(--space-8); }
 .brand-mark { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: var(--radius-sm); background: #c6ecf2; color: var(--color-brand); }
@@ -258,3 +258,5 @@ textarea { min-height: 6rem; }
 .area-links a.active { color: var(--color-brand); font-weight: 700; background: color-mix(in srgb, var(--color-focus), transparent 90%); }
 .area-links .nav-section-label { padding: var(--space-3) var(--space-3) 0; color: var(--color-muted); }
 @media (max-width: 720px), (min-width: 721px) and (max-width: 1024px) and (orientation: portrait) { .mobile-nav { justify-content: space-around; } }
+
+@media print { .shell { display: block; } .sidebar, .topbar, .mobile-nav, .no-print { display: none !important; } .page { padding: 0; max-width: none; } .prescription-document .card { border: 0; box-shadow: none; padding: 0; } }

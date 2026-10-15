@@ -1,4 +1,4 @@
-export { ClinicalWorkspacePage } from "./ClinicalWorkspace";
+export { ClinicalWorkspacePage, PrescriptionDocumentPage } from "./ClinicalWorkspace";
 export { DashboardPage } from "./DashboardWorkspace";
 export { SettingsPage, UsersPage, StoresPage, ProfilesPage } from "./AdminWorkspace";
 export { AttendancePage, AgendaPage, AttendanceNewPage, AttendanceDetailPage, ClinicalQueuePage } from "./ReceptionWorkspace";

@@ -164,3 +164,41 @@ export function activePrescription(prescriptions: readonly Prescription[]): Pres
   const retified = new Set(prescriptions.map((prescription) => prescription.retifies).filter((id): id is string => Boolean(id)));
   return prescriptions.filter((prescription) => !retified.has(prescription.id)).sort((a, b) => b.version - a.version)[0];
 }
+
+export function formatPrescriptionEye(label: string, eye: PrescriptionEye): string {
+  const parts: string[] = [];
+  if (eye.sphere !== undefined) parts.push(`esf ${eye.sphere.toFixed(2)}`);
+  if (eye.cylinder !== undefined) parts.push(`cil ${eye.cylinder.toFixed(2)}`);
+  if (eye.axis !== undefined) parts.push(`eixo ${eye.axis}°`);
+  if (eye.add !== undefined) parts.push(`ad ${eye.add.toFixed(2)}`);
+  return `${label}: ${parts.length ? parts.join(" · ") : "sem grau"}`;
+}
+
+// Printable view of one immutable version: building a document never mutates the prescription.
+export interface PrescriptionDocument {
+  title: string;
+  patient: string;
+  professional: string;
+  versionLine: string;
+  issuedAtLine: string;
+  usage?: string;
+  odLine: string;
+  oeLine: string;
+  notes?: string;
+  retificationLine?: string;
+}
+
+export function prescriptionDocument(prescription: Prescription, patient: string): PrescriptionDocument {
+  return {
+    title: "Receita óptica",
+    patient: patient.trim() || "Cliente",
+    professional: prescription.author,
+    versionLine: `Versão ${prescription.version}${prescription.retifies ? " · retificação" : ""}`,
+    issuedAtLine: new Date(prescription.issuedAt).toLocaleString("pt-BR"),
+    usage: prescription.usage ? prescriptionUsageLabels[prescription.usage] : undefined,
+    odLine: formatPrescriptionEye("OD", prescription.od),
+    oeLine: formatPrescriptionEye("OE", prescription.oe),
+    notes: prescription.notes,
+    retificationLine: prescription.retificationReason ? `Motivo da retificação: ${prescription.retificationReason}` : undefined,
+  };
+}

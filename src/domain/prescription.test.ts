@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { activePrescription, issuePrescription, prescriptionUsageKeys, prescriptionUsageLabels, retifyPrescription, type Prescription, type PrescriptionInput } from "./clinical";
+import { activePrescription, issuePrescription, prescriptionDocument, prescriptionUsageKeys, prescriptionUsageLabels, retifyPrescription, type Prescription, type PrescriptionInput } from "./clinical";
 
 const input: PrescriptionInput = {
   attendanceId: "att-1",
@@ -72,5 +72,41 @@ describe("retification", () => {
     expect(() => retifyPrescription(v1, { ...input, storeId: "store-shopping" }, "Motivo", "Dra. Ana")).toThrow("mesmo atendimento");
     expect(activePrescription([v1, v2, v3])).toBe(v3);
     expect(activePrescription([])).toBeUndefined();
+  });
+});
+
+describe("printable prescription document", () => {
+  it("renders patient, professional, version and degrees without mutating the prescription", () => {
+    const prescription = issuePrescription(input, "Dra. Ana", issuedAt);
+    const snapshot = JSON.parse(JSON.stringify(prescription));
+    const document = prescriptionDocument(prescription, "  Maria da Silva  ");
+    expect(document).toMatchObject({
+      title: "Receita óptica",
+      patient: "Maria da Silva",
+      professional: "Dra. Ana",
+      versionLine: "Versão 1",
+      usage: "Uso contínuo",
+      odLine: "OD: esf -1.25 · cil -0.50 · eixo 90°",
+      oeLine: "OE: esf -1.00 · cil -0.25 · eixo 85° · ad 0.50",
+      notes: "Uso contínuo"
+    });
+    expect(JSON.parse(JSON.stringify(prescription))).toEqual(snapshot);
+  });
+
+  it("keeps each version printable on its own so reprints always show the version number", () => {
+    const v1 = issuePrescription(input, "Dra. Ana", issuedAt);
+    const v2 = retifyPrescription(v1, { ...input, od: { sphere: -1.75 } }, "Grau conferido", "Dr. Bruno", "2026-10-09T10:00:00.000Z");
+    const documentV1 = prescriptionDocument(v1, "Maria");
+    const documentV2 = prescriptionDocument(v2, "Maria");
+    expect(documentV1.versionLine).toBe("Versão 1");
+    expect(documentV1.odLine).toBe("OD: esf -1.25 · cil -0.50 · eixo 90°");
+    expect(documentV2.versionLine).toBe("Versão 2 · retificação");
+    expect(documentV2.odLine).toBe("OD: esf -1.75");
+    expect(documentV2.retificationLine).toBe("Motivo da retificação: Grau conferido");
+    expect(documentV2.professional).toBe("Dr. Bruno");
+    expect(prescriptionDocument(v1, "").patient).toBe("Cliente");
+    const emptyEye = prescriptionDocument({ ...v1, od: {}, oe: {}, usage: undefined, notes: "Aguardando refração" }, "Maria");
+    expect(emptyEye.odLine).toBe("OD: sem grau");
+    expect(emptyEye.usage).toBeUndefined();
   });
 });
