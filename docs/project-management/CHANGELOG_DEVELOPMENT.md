@@ -4,6 +4,14 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `0e8675a` + docs — Receita óptica imprimível por versão (F3-05)
+
+- `src/domain/clinical.ts`: `formatPrescriptionEye(label, eye)` ("OD: esf -1.25 · cil -0.50 · eixo 90°"; sem campos → "sem grau") e função pura `prescriptionDocument(prescription, patient)` → `PrescriptionDocument` (título "Receita óptica", paciente, profissional, `versionLine` "Versão N [· retificação]", data/hora pt-BR, uso opcional, OD/OE, observações, motivo de retificação; **não muta a prescrição** — CA de imutabilidade).
+- `src/domain/repositories.ts`/`local-repositories.ts`: `PrescriptionRepository.get(id, storeId)` + `LocalPrescriptionRepository.get` (guarda de loja — loja errada/ausente → `undefined`, `assertRecordAccess`).
+- `src/domain/clinical-service.ts`: `getPrescription(prescriptionId, context)` (autoriza por loja, carrega por id).
+- UI: `ClinicalWorkspace.tsx` — botão "Imprimir" por linha da lista de prescrições (link para a página do documento); nova `PrescriptionDocumentPage` na rota `/prescricoes/:prescriptionId` (permissão `clinical.workspace.access` em `route-guards.ts`, entrada em `router.tsx`/`pages.tsx`) com versão visível nas reimpressões (risco do card), botão "Imprimir" (`window.print()`) e `@media print` em `styles.css` (esconde sidebar/topbar/nav).
+- Testes novos: `prescription.test.ts` +2 (imutabilidade do documento, versões imprimíveis por versão), `clinical.test.ts` +1 (get por id/loja/permissão), `permission-routes.test.ts` 19→20 — **308/308**, build 0, tsc 0. Dexie sem bump; backup schema 13 inalterado. Card: F3-05/#44 → DONE. **Impressão manual pendente** (CA do card).
+
 ### `6f2fe74` + docs — Prescrição estruturada: uso, retificação e venda (F3-06)
 
 - `src/domain/clinical.ts`: `PrescriptionUsage` (`DISTANCE`/`NEAR`/`CONTINUOUS`/`MULTIFOCAL`) com `prescriptionUsageLabels`/`prescriptionUsageKeys`/`assertValidPrescriptionUsage` ("Tipo de uso inválido."); `usage?` opcional em `Prescription`/`PrescriptionInput` (prescrições antigas sem uso continuam válidas); `assertValidPrescriptionEye` exportado.

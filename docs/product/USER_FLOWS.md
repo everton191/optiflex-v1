@@ -22,3 +22,12 @@ Fluxos de ponta a ponta usados pela equipe e por testes manuais. Cada fluxo refe
 1. **Caixa** → aba Vendas: informa forma de pagamento e pode receber um valor parcial (saldo pendente exibido por venda).
 2. Vendas pagas totalmente ou parcialmente ficam `PAID`/`PARTIAL`; recebimento excede o saldo é bloqueado.
 3. Cancelar uma venda paga exige motivo e registra estorno `REFUND` no caixa quando o caixa está aberto; estoque é devolvido atomicamente.
+
+## Receita óptica: emissão, retificação e impressão (F3-06 `6f2fe74`, F3-05 `0e8675a`)
+
+1. Profissional clínico abre a consulta (`/clinico/atendimento/:attendanceId`, permissão `clinical.workspace.access`) e registra OD/OE com esfera, cilindro, eixo e adição na seção "Refração (OD/OE)".
+2. Escolhe o tipo de uso (longe, perto, contínuo ou multifocal) e emite a prescrição: a versão 1 fica ativa e a lista mostra autor, data, graus e uso.
+3. Para corrigir um grau, clica em **Retificar** na prescrição ativa: os campos são pré-preenchidos, o motivo é obrigatório e a versão original permanece no histórico (autor, data e motivo preservados).
+4. Em qualquer linha da lista, clica em **Imprimir**: a rota `/prescricoes/:prescriptionId` abre a receita óptica com paciente, profissional, tipo de uso, OD/OE, observações e o número da versão sempre visível (inclusive em reimpressões).
+5. Clica em **Imprimir** na página da receita: o diálogo de impressão do navegador abre com a barra lateral/topo ocultos (`@media print`).
+6. No caixa, ao criar um orçamento, o vendedor seleciona uma prescrição do cliente: o snapshot (versão, uso e graus) entra na venda sem redigitação.
