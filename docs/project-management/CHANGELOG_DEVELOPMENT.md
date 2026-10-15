@@ -4,6 +4,14 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `c8dec75` + docs — Recuperação de dados: motivos de recusa e restauração protegida (F8-10)
+
+- `src/domain/backup.ts`: `validateBackup` explica o motivo de cada recusa (`invalidReason`): formato que não é backup do Opticore, versão de arquivo, schema não suportado, data de criação, estrutura de tabelas e tabelas ausentes — todos com "Nenhum dado foi substituído"; checagens de schema 10–13 ganham mensagens próprias.
+- `src/domain/backup.ts` (`BackupService.inspect`): conteúdo decifrado que não for JSON válido vira "Backup inválido: o conteúdo decifrado não é um arquivo válido" em vez de `SyntaxError` cru; erros de senha/integridade do codec continuam passando com a mensagem original.
+- `src/app/BackupPanel.tsx`: texto corrigido (anexos e prescrições agora incluídos no backup), prévia com contagem de prescrições/anexos e aviso explícito de que falha no meio da importação não altera a base (rollback em transação única).
+- Testes (`backup.test.ts` +2): arquivo inválido rejeitado com motivo sem tocar na base (senha, formato, JSON corrompido, schema 999, tabela faltante) e restauração falhada preserva os dados originais (eixo 181 e registro não serializável rejeitados); **278/278** (29 arquivos), build 0, tsc 0.
+- Card: F8-10/#144 → DONE (fluxo exportar → conferir → prévia → restaurar com rollback; arquivo inválido rejeitado com motivo).
+
 ### `c2f0c27` + docs — Refração estruturada OD/OE com persistência e backup (F3-07)
 
 - `src/domain/clinical-service.ts`: `ClinicalService` ganha `PrescriptionRepository` no construtor + `issuePrescription` (monta `PrescriptionInput` com `attendanceId`/`storeId` do contexto, autora = `session.userName`, domínio valida eixo 0–180/graus) e `listPrescriptions` (guarda de `clinical.workspace.access`).

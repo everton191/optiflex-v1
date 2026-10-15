@@ -56,7 +56,7 @@ Classificação de inventário (Etapa 4) no corpo de cada card:
 
 - Issues totais: **155** (8 épicas + 147 tarefas).
 - Tarefas por fase: F1=14 · F2=18 · F3=20 · F4=20 · F5=19 · F6=19 · F7=19 · F8=18.
-- Tarefas por status (revisado em 08/10/2026; F1-09, F2-04, F7-02, F1-11, F3-09, F3-14, F1-02, F1-06, F4-16, F2-05, F4-10, F4-18, F4-12, F2-06, F3-01, F8-06, F8-07, F1-07, F3-17, F2-11, F2-02, F3-02, F3-03, F2-07, F3-10, F4-11, F2-14 e F3-07 concluídas no mesmo dia): DONE=46 · IN PROGRESS=0 · READY=13 · TESTING=0 · CODE REVIEW=0 · BACKLOG=38 · BLOCKED=50.
+- Tarefas por status (revisado em 08/10/2026; F1-09, F2-04, F7-02, F1-11, F3-09, F3-14, F1-02, F1-06, F4-16, F2-05, F4-10, F4-18, F4-12, F2-06, F3-01, F8-06, F8-07, F1-07, F3-17, F2-11, F2-02, F3-02, F3-03, F2-07, F3-10, F4-11, F2-14, F3-07 e F8-10 concluídas no mesmo dia): DONE=47 · IN PROGRESS=0 · READY=12 · TESTING=0 · CODE REVIEW=0 · BACKLOG=38 · BLOCKED=50.
 - Bloqueios: **50 tarefas** bloqueadas — 47 por dependência de fase futura/externa + **3 reclassificadas em 08/10** (F4-13 #70, F8-03 #137, F3-20 #57: status desatualizado, decisão externa já registrada).
 - **Revisão de dependências 08/10/2026:** 7 ciclos detectados (SCC/Tarjan sobre este arquivo) e corrigidos em KANBAN + corpos das issues; **0 ciclos remanescentes**. Detalhe antes/depois em `DEPENDENCIES.md`.
 
@@ -255,7 +255,7 @@ Regra de ouro: **nunca mover para DONE sem evidência verificável** (comando de
 | F8-07 | [Auditoria de segurança](https://github.com/everton191/optiflex-v1/issues/141) | Access | DONE | p1 | F7-02, F1-11 (entregue em `277fdde` — `SECURITY_PLAN.md` com threat model, varredura automatizada de segredos e achados P0–P3; único P0 aberto = F1-12 erros globais, já em BACKLOG). |
 | F8-08 | [Verificação de LGPD](https://github.com/everton191/optiflex-v1/issues/142) | Compliance | BLOCKED | p2 | orientação jurídica; F3-09 (anexos), F1-10 (auditoria). |
 | F8-09 | [Testes de migração](https://github.com/everton191/optiflex-v1/issues/143) | Infraestrutura | DONE | p1 | F1-08. |
-| F8-10 | [Recuperação de dados](https://github.com/everton191/optiflex-v1/issues/144) | Infraestrutura | READY | p1 | F3-09. |
+| F8-10 | [Recuperação de dados](https://github.com/everton191/optiflex-v1/issues/144) | Infraestrutura | DONE | p1 | F3-09. |
 | F8-11 | [Homologação fiscal](https://github.com/everton191/optiflex-v1/issues/145) | Fiscal | BLOCKED | p2 | F6-08. |
 | F8-12 | [Piloto com ótica real](https://github.com/everton191/optiflex-v1/issues/146) | Infraestrutura | BLOCKED | p1 | F3/F4 concluídos, F8-10 (backup), F7-02 (login). |
 | F8-13 | [Correções do piloto](https://github.com/everton191/optiflex-v1/issues/147) | Infraestrutura | BLOCKED | p1 | F8-12. |
@@ -271,16 +271,16 @@ Ordem recomendada para a próxima sessão de desenvolvimento (status READY/IN PR
 
 | # | ID | Issue | Tarefa | Prioridade | Dependências | Justificativa |
 |---|---|---|---|---|---|---|
-| 1 | F8-10 | #144 | [Infraestrutura] Recuperação de dados | P1 | F3-09 (feito) | Anexos duráveis entregues; recuperação fecha o ciclo de dados antes do piloto. |
-| 2 | F8-02 | #136 | [Infraestrutura] Testes de integração | P1 | F8-01 (feito) | Base unitária consolidada (276 casos); integração cobre os fluxos críticos antes do piloto. |
-| 3 | F7-01 | #116 | [Ux] Design system consolidado | P1 | nenhuma | Sem dependências; padroniza componentes usados por todas as telas já entregues. |
-| 4 | F1-05 | #13 | [Infraestrutura] Identificadores de organizações e filiais | P1 | F1-08 (feito) | Migração de schema entregue; identificadores estabilizam org/filiais antes da escala multiempresa. |
-| 5 | F1-03 | #11 | [Infraestrutura] Separação gradual de páginas por módulo | P2 | nenhuma | Sem dependências; reduz o custo das próximas telas à medida que os módulos crescem. |
-| 6 | F7-03 | #118 | [Dashboard] Dashboard por função e estados de painel | P2 | F4-20, F1-11 (feitos) | Caixa e sessões prontos; consolida indicadores já entregues por perfil. |
-| 7 | F2-08 | #30 | [Customers] Prevenção de duplicidades | P2 | F2-07 (feito) | Validação de CPF entregue; comparação por documento/nome fecha o ciclo do cadastro. |
-| 8 | F7-05 | #120 | [Ux] Navegação mobile | P1 | F7-04 (feito) | Navegação desktop entregue; adaptação mobile fecha a base de UX antes do piloto. |
-| 9 | F1-12 | #20 | [Infraestrutura] Tratamento global de erros | P1 | nenhuma | Promovida de BACKLOG: sem dependências e único P0 aberto da auditoria F8-07 — erros globais antes do piloto. |
-| 10 | F3-06 | #45 | [Clinical] Prescrição estruturada | P1 | F1-07, F3-07 (feitos) | Refração por olho e persistência (F3-07) prontas; estrutura o restante do prontuário clínico. |
+| 1 | F8-02 | #136 | [Infraestrutura] Testes de integração | P1 | F8-01 (feito) | Base unitária consolidada (278 casos); integração cobre os fluxos críticos antes do piloto. |
+| 2 | F7-01 | #116 | [Ux] Design system consolidado | P1 | nenhuma | Sem dependências; padroniza componentes usados por todas as telas já entregues. |
+| 3 | F1-05 | #13 | [Infraestrutura] Identificadores de organizações e filiais | P1 | F1-08 (feito) | Migração de schema entregue; identificadores estabilizam org/filiais antes da escala multiempresa. |
+| 4 | F1-03 | #11 | [Infraestrutura] Separação gradual de páginas por módulo | P2 | nenhuma | Sem dependências; reduz o custo das próximas telas à medida que os módulos crescem. |
+| 5 | F7-03 | #118 | [Dashboard] Dashboard por função e estados de painel | P2 | F4-20, F1-11 (feitos) | Caixa e sessões prontos; consolida indicadores já entregues por perfil. |
+| 6 | F2-08 | #30 | [Customers] Prevenção de duplicidades | P2 | F2-07 (feito) | Validação de CPF entregue; comparação por documento/nome fecha o ciclo do cadastro. |
+| 7 | F7-05 | #120 | [Ux] Navegação mobile | P1 | F7-04 (feito) | Navegação desktop entregue; adaptação mobile fecha a base de UX antes do piloto. |
+| 8 | F1-12 | #20 | [Infraestrutura] Tratamento global de erros | P1 | nenhuma | Promovida de BACKLOG: sem dependências e único P0 aberto da auditoria F8-07 — erros globais antes do piloto. |
+| 9 | F3-06 | #45 | [Clinical] Prescrição estruturada | P1 | F1-07, F3-07 (feitos) | Refração por olho e persistência (F3-07) prontas; estrutura o restante do prontuário clínico. |
+| 10 | F3-05 | #44 | [Clinical] Receitas ópticas (documento e impressão) | P1 | F3-06 (#9) | Entra logo atrás de F3-06; documento/impressão fecha a cadeia clínica antes do PDV. |
 
 Os `#?` devem ser resolvidos pela tabela acima (coluna ID → link da issue). Os números já estão fixados nas tabelas das fases; para referência rápida: consulte `DEPENDENCIES.md`.
 

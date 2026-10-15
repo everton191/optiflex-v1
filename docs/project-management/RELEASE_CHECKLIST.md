@@ -7,7 +7,7 @@ Nenhuma versão é liberada com apenas "build verde".
 
 - [ ] Branch e escopo revisados (`git log` da release, `git status` limpo).
 - [ ] Toda feature ligada a Issue com `status/done` e evidência de teste no card.
-- [ ] `npm.cmd test` → 100% verde (números atuais: 276/276 em `c2f0c27`).
+- [ ] `npm.cmd test` → 100% verde (números atuais: 278/278 em `c8dec75`).
 - [ ] `npm.cmd run build` → exit 0.
 - [ ] `npx.cmd tsc -b --pretty false` → exit 0.
 - [ ] Login/sessão intactos (`/login`, `Sair`, expiração de 12 h) após mudanças em `access`/`providers`/`router`.
@@ -54,7 +54,7 @@ Nenhuma versão é liberada com apenas "build verde".
 
 ## 7. Dados e recuperação
 
-- [ ] Backup com dados/anexos; restauração validada; arquivo inválido rejeitado.
+- [ ] Backup com dados/anexos/prescrições; prévia com confirmação; arquivo inválido rejeitado com motivo; falha no meio da importação não corrompe a base (rollback em transação única).
 - [ ] Migração de schema testada com registros; PWA atualizada sem perda.
 - [ ] Auditoria local: autor/loja/dispositivo/motivo; cancelamento não destrutivo.
 
