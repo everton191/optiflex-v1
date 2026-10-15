@@ -24,7 +24,7 @@ Dexie / IndexedDB
 
 ### Apresentação
 
-- `src/app/pages.tsx`: todas as páginas e parte do estado temporário de formulários.
+- `src/app/pages.tsx`: barrel de re-exports das páginas (F1-03); cada página vive em seu `src/app/*Workspace.tsx`, que detém o estado temporário de formulários.
 - `src/shell/AppShell.tsx`: layout persistente e navegação responsiva.
 - `src/design-system/`: primitives e tokens globais.
 - `src/styles.css`: estilos do shell, páginas e breakpoints.
@@ -63,7 +63,7 @@ Entidades ainda sem modelo (produtos/catálogo, agenda, garantias, fiscal, SaaS)
 - Apresentação importa domínio e infraestrutura.
 - Shell importa provider da aplicação e acesso do domínio.
 
-Desvio conhecido: `pages.tsx` instancia repositories locais diretamente. A página não chama Dexie, mas conhece a implementação concreta. Documentar/refatorar injeção futura é válido; não mover agora sem tarefa específica.
+Desvio conhecido: os `*Workspace.tsx` instanciam repositories locais diretamente. A página não chama Dexie, mas conhece a implementação concreta (padrão repetido em cada workspace). Documentar/refatorar injeção futura é válido; não mover agora sem tarefa específica.
 
 ## Rotas e autorização
 
@@ -85,7 +85,7 @@ Existe acoplamento entre `router.tsx → AppShell.tsx → providers.tsx`, mas n�
 
 ## Pontos de melhoria documentados
 
-- Separar `pages.tsx` por módulo quando o volume justificar.
+- ~~Separar `pages.tsx` por módulo quando o volume justificar.~~ Concluído em F1-03 (08/10/2026): extraído para `Admin/Customers/Reception/Cash/AuthWorkspace.tsx`; restam no barrel apenas re-exports e `ForbiddenPage`.
 - Criar composition root para instanciar repositories/services fora das páginas.
 - Criar entrypoints somente após módulos físicos existirem.
 - Adicionar tratamento uniforme de erros assíncronos e mais testes por service.

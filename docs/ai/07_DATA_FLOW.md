@@ -14,7 +14,7 @@ Local Repository
 Dexie / IndexedDB (`opticore-v1`)
 ```
 
-As páginas nunca chamam métodos Dexie diretamente. Porém, `pages.tsx` instancia implementações locais, portanto conhece a infraestrutura concreta.
+As páginas nunca chamam métodos Dexie diretamente. Porém, os `src/app/*Workspace.tsx` instanciam implementações locais, portanto conhecem a infraestrutura concreta.
 
 ## Inicialização
 

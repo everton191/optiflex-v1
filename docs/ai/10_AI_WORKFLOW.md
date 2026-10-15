@@ -66,7 +66,7 @@ Se a tarefa citar tela, rota ou função, localize primeiro nos mapas.
 
 ## Limites do mapa atual
 
-- `pages.tsx` é um arquivo concentrado: use busca por nome da Page, não leia tudo por padrão.
+- `pages.tsx` é só barrel (F1-03): localize a Page no workspace da tabela de `09_CHANGE_IMPACT_MAP.md` (Admin/Customers/Reception/Cash/Auth/…) em vez de buscar no barrel.
 - `local-repositories.ts` reúne implementações: busque pela classe concreta.
 - `repositories.ts` reúne contratos: busque pela interface.
 - Não há entrypoints de módulos porque não há pastas físicas de módulos.

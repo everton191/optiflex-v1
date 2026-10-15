@@ -40,7 +40,7 @@
 
 ## Important Files Right Now
 
-- `src/app/pages.tsx` (`AttendancePage`, `AgendaPage`, `ClinicalQueuePage`).
+- `src/app/ReceptionWorkspace.tsx` (`AttendancePage`, `AgendaPage`, `ClinicalQueuePage`; re-exportado por `pages.tsx`).
 - `src/domain/reception-service.ts`.
 - `src/domain/agenda-service.ts` e `src/domain/agenda.ts`.
 - `src/domain/customer.ts`.

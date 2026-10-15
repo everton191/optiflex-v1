@@ -1,4 +1,4 @@
-﻿# Customers
+# Customers
 
 ## Purpose
 
@@ -6,7 +6,7 @@ Buscar, cadastrar, editar e exibir clientes, seus dados básicos e histórico de
 
 ## Directory
 
-Páginas em `src/app/pages.tsx`; domínio em `customer.ts` e `reception-service.ts`; persistência em `local-repositories.ts`.
+Páginas em `src/app/CustomersWorkspace.tsx` (re-exportadas por `pages.tsx`); domínio em `customer.ts` e `reception-service.ts`; persistência em `local-repositories.ts`.
 
 ## Routes
 
@@ -55,7 +55,7 @@ Attendance, Design System, React Router e IndexedDB local.
 
 ## Files Normally Modified
 
-- Listagem/busca/form/perfil: símbolos correspondentes em `pages.tsx`.
+- Listagem/busca/form/perfil: símbolos correspondentes em `CustomersWorkspace.tsx`.
 - Regra/orquestração: `reception-service.ts`.
 - Busca/persistência: `LocalCustomerRepository`.
 - Modelo: `customer.ts`.

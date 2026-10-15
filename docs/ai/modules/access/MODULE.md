@@ -12,7 +12,7 @@ Definir roles, scopes, permissions, guards de rota, visibilidade de navegação/
 - Guards: `src/app/permissions.tsx`.
 - Rotas: `src/app/router.tsx`.
 - Menu: `src/shell/AppShell.tsx`.
-- Páginas: `LoginPage`, `BlockedPage`, `ChangePasswordPage` em `src/app/pages.tsx`.
+- Páginas: `LoginPage`, `BlockedPage`, `ChangePasswordPage` em `src/app/AuthWorkspace.tsx` (F1-03).
 
 ## Routes
 

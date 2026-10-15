@@ -6,7 +6,7 @@ Unificar vendas, recebimentos, abertura, suprimento/sangria e fechamento de caix
 
 ## Directory
 
-UI em `CashDeskPage` dentro de `src/app/pages.tsx`; domínio em `cash.ts` e `cash-service.ts`; repository local em storage.
+UI em `CashDeskPage` dentro de `src/app/CashWorkspace.tsx`; domínio em `cash.ts` e `cash-service.ts`; repository local em storage.
 
 ## Routes
 

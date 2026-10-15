@@ -6,7 +6,7 @@ Inicializar e expor organização, sessão, lojas, loja atual, usuários e confi
 
 ## Directory
 
-Código distribuído entre `src/app/providers.tsx`, `src/app/pages.tsx`, `src/domain/access.ts`, `src/domain/administration-service.ts` e storage local.
+Código distribuído entre `src/app/providers.tsx`, `src/app/AdminWorkspace.tsx` (UI, F1-03), `src/domain/access.ts`, `src/domain/administration-service.ts` e storage local.
 
 ## Routes
 

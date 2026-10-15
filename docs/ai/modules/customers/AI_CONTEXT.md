@@ -1,4 +1,4 @@
-﻿# AI CONTEXT — Customers
+# AI CONTEXT — Customers
 
 ## Current Status
 
@@ -30,7 +30,7 @@
 
 ## Important Files Right Now
 
-- `src/app/pages.tsx` (`CustomersPage`, `CustomerNewPage`, `CustomerProfilePage`, `CustomerEditPage`).
+- `src/app/CustomersWorkspace.tsx` (`CustomersPage`, `CustomerNewPage`, `CustomerProfilePage`, `CustomerEditPage`; re-exportadas por `pages.tsx`).
 - `src/domain/reception-service.ts` (`createCustomer`, `updateCustomer`).
 - `src/domain/customer.ts`.
 - `LocalCustomerRepository` em `local-repositories.ts`.

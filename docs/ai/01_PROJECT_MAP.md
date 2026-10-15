@@ -27,9 +27,9 @@ opticore/
 
 Responsabilidade: compor a aplicação React, fornecer estado global, declarar rotas, aplicar guards e renderizar as páginas atuais.
 
-Arquivos: `App.tsx`, `providers.tsx`, `router.tsx`, `permissions.tsx`, `pages.tsx`, workspaces por módulo (`ClinicalWorkspace.tsx`, `DashboardWorkspace.tsx`, `InventoryWorkspace.tsx`, `WorkOrdersWorkspace.tsx`) e `BackupPanel.tsx`/`clinical-draft.ts`.
+Arquivos: `App.tsx`, `providers.tsx`, `router.tsx`, `permissions.tsx`, `pages.tsx` (barrel de re-exports), workspaces por módulo (`AdminWorkspace.tsx`, `CustomersWorkspace.tsx`, `ReceptionWorkspace.tsx`, `CashWorkspace.tsx`, `AuthWorkspace.tsx`, `ClinicalWorkspace.tsx`, `DashboardWorkspace.tsx`, `InventoryWorkspace.tsx`, `WorkOrdersWorkspace.tsx`) e `BackupPanel.tsx`/`clinical-draft.ts`.
 
-Pode depender de: `domain`, `infrastructure`, `design-system` e `shell`. Atenção: `pages.tsx` ainda concentra páginas e instancia services/repositories; módulos maiores já foram extraídos para `*Workspace.tsx` re-exportados por `pages.tsx`.
+Pode depender de: `domain`, `infrastructure`, `design-system` e `shell`. F1-03 (08/10/2026): `pages.tsx` é um barrel de re-exports (+ `ForbiddenPage`); as páginas vivem nos `*Workspace.tsx`, cada um instanciando seus próprios services/repositories (tabela completa em `09_CHANGE_IMPACT_MAP.md`).
 
 ## `src/design-system/`
 

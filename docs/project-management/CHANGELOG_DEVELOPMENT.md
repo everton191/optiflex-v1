@@ -4,6 +4,17 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `c72849f`…`af42ea7` + docs — Separação de páginas por módulo (F1-03, 5 commits)
+
+- Extração incremental de `pages.tsx` (752 → 12 linhas) em um commit por módulo, com `npm.cmd test` + `npm.cmd run build` + `tsc -b` verdes **após cada extração**:
+  - `c72849f` `AdminWorkspace.tsx` — `SettingsPage`, `UsersPage`, `StoresPage`, `ProfilesPage` (+ `PermissionsMatrix`, `scopeLabels`, `roleDescriptions`).
+  - `fe1bb51` `ReceptionWorkspace.tsx` — `AttendancePage`, `AgendaPage`, `AttendanceNewPage`, `AttendanceDetailPage`, `ClinicalQueuePage` (+ fila `AttendanceQueue` e rótulos de atendimento **exportados** para outros módulos).
+  - `df2dcd7` `CustomersWorkspace.tsx` — `CustomersPage`, `CustomerProfilePage`, `CustomerNewPage`, `CustomerEditPage`.
+  - `6af6fd8` `CashWorkspace.tsx` — `CashDeskPage` + `CashDeskView`, `escapeHtml`, `cashEntryLabels`/`saleStatusLabels`.
+  - `af42ea7` `AuthWorkspace.tsx` — `LoginPage`, `BlockedPage`, `ChangePasswordPage`.
+- `pages.tsx` virou barrel: re-exports + `ForbiddenPage` apenas; rotas (`router.tsx`) e permissões inalteradas; cada workspace instancia seus próprios services (padrão já usado por `Clinical/Dashboard/Inventory/WorkOrdersWorkspace`).
+- Docs: `09_CHANGE_IMPACT_MAP.md` (tabela página→workspace), `01_PROJECT_MAP`, `02_ARCHITECTURE`, `07_DATA_FLOW`, `10_AI_WORKFLOW` e 8 módulos em `docs/ai/modules/` realocados. Total: **284/284**, build 0, tsc 0. Card: F1-03/#11 → DONE.
+
 ### `887b64b` + docs — Identificadores de organização (F1-05)
 
 - `src/domain/access.ts`: tipo `Organization` + constante `defaultOrganization` (`org-local` / "Opticore Demo"); `organizationId?` adicionado a `Store` e `User`.

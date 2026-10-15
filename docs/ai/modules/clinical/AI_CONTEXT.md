@@ -30,7 +30,7 @@
 
 ## Important Files Right Now
 
-- `src/app/ClinicalWorkspace.tsx` (`ClinicalQueuePage` segue em `pages.tsx`).
+- `src/app/ClinicalWorkspace.tsx` (`ClinicalQueuePage` em `src/app/ReceptionWorkspace.tsx`, F1-03).
 - `src/domain/clinical-service.ts`.
 - `src/domain/clinical.ts`.
 - `LocalClinicalRepository`, `LocalPrescriptionRepository` e tabelas `clinicalRecords`/`prescriptions`.

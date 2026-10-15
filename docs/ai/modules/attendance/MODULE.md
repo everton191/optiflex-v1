@@ -6,7 +6,7 @@ Criar atendimentos para clientes e manter a fila da loja usada pela recepção e
 
 ## Directory
 
-UI em `src/app/pages.tsx`; tipos em `src/domain/customer.ts` e `src/domain/agenda.ts`; services em `reception-service.ts` e `agenda-service.ts`; repositories locais em storage.
+UI em `src/app/ReceptionWorkspace.tsx` (re-exportada por `pages.tsx`); tipos em `src/domain/customer.ts` e `src/domain/agenda.ts`; services em `reception-service.ts` e `agenda-service.ts`; repositories locais em storage.
 
 ## Routes
 
@@ -54,8 +54,8 @@ Métodos de attendance expostos por `ReceptionService` e `AttendanceRepository`;
 
 ## Files Normally Modified
 
-- Fila/form: `AttendancePage` em `pages.tsx`.
-- Agenda: `AgendaPage` em `pages.tsx`.
+- Fila/form: `AttendancePage` em `ReceptionWorkspace.tsx`.
+- Agenda: `AgendaPage` em `ReceptionWorkspace.tsx`.
 - Regras: `reception-service.ts` e `agenda-service.ts`.
 - Tipos: `customer.ts` e `agenda.ts`.
 - Persistência: `LocalAttendanceRepository` e `LocalAgendaRepository`.

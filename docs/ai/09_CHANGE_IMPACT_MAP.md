@@ -1,5 +1,20 @@
 # Change Impact Map
 
+## Localizar uma página (barrel `pages.tsx` — F1-03)
+
+`src/app/pages.tsx` virou barrel: apenas re-exports + `ForbiddenPage`. Ache a página no workspace correspondente:
+
+| Páginas | Arquivo |
+|---|---|
+| `SettingsPage`, `UsersPage`, `StoresPage`, `ProfilesPage` | `src/app/AdminWorkspace.tsx` |
+| `CustomersPage`, `CustomerProfilePage`, `CustomerNewPage`, `CustomerEditPage` | `src/app/CustomersWorkspace.tsx` |
+| `AttendancePage`, `AgendaPage`, `AttendanceNewPage`, `AttendanceDetailPage`, `ClinicalQueuePage` | `src/app/ReceptionWorkspace.tsx` (exporta também `attendanceTypeLabels`/`attendanceStatusLabels`/`attendancePriorityLabels`) |
+| `CashDeskPage` | `src/app/CashWorkspace.tsx` |
+| `LoginPage`, `BlockedPage`, `ChangePasswordPage` | `src/app/AuthWorkspace.tsx` |
+| `ClinicalWorkspacePage`, `DashboardPage`, `InventoryPage`, `WorkOrdersPage`, `WorkOrderDetailPage` | `*Workspace.tsx` pré-existentes |
+
+Cada workspace instancia seus próprios services/repositories no topo do arquivo (padrão do projeto).
+
 ## Alterar todos os botões
 
 Primeiro verificar: `src/design-system/components.tsx` e `.button` em `src/styles.css`.
@@ -33,7 +48,7 @@ Abrir somente:
 
 - `docs/ai/modules/customers/MODULE.md`;
 - `docs/ai/modules/customers/AI_CONTEXT.md`;
-- `CustomersPage` em `src/app/pages.tsx`;
+- `CustomersPage` em `src/app/CustomersWorkspace.tsx`;
 - `LocalCustomerRepository.list` em `src/infrastructure/storage/local-repositories.ts`;
 - `ReceptionService.listCustomers` se o contrato mudar.
 
