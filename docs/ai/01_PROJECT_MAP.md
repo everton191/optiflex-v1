@@ -35,7 +35,7 @@ Pode depender de: `domain`, `infrastructure`, `design-system` e `shell`. Atenç�
 
 Responsabilidade: fonte global de tokens e primitives visuais existentes.
 
-Arquivos: `components.tsx` (`Button`, `Card`, `Input`) e `tokens.css` (cores, espaços, raios e sombra).
+Arquivos: `components.tsx` (`Button`, `Card`, `Input` + `Select`, `Badge`, `Tabs`, `Table`, `Dialog`, `Drawer`, `Toast`, `Tooltip`, `Search`, `EmptyState`, `Skeleton`, `PageHeader` — F7-01) e `tokens.css` (cores, espaços, raios e sombra).
 
 Pode depender somente de React e tipos web. Páginas e shell podem depender desta pasta.
 

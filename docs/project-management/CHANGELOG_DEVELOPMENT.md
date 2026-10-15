@@ -4,6 +4,14 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `2d5a655` + docs — Design system consolidado (F7-01)
+
+- `src/design-system/components.tsx`: 12 primitivas novas além de `Button`/`Input`/`Card` — `Select` (label+select), `Badge` (tons neutral/success/warning/danger), `Tabs` (tablist acessível), `Table` (wrapper semântico), `Dialog` e `Drawer` (modais `aria-modal` com Escape/clique-fora/×), `Toast` (flutuante dispensável, `role=status|alert`), `Tooltip` (hover+foco com `aria-describedby`), `Search` (`input type="search"`), `EmptyState`, `Skeleton` (aria-busy, `prefers-reduced-motion`), `PageHeader` (eyebrow/title/intro/actions).
+- `src/styles.css`: seção global nova (`.select`, `.tabs`, `.data-table`, `.dialog*`, `.drawer*`, `.toast`, `.tooltip`, `.search-field`, `.skeleton` + shimmer, `.badge.is-success`, estados de foco/erro `aria-invalid`).
+- Uso real em ≥1 tela por componente: clientes (PageHeader/Search/EmptyState/Skeleton), usuários (PageHeader/Table/Badge/Select), lojas (Badge), caixa (Tabs/Toast/Tooltip/Dialog), estoque (Select/Drawer), dashboard (Skeleton).
+- Documentação: `05_DESIGN_SYSTEM_MAP.md` (seções por componente + "Estados documentados"), `08_SHARED_COMPONENTS.md`, `01_PROJECT_MAP.md`.
+- Total: **282/282** (30 arquivos), build 0, tsc 0. Card: F7-01/#116 → DONE.
+
 ### `de67cc3` + docs — Testes de integração ponta a ponta (F8-02)
 
 - `src/infrastructure/storage/integration-flows.test.ts` (novo): 4 fluxos multi-entidade sobre IndexedDB em memória — **venda→pagamento→caixa→fechamento→OS→entrega** (PIX com referência, `PAID`, laboratório, trilha de eventos e fechamento conciliado), **cancelamento de venda paga→estoque+estorno** (IN no estoque, `REFUND`, saldo esperado), **insumos de OS→estoque→entrega** (movimentos `OUT` com autor e guarda de transição) e **pagamento fracionado** (PARTIAL→PAID, rejeição de excesso/já recebida).
