@@ -2,13 +2,13 @@
 
 **Não duplica:** o estado real dos modelos vive em `src/domain/*.ts` e nos mapas `docs/ai/01–09` (especialmente `02_ARCHITECTURE.md` e `07_DATA_FLOW.md`). Este documento planeja a **evolução** e aponta os cards responsáveis.
 
-Atualizado em: 08/10/2026 · Base: `41f0bfd` (schema IndexedDB `opticore-v1` v12).
+Atualizado em: 08/10/2026 · Base: `887b64b` (schema IndexedDB `opticore-v1` v14).
 
 ## Estado atual (resumo)
 
 | Grupo | Entidades existentes | Lacuna planejada | Card |
 |---|---|---|---|
-| Acesso/admin | `User`, `Store`, `OrganizationSettings`, `LocalSession` | `Organization` com `organizationId` em registros; CRUD de lojas/usuários | F1-05, F2-02, F2-04 |
+| Acesso/admin | `User`, `Store`, `OrganizationSettings`, `LocalSession`, `Organization` (tipo + `organizationId?` nos modelos, F1-05 feito) | CRUD de lojas/usuários | F2-02, F2-04 |
 | Clientes/atendimento | `Customer`, `Attendance` | histórico de alterações, agenda | F2-06, F2-09, F3-01 |
 | Clínico | `ClinicalRecord`, `ClinicalAttachment` (+`category`), `ClinicalAttachmentContent` (tabela `attachments`, v11), `Prescription` (+`PrescriptionEye`, contrato `PrescriptionRepository`, F1-07 `41f0bfd`) | refração estruturada e persistência da prescrição (F3-06/F3-07 consomem) | F3-06, F3-07 |
 | Comercial | `Sale` (`cancelReason?`/`cancelledAt?`/`cancelledBy?`, `paymentStatus` `PENDING`/`PARTIAL`/`PAID`), `SaleItem` | estados de orçamento, desconto/aprovação | F3-10, F3-12 |
@@ -21,10 +21,10 @@ Atualizado em: 08/10/2026 · Base: `41f0bfd` (schema IndexedDB `opticore-v1` v12
 ## Regras de evolução do modelo
 
 1. **Todo modelo novo** nasce com: tipo em `src/domain/`, contrato em `repositories.ts`, teste de domínio, entrada em backup (`src/infrastructure/storage/backup.ts`) quando persistido. Auditoria F1-02 (08/10/2026, `8fc64b0`): os 10 contratos existentes têm implementação local e cobertura de teste — último lacuna (`SettingsRepository`) fechada em `storage/settings.test.ts`; a UI não acessa Dexie diretamente (0 usos em `src/app`). Mapeamento completo: `docs/ai/02_ARCHITECTURE.md` → "Regra F1-02".
-2. **Migração Dexie:** campo opcional **sem índice** → sem bump de versão (regra adotada nas fases A–E). Índice novo ou mudança de tipo → bump + teste de upgrade com registros (`database.test.ts`).
+2. **Migração Dexie:** campo opcional **sem índice** → sem bump de versão (regra adotada nas fases A–E); exceção F1-05 (v14): bump + `upgrade` com backfill quando o campo precisa existir também em registros antigos, sempre com teste de upgrade (`database.test.ts`). Índice novo ou mudança de tipo → bump + teste de upgrade com registros.
 3. **Nunca recriar o banco** `opticore-v1`; migração incremental sempre.
 4. **Precisão monetária (F1-09 — concluído em 08/10/2026, `7dc1d7b`):** regra única em `src/domain/money.ts` — fronteira sempre em reais finitos (`requireMoney`/`isMoney`), cálculo em centavos inteiros (`toCents`/`fromCents`, arredondamento `Math.round` aplicado na linha/orçamento), soma apenas de centavos (`itemsTotalCents`, `paidCents`, `cashTotals`); NaN/Infinity rejeitados na fronteira dos serviços (`createQuote`, `confirm`, caixa). **Não usar arredondamento ad-hoc** (`Math.round(x*100)/100`) fora de `money.ts`.
-5. **`organizationId` opcional** nos novos registros até a Fase 5 (F1-05), para não travar o multiempresa depois.
+5. **`organizationId` opcional nos novos registros — F1-05 concluído em 08/10/2026 (`887b64b`):** tipos carregam `organizationId?`, serviços/seeds carimbam `defaultOrganization.id` (`org-local`), a migração Dexie **v14** preenche registros antigos sem perda e `validateBackup` rejeita o campo quando presente e não for string não vazia (arquivos legados sem o campo seguem válidos).
 6. **Cancelamento não destrutivo:** status + motivo + autor; nunca apagar registro financeiro/clínico.
 
 ## Entidades planejadas (resumo por prioridade)

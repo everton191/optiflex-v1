@@ -3,19 +3,19 @@
 **Status: NÃO INICIADO — bloqueado pela decisão P1 (backend) em `docs/project-management/DECISIONS.md`.**
 Épica: Issue #5 · cards F5-01..F5-19. Este documento define o alvo; nenhum código deve começar antes da decisão.
 
-Atualizado em: 07/10/2026.
+Atualizado em: 08/10/2026.
 
 ## Realidade atual
 
 - Aplicação 100% local (IndexedDB `opticore-v1`), single-tenant de fato.
 - `Store`/`CurrentStoreContext` cuidam da **loja**, não da **empresa**.
-- Nenhum registro carrega `organizationId` (grep verificado em 07/10/2026).
+- `organizationId` opcional já presente nos registros novos e carimbado nos antigos pela migração **v14** (F1-05, 08/10/2026, `887b64b`); validado na importação de backup.
 - Sessão demo `OWNER` automática (`local-repositories.ts`) — P0 da auditoria.
 
 ## Alvo (quando a decisão P1 existir)
 
 1. **Tenant = `organizationId`**; filiais (`storeId`) subordinadas.
-   - Preparação local antes do backend: card F1-05 (campo opcional + migração + backup).
+   - Preparação local antes do backend: card F1-05 — **concluído** (campo opcional + migração v14 + backup validado, 08/10/2026).
 2. **Isolamento em três camadas** (F5-04): queries do servidor, endpoints da API e storage de arquivos. Todo caminho com teste negativo automatizado (F8-05).
 3. **RLS quando a infra suportar** (F5-06); se não suportar, documentar a alternativa equivalente em vez de fingir cobertura.
 4. **Autorização server-side espelhando a matriz local** (F5-05 + `docs/ai/06_PERMISSION_MAP.md`): o guard do frontend nunca é a única barreira.
@@ -32,7 +32,7 @@ Atualizado em: 07/10/2026.
 
 ## Pré-requisitos locais que já podem ser feitos (não dependem da decisão)
 
-- F1-05 `organizationId` nos registros novos.
+- F1-05 `organizationId` nos registros novos — **concluído** (08/10/2026, `887b64b`): tipo `Organization` + `defaultOrganization`, `organizationId?` em 14 modelos, carimbo nos serviços, migração Dexie v14 e validação no backup.
 - F1-11 escopo por registro aplicado localmente (SELF/STORE/ORG/NETWORK).
 - F7-02 login local identificável (encerra OWNER automático).
 

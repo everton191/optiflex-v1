@@ -4,6 +4,15 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `887b64b` + docs — Identificadores de organização (F1-05)
+
+- `src/domain/access.ts`: tipo `Organization` + constante `defaultOrganization` (`org-local` / "Opticore Demo"); `organizationId?` adicionado a `Store` e `User`.
+- `organizationId?` também em `Customer`, `Attendance`, `AgendaEvent`, `Sale`, `WorkOrder`, `InventoryItem`, `InventoryMovement`, `CashSession`, `CashEntry`, `ClinicalRecord` (e `ClinicalVersion` por extensão) e `Prescription`.
+- Carimbo nos criadores: administração (loja/usuário), recepção (cliente/atendimento), agenda, vendas (orçamento), caixa (sessão/entrada/movimento), estoque (item/movimentos), OS (criação e insumos), prescrição (`issuePrescription`), movimentos de venda/estorno e seeds (lojas/usuários) + `LocalClinicalRepository.write` para registros montados na UI.
+- `database.ts`: **Dexie v14** com `upgrade` que preenche `organizationId` em 14 tabelas via `toCollection().modify` (sem perda, registros antigos preservados).
+- `backup.ts`: `validateBackup` rejeita `organizationId` presente e não-string/não-vazio; arquivos legados sem o campo seguem válidos; snapshot/restore preservam o campo por serem `toArray()` completos.
+- Testes: `database.test.ts` +1 (backfill v14 com dados legados) e `backup.test.ts` +1 (roundtrip do campo + rejeições), asserções de semente/novos registros. Total: **284/284** (30 arquivos), build 0, tsc 0. Card: F1-05/#13 → DONE.
+
 ### `2d5a655` + docs — Design system consolidado (F7-01)
 
 - `src/design-system/components.tsx`: 12 primitivas novas além de `Button`/`Input`/`Card` — `Select` (label+select), `Badge` (tons neutral/success/warning/danger), `Tabs` (tablist acessível), `Table` (wrapper semântico), `Dialog` e `Drawer` (modais `aria-modal` com Escape/clique-fora/×), `Toast` (flutuante dispensável, `role=status|alert`), `Tooltip` (hover+foco com `aria-describedby`), `Search` (`input type="search"`), `EmptyState`, `Skeleton` (aria-busy, `prefers-reduced-motion`), `PageHeader` (eyebrow/title/intro/actions).
