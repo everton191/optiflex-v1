@@ -4,6 +4,13 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `66dc070` + docs — Dashboard por função e estados de painel (F7-03)
+
+- `src/domain/dashboard.ts`: seletores puros novos — `dashboardProfile` (CLINICAL/SALES/CASH/MANAGEMENT por papel), `dashboardMetricKeys` (ordem de métricas por perfil, filtrada por permissão, teto de 4) e `returnsToday` (retornos criados hoje).
+- `DashboardWorkspace.tsx`: métricas montadas a partir do seletor (perfil clínico vê **apenas fila/retornos — nenhum valor comercial**; vendedor vendas/OS; caixa sessão primeiro; gestão mantém as 4 atuais); **gráfico de vendas condicionado a `sales.read`** (fecha vazamento de número comercial para o perfil clínico) com `empty-state` quando o período zera; grade sem métricas vira `EmptyState` (estado denied); loading continua em `Skeleton` e erro com retry.
+- Atendimento de `retornos` carregado quando `attendance.queue.read` **ou** `clinical.workspace.access`.
+- 4 testes novos em `dashboard.test.ts` (mapeamento de perfis, perfil clínico sem métricas comerciais, ordem/teto por papel, retornos de hoje) — **288/288**, build 0, tsc 0. Escopo: "seletores + composição condicional por permissão"; metas/comissões fora de escopo. Card: F7-03/#118 → DONE.
+
 ### `c72849f`…`af42ea7` + docs — Separação de páginas por módulo (F1-03, 5 commits)
 
 - Extração incremental de `pages.tsx` (752 → 12 linhas) em um commit por módulo, com `npm.cmd test` + `npm.cmd run build` + `tsc -b` verdes **após cada extração**:
