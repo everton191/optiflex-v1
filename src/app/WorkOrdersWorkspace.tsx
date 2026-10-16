@@ -9,6 +9,7 @@ import type { Sale } from "../domain/sales";
 import type { WorkOrder, WorkOrderStatus } from "../domain/work-order";
 import { canTransition, workOrderEventLabels, workOrderStatusLabels, workOrderTransitions } from "../domain/work-order";
 import { isOverdueOrder, overdueOrders } from "../domain/dashboard";
+import { formatPrescriptionEye, formatPrescriptionMeasures, prescriptionUsageLabels } from "../domain/clinical";
 import { ReceptionService } from "../domain/reception-service";
 import { SalesService } from "../domain/sales-service";
 import { InventoryService } from "../domain/inventory-service";
@@ -250,6 +251,14 @@ export function WorkOrderDetailPage() {
       <p className="help-text">Criada em {new Date(order.createdAt).toLocaleString("pt-BR")}{sale ? ` · Venda R$ ${sale.total.toFixed(2)}` : ""}</p>
       {customer && <Link to={`/clientes/${customer.id}`}>Ver histórico do cliente</Link>}
     </section>
+
+    {sale?.prescription && <section className="card">
+      <h2>Prescrição</h2>
+      <p className="help-text">Versão {sale.prescription.version}{sale.prescription.usage ? ` · ${prescriptionUsageLabels[sale.prescription.usage]}` : ""} — dados copiados da venda, sem redigitação.</p>
+      <p>{formatPrescriptionEye("OD", sale.prescription.od)}</p>
+      <p>{formatPrescriptionEye("OE", sale.prescription.oe)}</p>
+      {formatPrescriptionMeasures(sale.prescription.measures) ? <p><strong>Medidas de montagem:</strong> {formatPrescriptionMeasures(sale.prescription.measures)}</p> : <p className="help-text">Medidas de montagem não registradas nesta prescrição.</p>}
+    </section>}
 
     {canManage && <section className="card no-print">
       <h2>Ações</h2>

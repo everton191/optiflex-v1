@@ -192,6 +192,13 @@ describe("prescription handoff", () => {
     expect(repository.save).toHaveBeenCalledOnce();
   });
 
+  it("carries the mounting measures through the snapshot and rejects invalid ones", async () => {
+    repository.save.mockResolvedValue(undefined);
+    const created = await service.createQuote("customer-1", "store-centro", "Armação + lentes", 480, [], rx({ measures: { dpTotal: 64, heightOd: 22, origin: "MEASURED" } }));
+    expect(created.prescription?.measures).toEqual({ dpTotal: 64, heightOd: 22, origin: "MEASURED" });
+    await expect(service.createQuote("customer-1", "store-centro", "Venda", 100, [], rx({ measures: { dpTotal: -1 } }))).rejects.toThrow("Medida de montagem inválida");
+  });
+
   it("rejects snapshots from another customer or with invalid version, usage or degrees", async () => {
     await expect(service.createQuote("customer-1", "store-centro", "Venda", 100, [], rx({ customerId: "customer-2" }))).rejects.toThrow("outro cliente");
     await expect(service.createQuote("customer-1", "store-centro", "Venda", 100, [], rx({ version: 0 }))).rejects.toThrow("Versão da prescrição");

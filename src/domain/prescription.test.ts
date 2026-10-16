@@ -110,3 +110,33 @@ describe("printable prescription document", () => {
     expect(emptyEye.usage).toBeUndefined();
   });
 });
+
+describe("structured mounting measures (DP/height)", () => {
+  const measures = { dpTotal: 64, dpFar: 63.5, dpNear: 60, heightOd: 22, heightOe: 21.5, origin: "MEASURED" as const };
+
+  it("keeps the measures with unit and origin and prints them on the document", () => {
+    const prescription = issuePrescription({ ...input, measures }, "Dra. Ana", issuedAt);
+    expect(prescription.measures).toEqual(measures);
+    const document = prescriptionDocument(prescription, "Maria");
+    expect(document.measuresLine).toBe("DP total 64.00 mm · DP longe 63.50 mm · DP perto 60.00 mm · Altura OD 22.00 mm · Altura OE 21.50 mm · Medido");
+  });
+
+  it("rejects non-positive or non-finite measures and unknown origins", () => {
+    expect(() => issuePrescription({ ...input, measures: { dpTotal: 0 } }, "Dra. Ana", issuedAt)).toThrow("Medida de montagem inválida");
+    expect(() => issuePrescription({ ...input, measures: { dpTotal: -2 } }, "Dra. Ana", issuedAt)).toThrow("Medida de montagem inválida");
+    expect(() => issuePrescription({ ...input, measures: { heightOd: Number.NaN } }, "Dra. Ana", issuedAt)).toThrow("Medida de montagem inválida");
+    expect(() => issuePrescription({ ...input, measures: { origin: "CHUTADO" as never } }, "Dra. Ana", issuedAt)).toThrow("Origem das medidas inválida");
+    expect(() => issuePrescription({ ...input, measures: { dpFar: 62, origin: "INFORMED" } }, "Dra. Ana", issuedAt)).not.toThrow();
+  });
+
+  it("drops empty measures, keeps older documents printable and replaces them on retification", () => {
+    const withoutMeasures = issuePrescription({ ...input, measures: { dpTotal: undefined, origin: undefined } }, "Dra. Ana", issuedAt);
+    expect(withoutMeasures.measures).toBeUndefined();
+    expect(prescriptionDocument(withoutMeasures, "Maria").measuresLine).toBeUndefined();
+    const original = issuePrescription({ ...input, measures }, "Dra. Ana", issuedAt);
+    const retified = retifyPrescription(original, { ...input, measures: { dpFar: 62, origin: "INFORMED" } }, "Medidas conferidas", "Dr. Bruno", "2026-10-09T10:00:00.000Z");
+    expect(retified.measures).toEqual({ dpFar: 62, origin: "INFORMED" });
+    expect(original.measures).toEqual(measures);
+    expect(prescriptionDocument(retified, "Maria").measuresLine).toBe("DP longe 62.00 mm · Informado");
+  });
+});

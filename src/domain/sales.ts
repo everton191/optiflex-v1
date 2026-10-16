@@ -1,7 +1,7 @@
 import type { InventoryMovement } from "./inventory";
 import { fromCents, toCents } from "./money";
 import { defaultOrganization } from "./access";
-import { assertValidPrescriptionEye, assertValidPrescriptionUsage, type Prescription, type PrescriptionEye, type PrescriptionUsage } from "./clinical";
+import { assertValidPrescriptionEye, assertValidPrescriptionMeasures, assertValidPrescriptionUsage, type Prescription, type PrescriptionEye, type PrescriptionMeasures, type PrescriptionUsage } from "./clinical";
 
 export type SaleStatus = "QUOTE" | "CONFIRMED" | "CANCELLED";
 export type SalePaymentStatus = "PENDING" | "PARTIAL" | "PAID";
@@ -36,11 +36,12 @@ export interface SalePrescription {
   usage?: PrescriptionUsage;
   od: PrescriptionEye;
   oe: PrescriptionEye;
+  measures?: PrescriptionMeasures;
   notes?: string;
 }
 
 export function salePrescriptionSnapshot(prescription: Prescription): SalePrescription {
-  return { prescriptionId: prescription.id, customerId: prescription.customerId, version: prescription.version, usage: prescription.usage, od: prescription.od, oe: prescription.oe, notes: prescription.notes };
+  return { prescriptionId: prescription.id, customerId: prescription.customerId, version: prescription.version, usage: prescription.usage, od: prescription.od, oe: prescription.oe, measures: prescription.measures, notes: prescription.notes };
 }
 
 export function assertValidSalePrescription(prescription: SalePrescription): void {
@@ -50,6 +51,7 @@ export function assertValidSalePrescription(prescription: SalePrescription): voi
   if (prescription.usage !== undefined) assertValidPrescriptionUsage(prescription.usage);
   assertValidPrescriptionEye(prescription.od);
   assertValidPrescriptionEye(prescription.oe);
+  if (prescription.measures !== undefined) assertValidPrescriptionMeasures(prescription.measures);
   if (prescription.notes !== undefined && typeof prescription.notes !== "string") throw new Error("Observações da prescrição vinculada inválidas.");
 }
 

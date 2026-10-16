@@ -3,7 +3,7 @@ import { errorMessage } from "../domain/errors";
 import { Link, useBlocker, useParams } from "react-router-dom";
 import { Button, Card, Input, PrintLayout } from "../design-system/components";
 import { ClinicalService } from "../domain/clinical-service";
-import { ATTACHMENT_MAX_BYTES, ATTACHMENT_TYPE_LABEL, activePrescription, attachmentCategoryKeys, clinicalAttachmentCategoryLabels, formatPrescriptionEye, prescriptionDocument, prescriptionUsageKeys, prescriptionUsageLabels, type ClinicalAttachment, type ClinicalAttachmentCategory, type ClinicalVersion, type Prescription, type PrescriptionUsage } from "../domain/clinical";
+import { ATTACHMENT_MAX_BYTES, ATTACHMENT_TYPE_LABEL, activePrescription, attachmentCategoryKeys, clinicalAttachmentCategoryLabels, formatPrescriptionEye, formatPrescriptionMeasures, measurementOriginKeys, measurementOriginLabels, prescriptionDocument, prescriptionUsageKeys, prescriptionUsageLabels, type ClinicalAttachment, type ClinicalAttachmentCategory, type ClinicalVersion, type MeasurementOrigin, type Prescription, type PrescriptionUsage } from "../domain/clinical";
 import type { Customer } from "../domain/customer";
 import { base64ToBlob, fileToBase64 } from "../infrastructure/storage/attachment-codec";
 import { LocalClinicalRepository, LocalCustomerRepository, LocalPrescriptionRepository } from "../infrastructure/storage/local-repositories";
@@ -35,6 +35,8 @@ function ClinicalWorkspace({ attendanceId }: { attendanceId: string }) {
   const [odSphere, setOdSphere] = useState(""); const [odCylinder, setOdCylinder] = useState(""); const [odAxis, setOdAxis] = useState(""); const [odAdd, setOdAdd] = useState("");
   const [oeSphere, setOeSphere] = useState(""); const [oeCylinder, setOeCylinder] = useState(""); const [oeAxis, setOeAxis] = useState(""); const [oeAdd, setOeAdd] = useState("");
   const [rxNotes, setRxNotes] = useState(""); const [rxUsage, setRxUsage] = useState("");
+  const emptyMeasures = { dpTotal: "", dpFar: "", dpNear: "", heightOd: "", heightOe: "", origin: "" };
+  const [rxMeasures, setRxMeasures] = useState(emptyMeasures);
   const [retifying, setRetifying] = useState<Prescription>(); const [retificationReason, setRetificationReason] = useState("");
   const [, render] = useState(0); const alive = useRef(true); const pending = useRef(false); const fileInput = useRef<HTMLInputElement>(null);
   const context = { storeId: currentStoreId, session };
@@ -110,13 +112,14 @@ function ClinicalWorkspace({ attendanceId }: { attendanceId: string }) {
   function resetRxForm() {
     setOdSphere(""); setOdCylinder(""); setOdAxis(""); setOdAdd("");
     setOeSphere(""); setOeCylinder(""); setOeAxis(""); setOeAdd("");
-    setRxNotes(""); setRxUsage(""); setRetifying(undefined); setRetificationReason("");
+    setRxNotes(""); setRxUsage(""); setRxMeasures(emptyMeasures); setRetifying(undefined); setRetificationReason("");
   }
   function startRetification(rx: Prescription) {
     setRxError(""); setRetifying(rx); setRetificationReason("");
     setOdSphere(formatDegree(rx.od.sphere)); setOdCylinder(formatDegree(rx.od.cylinder)); setOdAxis(rx.od.axis === undefined ? "" : String(rx.od.axis)); setOdAdd(formatDegree(rx.od.add));
     setOeSphere(formatDegree(rx.oe.sphere)); setOeCylinder(formatDegree(rx.oe.cylinder)); setOeAxis(rx.oe.axis === undefined ? "" : String(rx.oe.axis)); setOeAdd(formatDegree(rx.oe.add));
     setRxNotes(rx.notes ?? ""); setRxUsage(rx.usage ?? "");
+    setRxMeasures({ dpTotal: formatDegree(rx.measures?.dpTotal), dpFar: formatDegree(rx.measures?.dpFar), dpNear: formatDegree(rx.measures?.dpNear), heightOd: formatDegree(rx.measures?.heightOd), heightOe: formatDegree(rx.measures?.heightOe), origin: rx.measures?.origin ?? "" });
   }
   async function submitPrescription(event: FormEvent) {
     event.preventDefault();
@@ -125,9 +128,10 @@ function ClinicalWorkspace({ attendanceId }: { attendanceId: string }) {
     const od = { sphere: parseDegree(odSphere), cylinder: parseDegree(odCylinder), axis: parseDegree(odAxis), add: parseDegree(odAdd) };
     const oe = { sphere: parseDegree(oeSphere), cylinder: parseDegree(oeCylinder), axis: parseDegree(oeAxis), add: parseDegree(oeAdd) };
     const usage = rxUsage ? rxUsage as PrescriptionUsage : undefined;
+    const measures = { dpTotal: parseDegree(rxMeasures.dpTotal), dpFar: parseDegree(rxMeasures.dpFar), dpNear: parseDegree(rxMeasures.dpNear), heightOd: parseDegree(rxMeasures.heightOd), heightOe: parseDegree(rxMeasures.heightOe), origin: rxMeasures.origin ? rxMeasures.origin as MeasurementOrigin : undefined };
     try {
-      if (retifying) await service.retifyPrescription(retifying, { od, oe, usage, notes: rxNotes }, retificationReason, context);
-      else await service.issuePrescription({ customerId: customer?.id ?? "", od, oe, usage, notes: rxNotes }, attendanceId, context);
+      if (retifying) await service.retifyPrescription(retifying, { od, oe, usage, measures, notes: rxNotes }, retificationReason, context);
+      else await service.issuePrescription({ customerId: customer?.id ?? "", od, oe, usage, measures, notes: rxNotes }, attendanceId, context);
       resetRxForm();
       setPrescriptions(await service.listPrescriptions(attendanceId, context));
     } catch (failure) { setRxError(errorMessage(failure, retifying ? "Não foi possível retificar a prescrição." : "Não foi possível emitir a prescrição.")); }
@@ -156,14 +160,20 @@ function ClinicalWorkspace({ attendanceId }: { attendanceId: string }) {
         <label>OE eixo<Input type="number" step="1" min="0" max="180" value={oeAxis} disabled={busy} placeholder="0–180" onChange={(event) => setOeAxis(event.target.value)} /></label>
         <label>OE adição<Input type="number" step="0.01" value={oeAdd} disabled={busy} placeholder="+0.50" onChange={(event) => setOeAdd(event.target.value)} /></label>
         <label>Tipo de uso<select value={rxUsage} disabled={busy} onChange={(event) => setRxUsage(event.target.value)}><option value="">Não informado</option>{prescriptionUsageKeys.map((key) => <option key={key} value={key}>{prescriptionUsageLabels[key]}</option>)}</select></label>
+        <label>DP total (mm)<Input type="number" step="0.1" min="0" value={rxMeasures.dpTotal} disabled={busy} placeholder="63.0" onChange={(event) => setRxMeasures((current) => ({ ...current, dpTotal: event.target.value }))} /></label>
+        <label>DP longe (mm)<Input type="number" step="0.1" min="0" value={rxMeasures.dpFar} disabled={busy} placeholder="63.5" onChange={(event) => setRxMeasures((current) => ({ ...current, dpFar: event.target.value }))} /></label>
+        <label>DP perto (mm)<Input type="number" step="0.1" min="0" value={rxMeasures.dpNear} disabled={busy} placeholder="60.0" onChange={(event) => setRxMeasures((current) => ({ ...current, dpNear: event.target.value }))} /></label>
+        <label>Altura OD (mm)<Input type="number" step="0.5" min="0" value={rxMeasures.heightOd} disabled={busy} placeholder="22.0" onChange={(event) => setRxMeasures((current) => ({ ...current, heightOd: event.target.value }))} /></label>
+        <label>Altura OE (mm)<Input type="number" step="0.5" min="0" value={rxMeasures.heightOe} disabled={busy} placeholder="21.5" onChange={(event) => setRxMeasures((current) => ({ ...current, heightOe: event.target.value }))} /></label>
+        <label>Origem das medidas<select value={rxMeasures.origin} disabled={busy} onChange={(event) => setRxMeasures((current) => ({ ...current, origin: event.target.value }))}><option value="">Não informado</option>{measurementOriginKeys.map((key) => <option key={key} value={key}>{measurementOriginLabels[key]}</option>)}</select></label>
         <label>Observações<Input value={rxNotes} disabled={busy} placeholder="Opcional (observações clínicas)" onChange={(event) => setRxNotes(event.target.value)} /></label>
         {retifying && <Card><h3>Retificando a versão {retifying.version}</h3><p>A versão {retifying.version} ({retifying.author} · {new Date(retifying.issuedAt).toLocaleString("pt-BR")}) permanece no histórico com autor, data e motivo. A nova versão fica ativa.</p><label>Motivo da retificação<Input value={retificationReason} disabled={busy} placeholder="Ex.: grau conferido na revisão" onChange={(event) => setRetificationReason(event.target.value)} /></label></Card>}
         <div className="form-actions"><Button type="submit" disabled={busy || (Boolean(retifying) && !retificationReason.trim())}>{retifying ? `Retificar (versão ${retifying.version + 1})` : "Emitir prescrição"}</Button>{retifying && <Button type="button" disabled={busy} onClick={() => { resetRxForm(); }}>Cancelar retificação</Button>}</div>
-        <p className="help-text">Graus em dioptrias; eixo em graus (0–180). A prescrição é um documento próprio: versões emitidas nunca são reescritas.</p>
+        <p className="help-text">Graus em dioptrias; eixo em graus (0–180); medidas de montagem (DP e altura) em milímetros, com origem medido/informado. A prescrição é um documento próprio: versões emitidas nunca são reescritas.</p>
       </form>
       {rxError && <p role="alert" className="notice error-text">{rxError}</p>}
       <div className="list-card compact-list">{prescriptions.length ? prescriptions.map((rx) => { const active = rx.id === activePrescription(prescriptions)?.id; return <article className="list-row" key={rx.id}>
-        <div><strong>{active ? "Prescrição ativa" : `Versão ${rx.version}`}{rx.retifies ? " · retificação" : ""}{rx.usage ? ` · ${prescriptionUsageLabels[rx.usage]}` : ""}</strong><span>{formatPrescriptionEye("OD", rx.od)} · {formatPrescriptionEye("OE", rx.oe)}</span>{rx.notes && <span className="help-text">{rx.notes}</span>}{rx.retificationReason && <span className="help-text">Motivo da retificação: {rx.retificationReason}</span>}<span className="help-text">{rx.author} · {new Date(rx.issuedAt).toLocaleString("pt-BR")}</span></div>
+        <div><strong>{active ? "Prescrição ativa" : `Versão ${rx.version}`}{rx.retifies ? " · retificação" : ""}{rx.usage ? ` · ${prescriptionUsageLabels[rx.usage]}` : ""}</strong><span>{formatPrescriptionEye("OD", rx.od)} · {formatPrescriptionEye("OE", rx.oe)}</span>{rx.measures && <span className="help-text">{formatPrescriptionMeasures(rx.measures)}</span>}{rx.notes && <span className="help-text">{rx.notes}</span>}{rx.retificationReason && <span className="help-text">Motivo da retificação: {rx.retificationReason}</span>}<span className="help-text">{rx.author} · {new Date(rx.issuedAt).toLocaleString("pt-BR")}</span></div>
         <div>{!busy && <Link className="button" to={`/prescricoes/${rx.id}`}>Imprimir</Link>}{active && !busy && <Button type="button" onClick={() => startRetification(rx)}>Retificar</Button>}</div>
       </article>; }) : <p className="empty-state">Nenhuma prescrição estruturada emitida.</p>}</div>
     </section>
@@ -216,6 +226,7 @@ export function PrescriptionDocumentPage() {
     {document.usage && <p><strong>Tipo de uso:</strong> {document.usage}</p>}
     <p>{document.odLine}</p>
     <p>{document.oeLine}</p>
+    {document.measuresLine && <p><strong>Medidas de montagem:</strong> {document.measuresLine}</p>}
     {document.notes && <p><strong>Observações:</strong> {document.notes}</p>}
     {document.retificationLine && <p><strong>{document.retificationLine}</strong></p>}
     <p className="help-text no-print">Documento por versão: a receita é imutável — reimpressões sempre mostram o número da versão.</p>

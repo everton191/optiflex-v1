@@ -70,6 +70,56 @@ export function assertValidPrescriptionUsage(usage: string): asserts usage is Pr
   if (!Object.hasOwn(prescriptionUsageLabels, usage)) throw new Error("Tipo de uso inválido.");
 }
 
+export type MeasurementOrigin = "MEASURED" | "INFORMED";
+
+export const measurementOriginLabels: Record<MeasurementOrigin, string> = { MEASURED: "Medido", INFORMED: "Informado" };
+
+export const measurementOriginKeys = Object.keys(measurementOriginLabels) as MeasurementOrigin[];
+
+export function assertValidMeasurementOrigin(origin: string): asserts origin is MeasurementOrigin {
+  if (!Object.hasOwn(measurementOriginLabels, origin)) throw new Error("Origem das medidas inválida.");
+}
+
+// Mounting measures in millimetres; DP = pupillary distance (total/far/near), height = fitting height OD/OE.
+export interface PrescriptionMeasures {
+  dpTotal?: number;
+  dpFar?: number;
+  dpNear?: number;
+  heightOd?: number;
+  heightOe?: number;
+  origin?: MeasurementOrigin;
+}
+
+const measureKeys = ["dpTotal", "dpFar", "dpNear", "heightOd", "heightOe"] as const;
+
+export function assertValidPrescriptionMeasures(measures: PrescriptionMeasures): void {
+  for (const key of measureKeys) {
+    const value = measures[key];
+    if (value !== undefined && (!Number.isFinite(value) || value <= 0)) throw new Error("Medida de montagem inválida (use milímetros positivos).");
+  }
+  if (measures.origin !== undefined) assertValidMeasurementOrigin(measures.origin);
+}
+
+function normalizeMeasures(measures?: PrescriptionMeasures): PrescriptionMeasures | undefined {
+  if (!measures) return undefined;
+  const normalized: PrescriptionMeasures = {};
+  for (const key of measureKeys) if (measures[key] !== undefined) normalized[key] = measures[key];
+  if (measures.origin !== undefined) normalized.origin = measures.origin;
+  return Object.keys(normalized).length ? normalized : undefined;
+}
+
+export function formatPrescriptionMeasures(measures?: PrescriptionMeasures): string {
+  if (!measures) return "";
+  const parts: string[] = [];
+  if (measures.dpTotal !== undefined) parts.push(`DP total ${measures.dpTotal.toFixed(2)} mm`);
+  if (measures.dpFar !== undefined) parts.push(`DP longe ${measures.dpFar.toFixed(2)} mm`);
+  if (measures.dpNear !== undefined) parts.push(`DP perto ${measures.dpNear.toFixed(2)} mm`);
+  if (measures.heightOd !== undefined) parts.push(`Altura OD ${measures.heightOd.toFixed(2)} mm`);
+  if (measures.heightOe !== undefined) parts.push(`Altura OE ${measures.heightOe.toFixed(2)} mm`);
+  if (measures.origin !== undefined) parts.push(measurementOriginLabels[measures.origin]);
+  return parts.join(" · ");
+}
+
 // Append-only document: issued versions are never rewritten; retification adds a new version linked to the previous one.
 export interface Prescription {
   organizationId?: string;
@@ -83,6 +133,7 @@ export interface Prescription {
   od: PrescriptionEye;
   oe: PrescriptionEye;
   usage?: PrescriptionUsage;
+  measures?: PrescriptionMeasures;
   notes?: string;
   retifies?: string;
   retificationReason?: string;
@@ -95,6 +146,7 @@ export interface PrescriptionInput {
   od: PrescriptionEye;
   oe: PrescriptionEye;
   usage?: PrescriptionUsage;
+  measures?: PrescriptionMeasures;
   notes?: string;
 }
 
@@ -125,6 +177,7 @@ function assertPrescriptionInput(input: PrescriptionInput, author: string, now: 
   }
   if (!Number.isFinite(Date.parse(now))) throw new Error("Data da prescrição inválida.");
   if (input.usage !== undefined) assertValidPrescriptionUsage(input.usage);
+  if (input.measures !== undefined) assertValidPrescriptionMeasures(input.measures);
   assertValidPrescriptionEye(input.od);
   assertValidPrescriptionEye(input.oe);
   if (!hasEyeValue(input.od) && !hasEyeValue(input.oe) && !input.notes?.trim()) throw new Error("Informe ao menos um grau (OD/OE) ou uma observação.");
@@ -145,6 +198,7 @@ export function issuePrescription(input: PrescriptionInput, author: string, now 
     od: normalizeEye(input.od),
     oe: normalizeEye(input.oe),
     usage: input.usage,
+    measures: normalizeMeasures(input.measures),
     notes: input.notes?.trim() || undefined,
   };
 }
@@ -184,6 +238,7 @@ export interface PrescriptionDocument {
   usage?: string;
   odLine: string;
   oeLine: string;
+  measuresLine?: string;
   notes?: string;
   retificationLine?: string;
 }
@@ -198,6 +253,7 @@ export function prescriptionDocument(prescription: Prescription, patient: string
     usage: prescription.usage ? prescriptionUsageLabels[prescription.usage] : undefined,
     odLine: formatPrescriptionEye("OD", prescription.od),
     oeLine: formatPrescriptionEye("OE", prescription.oe),
+    measuresLine: formatPrescriptionMeasures(prescription.measures) || undefined,
     notes: prescription.notes,
     retificationLine: prescription.retificationReason ? `Motivo da retificação: ${prescription.retificationReason}` : undefined,
   };
