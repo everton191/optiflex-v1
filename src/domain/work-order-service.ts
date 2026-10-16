@@ -16,6 +16,14 @@ export interface WorkOrderInput {
   quantity: number;
 }
 
+export interface WorkOrderDeliveryInput {
+  receivedBy: string;
+  note?: string;
+  // Pending cents the caller computed from cash (sale total minus receipts). Delivery with a balance requires the explicit acknowledgement.
+  pendingCents: number;
+  acknowledgePending?: boolean;
+}
+
 export class WorkOrderService {
   constructor(private readonly repository: WorkOrderRepository) {}
   list(storeId: string): Promise<WorkOrder[]> { return this.repository.listByStore(storeId); }
@@ -49,6 +57,21 @@ export class WorkOrderService {
     if (!trimmed) throw new Error("Informe o motivo do cancelamento.");
     const at = new Date().toISOString();
     const updated: WorkOrder = { ...order, status: "CANCELLED", cancelReason: trimmed, updatedAt: at, updatedBy: author.trim(), events: [...(order.events ?? []), { id: `os-event-${crypto.randomUUID()}`, type: "CANCELLED", from: order.status, to: "CANCELLED", note: trimmed, author: author.trim(), at }] };
+    return this.repository.update(updated, order.status);
+  }
+
+  async deliver(order: WorkOrder, input: WorkOrderDeliveryInput, author: string): Promise<WorkOrder> {
+    if (!author.trim()) throw new Error("Informe o responsável pela alteração.");
+    if (order.status === "DELIVERED") throw new Error("Esta ordem já foi entregue.");
+    if (order.status === "CANCELLED") throw new Error("Ordem cancelada não pode ser entregue.");
+    if (!canTransition(order.status, "DELIVERED")) throw new Error(`Transição inválida: ${order.status} → DELIVERED.`);
+    const receivedBy = input.receivedBy.trim();
+    if (!receivedBy) throw new Error("Informe quem recebeu a entrega.");
+    if (!Number.isFinite(input.pendingCents) || input.pendingCents < 0) throw new Error("Saldo a receber inválido.");
+    if (input.pendingCents > 0 && !input.acknowledgePending) throw new Error(`Entrega com saldo pendente de R$ ${(input.pendingCents / 100).toFixed(2)}: confirme a ciência para continuar.`);
+    const note = [`Recebido por ${receivedBy}`, input.note?.trim() || undefined].filter(Boolean).join(" · ");
+    const at = new Date().toISOString();
+    const updated: WorkOrder = { ...order, status: "DELIVERED", receivedBy, deliveredNote: input.note?.trim() || undefined, updatedAt: at, updatedBy: author.trim(), events: [...(order.events ?? []), { id: `os-event-${crypto.randomUUID()}`, type: "DELIVERY", from: order.status, to: "DELIVERED", note, author: author.trim(), at }] };
     return this.repository.update(updated, order.status);
   }
 

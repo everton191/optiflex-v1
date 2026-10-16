@@ -111,7 +111,9 @@ export function validateBackup(value: unknown): BackupSnapshot {
         if (row.cancelledAt !== undefined && (typeof row.cancelledAt !== "string" || !Number.isFinite(Date.parse(row.cancelledAt)))) throw invalid();
       }
       if (name === "workOrders") {
-        if (row.cancelReason !== undefined && (typeof row.cancelReason !== "string" || !row.cancelReason.trim())) throw invalid();        if (row.events !== undefined) {
+        if (row.cancelReason !== undefined && (typeof row.cancelReason !== "string" || !row.cancelReason.trim())) throw invalid();        if (row.receivedBy !== undefined && (typeof row.receivedBy !== "string" || !row.receivedBy.trim())) throw invalid();
+        if (row.deliveredNote !== undefined && typeof row.deliveredNote !== "string") throw invalid();
+        if (row.events !== undefined) {
           if (!Array.isArray(row.events)) throw invalid();
           const eventIds = new Set<string>();
           for (const event of row.events) {

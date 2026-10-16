@@ -7,6 +7,7 @@ import type { Customer } from "../domain/customer";
 import type { InventoryItem } from "../domain/inventory";
 import { productCategoryLabels } from "../domain/inventory";
 import type { Sale } from "../domain/sales";
+import type { CashEntry } from "../domain/cash";
 import type { WorkOrder, WorkOrderStatus } from "../domain/work-order";
 import { canTransition, productionPipeline, stageEvent, workOrderEventLabels, workOrderStatuses, workOrderStatusLabels, workOrderTransitions } from "../domain/work-order";
 import { isOverdueOrder, overdueOrders } from "../domain/dashboard";
@@ -15,13 +16,14 @@ import { ReceptionService } from "../domain/reception-service";
 import { SalesService } from "../domain/sales-service";
 import { InventoryService } from "../domain/inventory-service";
 import { WorkOrderService } from "../domain/work-order-service";
-import { LocalAttendanceRepository, LocalCustomerRepository, LocalInventoryRepository, LocalSaleRepository, LocalWorkOrderRepository } from "../infrastructure/storage/local-repositories";
+import { LocalAttendanceRepository, LocalCashRepository, LocalCustomerRepository, LocalInventoryRepository, LocalSaleRepository, LocalWorkOrderRepository } from "../infrastructure/storage/local-repositories";
 import { useAppContext, useSession } from "./providers";
 
 const service = new WorkOrderService(new LocalWorkOrderRepository());
 const salesService = new SalesService(new LocalSaleRepository());
 const receptionService = new ReceptionService(new LocalCustomerRepository(), new LocalAttendanceRepository());
 const inventoryService = new InventoryService(new LocalInventoryRepository());
+const cashRepository = new LocalCashRepository();
 const transitionLabels: Record<WorkOrderStatus, string> = {
   OPEN: "",
   SENT_TO_LAB: "Enviar ao laboratório",
@@ -145,7 +147,7 @@ export function WorkOrdersPage() {
           <div className="work-order-actions">
             <span className="badge">{workOrderStatusLabels[order.status]}</span>
             {isOverdueOrder(order) && <span className="badge is-out" role="status">Atrasada</span>}
-            {canManage && workOrderTransitions[order.status].filter((status) => status !== "CANCELLED").map((status) => <Button type="button" key={status} onClick={() => void transition(order, status)}>{transitionLabels[status]}</Button>)}
+            {canManage && workOrderTransitions[order.status].filter((status) => status !== "CANCELLED" && status !== "DELIVERED").map((status) => <Button type="button" key={status} onClick={() => void transition(order, status)}>{transitionLabels[status]}</Button>)}
             {canManage && canTransition(order.status, "CANCELLED") && <Button type="button" onClick={() => cancelling?.id === order.id ? closeCancel() : openCancel(order)}>{cancelling?.id === order.id ? "Fechar" : "Cancelar"}</Button>}
             {canManage && <Button type="button" onClick={() => editing?.id === order.id ? closeSchedule() : openSchedule(order)}>{editing?.id === order.id ? "Fechar" : "Prazo/notas"}</Button>}
             <Link className="button" to={`/ordens-servico/${order.id}`}>Detalhes</Link>
@@ -186,14 +188,19 @@ export function WorkOrderDetailPage() {
   const [cancelReason, setCancelReason] = useState("");
   const [inputItem, setInputItem] = useState("");
   const [inputQuantity, setInputQuantity] = useState("1");
+  const [cashEntries, setCashEntries] = useState<CashEntry[]>([]);
+  const [delivering, setDelivering] = useState(false);
+  const [receivedBy, setReceivedBy] = useState("");
+  const [deliveryNote, setDeliveryNote] = useState("");
+  const [ackPending, setAckPending] = useState(false);
 
   async function refresh() {
     try {
-      const [orders, sales, inventoryItems] = await Promise.all([service.list(currentStoreId), salesService.list(currentStoreId), inventoryService.list(currentStoreId)]);
+      const [orders, sales, inventoryItems, entries] = await Promise.all([service.list(currentStoreId), salesService.list(currentStoreId), inventoryService.list(currentStoreId), cashRepository.listEntries(currentStoreId)]);
       const found = orders.find((item) => item.id === orderId);
       if (!found) { setOrder(undefined); setError("Ordem não encontrada nesta loja."); return; }
       const foundSale = sales.find((item) => item.id === found.saleId);
-      setOrder(found); setSale(foundSale); setItems(inventoryItems); setError("");
+      setOrder(found); setSale(foundSale); setItems(inventoryItems); setCashEntries(entries); setError("");
       setCustomer(await receptionService.getCustomer(found.customerId));
       setDueAt(found.dueAt ? found.dueAt.slice(0, 10) : "");
       setNotes(found.notes ?? "");
@@ -203,6 +210,8 @@ export function WorkOrderDetailPage() {
   useEffect(() => { void refresh(); }, [currentStoreId, orderId, attempt]);
   function retry() { setLoading(true); setAttempt((value) => value + 1); }
 
+  const salePendingCents = sale ? Math.max(0, Math.round(sale.total * 100) - cashEntries.filter((entry) => entry.saleId === sale.id && entry.type === "RECEIPT").reduce((sum, entry) => sum + Math.round(entry.amount * 100), 0)) : 0;
+
   async function run(action: () => Promise<string>, fallback: string) {
     if (pending.current || !canManage || !order) return;
     pending.current = true; setMessage(""); setError("");
@@ -210,6 +219,14 @@ export function WorkOrderDetailPage() {
   }
   async function transition(status: WorkOrderStatus) {
     await run(async () => { await service.transition(order!, status, session.userName); return `Ordem marcada como ${workOrderStatusLabels[status].toLowerCase()}.`; }, "Não foi possível atualizar a ordem.");
+  }
+  async function deliverOrder(event: React.FormEvent) {
+    event.preventDefault();
+    await run(async () => {
+      await service.deliver(order!, { receivedBy, note: deliveryNote, pendingCents: salePendingCents, acknowledgePending: ackPending }, session.userName);
+      setDelivering(false); setReceivedBy(""); setDeliveryNote(""); setAckPending(false);
+      return "Entrega registrada com responsável e data.";
+    }, "Não foi possível registrar a entrega.");
   }
   async function saveSchedule(event: React.FormEvent) {
     event.preventDefault();
@@ -253,6 +270,7 @@ export function WorkOrderDetailPage() {
       <p className={isOverdueOrder(order) ? "error-text" : "help-text"}>{order.dueAt ? `Prazo: ${new Date(order.dueAt).toLocaleDateString("pt-BR")}${isOverdueOrder(order) ? " · atrasada" : ""}` : "Sem prazo definido"}</p>
       {order.notes && <p className="help-text">{order.notes}</p>}
       {order.cancelReason && <p className="error-text">Motivo do cancelamento: {order.cancelReason}</p>}
+{order.receivedBy && <p className="help-text">Recebido por {order.receivedBy}{order.deliveredNote ? ` · ${order.deliveredNote}` : ""} · {new Date(order.updatedAt ?? order.createdAt).toLocaleString("pt-BR")}</p>}
       <p className="help-text">Criada em {new Date(order.createdAt).toLocaleString("pt-BR")}{sale ? ` · Venda R$ ${sale.total.toFixed(2)}` : ""}</p>
       {customer && <Link to={`/clientes/${customer.id}`}>Ver histórico do cliente</Link>}
     </section>
@@ -291,12 +309,20 @@ export function WorkOrderDetailPage() {
     </section>}
 
     {canManage && <section className="card no-print">
-      <h2>Ações</h2>
-      <div className="form-actions">
-        {workOrderTransitions[order.status].filter((status) => status !== "CANCELLED").map((status) => <Button type="button" key={status} onClick={() => void transition(status)}>{transitionLabels[status]}</Button>)}
+        <h2>Ações</h2>
+        <div className="form-actions">
+        {workOrderTransitions[order.status].filter((status) => status !== "CANCELLED" && status !== "DELIVERED").map((status) => <Button type="button" key={status} onClick={() => void transition(status)}>{transitionLabels[status]}</Button>)}
+        {canTransition(order.status, "DELIVERED") && !delivering && <Button type="button" onClick={() => setDelivering(true)}>Registrar entrega</Button>}
         {canTransition(order.status, "CANCELLED") && !cancelling && <Button type="button" onClick={() => { setCancelling(true); setCancelReason(""); }}>Cancelar ordem</Button>}
         {acceptsInputs && <Button type="button" onClick={() => setEditing(!editing)}>{editing ? "Fechar prazo" : "Prazo/notas"}</Button>}
-      </div>
+        </div>
+        {delivering && <form className="orders-form" onSubmit={deliverOrder}>
+        <label>Recebido por<Input value={receivedBy} onChange={(event) => setReceivedBy(event.target.value)} placeholder="Nome de quem recebeu (obrigatório)" /></label>
+        <label>Assinatura/observação<Input value={deliveryNote} onChange={(event) => setDeliveryNote(event.target.value)} placeholder="Opcional" /></label>
+        {salePendingCents > 0 && <label className="check-label"><input type="checkbox" checked={ackPending} onChange={(event) => setAckPending(event.target.checked)} />Entregar com saldo a receber de R$ {salePendingCents.toFixed(2).replace(".", ",")} — entendi que o pagamento continua pendente.</label>}
+        <div className="form-actions"><Button type="submit" disabled={!receivedBy.trim() || (salePendingCents > 0 && !ackPending)}>Confirmar entrega</Button><Button type="button" onClick={() => setDelivering(false)}>Voltar</Button></div>
+        {salePendingCents > 0 && <p className="help-text">Saldo apurado no caixa: R$ {salePendingCents.toFixed(2).replace(".", ",")}. Registre a receita para quitar a venda.</p>}
+        </form>}
       {cancelling && <form className="orders-form" onSubmit={saveCancel}>
         <label>Motivo do cancelamento<Input value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} placeholder="Obrigatório" /></label>
         <div className="form-actions"><Button type="submit" disabled={!cancelReason.trim()}>Confirmar cancelamento</Button><Button type="button" onClick={() => setCancelling(false)}>Voltar</Button></div>

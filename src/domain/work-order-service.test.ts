@@ -3,6 +3,7 @@ import { WorkOrderService } from "./work-order-service";
 import type { Sale } from "./sales";
 import type { WorkOrder, WorkOrderStatus } from "./work-order";
 import { canTransition, stageEvent, stageIndexOf } from "./work-order";
+import { openOrders } from "./dashboard";
 
 const repository = { listByStore: vi.fn(), getBySale: vi.fn(), create: vi.fn(), update: vi.fn(), recordInputs: vi.fn() };
 const service = new WorkOrderService(repository);
@@ -229,5 +230,52 @@ describe("listing", () => {
     const orders: WorkOrderStatus[] = (await service.list("store-centro")).map((order) => order.status);
     expect(orders).toEqual(["OPEN"]);
     expect(repository.listByStore).toHaveBeenCalledWith("store-centro");
+  });
+});
+
+describe("work order delivery", () => {
+  const repository = { create: vi.fn(), list: vi.fn(), update: vi.fn() };
+  const service = new WorkOrderService(repository as never);
+  const ready: WorkOrder = { id: "os-1", saleId: "sale-1", customerId: "customer-1", storeId: "store-centro", status: "READY", createdAt: new Date().toISOString() };
+
+  beforeEach(() => {
+    repository.create.mockReset();
+    repository.list.mockReset();
+    repository.update.mockReset();
+    repository.update.mockImplementation((order: WorkOrder) => Promise.resolve(order));
+  });
+
+  it("records who received the delivery with the event and leaves the pending queues", async () => {
+    const delivered = await service.deliver(ready, { receivedBy: "  Maria Souza ", note: "Conferido na loja", pendingCents: 0 }, "Operador");
+    expect(delivered.status).toBe("DELIVERED");
+    expect(delivered.receivedBy).toBe("Maria Souza");
+    expect(delivered.deliveredNote).toBe("Conferido na loja");
+    expect(delivered.updatedBy).toBe("Operador");
+    const event = delivered.events?.at(-1);
+    expect(event).toMatchObject({ type: "DELIVERY", from: "READY", to: "DELIVERED", author: "Operador" });
+    expect(event?.note).toContain("Recebido por Maria Souza");
+    expect(event?.note).toContain("Conferido na loja");
+    expect(repository.update).toHaveBeenCalledOnce();
+    expect(repository.update.mock.calls[0][1]).toBe("READY");
+    expect(openOrders([delivered])).toEqual([]);
+  });
+
+  it("requires the receiver name", async () => {
+    await expect(service.deliver(ready, { receivedBy: "   ", pendingCents: 0 }, "Operador")).rejects.toThrow("Informe quem recebeu");
+    expect(repository.update).not.toHaveBeenCalled();
+  });
+
+  it("blocks delivery with a pending balance unless it is acknowledged", async () => {
+    await expect(service.deliver(ready, { receivedBy: "Maria", pendingCents: 15000 }, "Operador")).rejects.toThrow("saldo pendente");
+    const delivered = await service.deliver(ready, { receivedBy: "Maria", pendingCents: 15000, acknowledgePending: true }, "Operador");
+    expect(delivered.status).toBe("DELIVERED");
+  });
+
+  it("blocks delivery from cancelled, delivered or unreachable statuses and rejects invalid balances", async () => {
+    await expect(service.deliver({ ...ready, status: "CANCELLED" }, { receivedBy: "Maria", pendingCents: 0 }, "Operador")).rejects.toThrow("cancelada");
+    await expect(service.deliver({ ...ready, status: "DELIVERED" }, { receivedBy: "Maria", pendingCents: 0 }, "Operador")).rejects.toThrow("já foi entregue");
+    await expect(service.deliver({ ...ready, status: "OPEN" }, { receivedBy: "Maria", pendingCents: 0 }, "Operador")).rejects.toThrow("Transição inválida");
+    await expect(service.deliver(ready, { receivedBy: "Maria", pendingCents: -1 }, "Operador")).rejects.toThrow("Saldo a receber inválido");
+    expect(repository.update).not.toHaveBeenCalled();
   });
 });

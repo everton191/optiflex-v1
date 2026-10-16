@@ -1,7 +1,7 @@
 export const workOrderStatuses = ["OPEN", "SENT_TO_LAB", "IN_PRODUCTION", "RETURNED", "IN_INSPECTION", "READY", "AWAITING_PICKUP", "DELIVERED", "CANCELLED"] as const;
 export type WorkOrderStatus = (typeof workOrderStatuses)[number];
 
-export type WorkOrderEventType = "CREATED" | "STATUS" | "SCHEDULE" | "CANCELLED" | "INPUTS" | "LABORATORY";
+export type WorkOrderEventType = "CREATED" | "STATUS" | "SCHEDULE" | "CANCELLED" | "INPUTS" | "LABORATORY" | "DELIVERY";
 
 export interface WorkOrderEvent {
   id: string;
@@ -27,6 +27,8 @@ export interface WorkOrder {
   notes?: string;
   laboratory?: string;
   cancelReason?: string;
+  receivedBy?: string;
+  deliveredNote?: string;
   events?: WorkOrderEvent[];
 }
 
@@ -49,6 +51,7 @@ export const workOrderEventLabels: Record<WorkOrderEventType, string> = {
   CANCELLED: "Cancelamento",
   INPUTS: "Insumos registrados",
   LABORATORY: "Laboratório informado",
+  DELIVERY: "Entrega registrada",
 };
 
 export const workOrderTransitions: Record<WorkOrderStatus, readonly WorkOrderStatus[]> = {
@@ -75,13 +78,13 @@ export function stageIndexOf(status: WorkOrderStatus): number {
   return (productionPipeline as readonly string[]).indexOf(status);
 }
 
-// Responsible and date of a stage come from the embedded history: CREATED for OPEN, the latest STATUS event that reached the stage (rework keeps the newest stamp).
+// Responsible and date of a stage come from the embedded history: CREATED for OPEN, the latest STATUS event that reached the stage (DELIVERY stamps the final stage; rework keeps the newest stamp).
 export function stageEvent(order: Pick<WorkOrder, "events">, status: ProductionStage): WorkOrderEvent | undefined {
   const events = order.events ?? [];
   if (status === "OPEN") return events.find((event) => event.type === "CREATED");
   for (let index = events.length - 1; index >= 0; index -= 1) {
     const event = events[index];
-    if (event.type === "STATUS" && event.to === status) return event;
+    if ((event.type === "STATUS" || event.type === "DELIVERY") && event.to === status) return event;
   }
   return undefined;
 }
