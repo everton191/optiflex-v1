@@ -89,12 +89,20 @@
 ### EmptyState (F7-01)
 
 - Caminho: `src/design-system/components.tsx`; classe `.empty-state`.
-- Uso real: lista de clientes sem resultados (demais telas ainda usam a classe direta; substituição gradual).
+- Uso real: lista de clientes sem resultados, lista de estoque, agenda e fila da recepção, lista de ordens de serviço (aplicação incremental concluída em F7-11).
 
 ### Skeleton (F7-01)
 
 - Caminho: `src/design-system/components.tsx`; estilos `.skeleton`/`.skeleton-line`.
-- Uso real: carregamento da lista de clientes e do dashboard (`role="status" aria-busy`); shimmer respeita `prefers-reduced-motion`.
+- Uso real: carregamento das listas de clientes, dashboard, estoque, agenda/fila da recepção, ordens e caixa (`role="status" aria-busy`); shimmer respeita `prefers-reduced-motion`.
+
+### ErrorState (F7-11)
+
+- Caminho: `src/design-system/components.tsx`; classe `.error-state` em `styles.css`.
+- Props: `message` (obrigatório), `onRetry?`, `retryLabel?` (padrão "Tentar novamente").
+- `role="alert"`, reutiliza `Button` para o retry; cor de erro `#b42318` no texto.
+- Uso real: falha de leitura do caixa (com `refresh`), fila de atendimento e demais páginas que capturam `errorMessage`.
+- Padrão-CA: falha de leitura mostra erro + retry; sem tela branca.
 
 ### PageHeader (F7-01)
 
@@ -117,7 +125,7 @@
 
 ## Componentes ausentes
 
-`CustomerHeader` continua sem componente global (cada página monta o próprio cabeçalho de cliente). Demais primitivas da auditoria A (Select, Table, Dialog, Drawer, Tabs, Badge, Toast, Search, EmptyState, Skeleton, Tooltip, PageHeader) foram entregues em F7-01/#116; ao criar um novo, confirme reutilização em mais de uma área.
+`CustomerHeader` continua sem componente global (cada página monta o próprio cabeçalho de cliente). Demais primitivas da auditoria A (Select, Table, Dialog, Drawer, Tabs, Badge, Toast, Search, EmptyState, Skeleton, Tooltip, PageHeader) foram entregues em F7-01/#116; `ErrorState` em F7-11/#126; ao criar um novo, confirme reutilização em mais de uma área.
 
 ## Shell e navegação
 
@@ -152,6 +160,6 @@ Não há tokens separados para sizes, z-index ou breakpoints.
 ## Regra de mudança
 
 - Cor/espaço/raio/sombra global → `tokens.css`.
-- Componentes globais (Button, Input, Card, Select, Badge, Tabs, Table, Dialog, Drawer, Toast, Tooltip, Search, EmptyState, Skeleton, PageHeader) → `components.tsx` e classe global em `styles.css`.
+- Componentes globais (Button, Input, Card, Select, Badge, Tabs, Table, Dialog, Drawer, Toast, Tooltip, Search, EmptyState, Skeleton, ErrorState, PageHeader) → `components.tsx` e classe global em `styles.css`.
 - Menu/topbar/responsividade → `AppShell.tsx` + `styles.css`.
 - Estilo exclusivo de página → seção correspondente de `styles.css`.

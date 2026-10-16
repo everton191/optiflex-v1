@@ -4,6 +4,13 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `affd182` + docs — Indicadores de carregamento e erros (F7-11)
+
+- Componente `ErrorState` (`role="alert"`, mensagem + botão "Tentar novamente") em `src/design-system/components.tsx` + classe `.error-state` em `styles.css`.
+- `Skeleton` aplicado no carregamento de Estoque (lista), Recepção (agenda e fila de atendimento), Ordens (lista) e Caixa (painel inteiro com loading guard); `EmptyState` nos estados vazios de Estoque, Recepção (agenda e fila) e Ordens; Caixa e fila de atendimento mostram erro com retry via refresh.
+- CustomerWorkspace, Dashboard e Clinical já usavam o padrão (Skeleton/EmptyState + retry) e ficaram como referência; a substituição foi incremental nas páginas que ainda usavam `<p role="status">Carregando…</p>`.
+- Total: **308/308** (31 arquivos), build 0, tsc 0. Card: F7-11/#126 → DONE. **Teste manual de falha simulada pendente** (CA do card).
+
 ### `0e8675a` + docs — Receita óptica imprimível por versão (F3-05)
 
 - `src/domain/clinical.ts`: `formatPrescriptionEye(label, eye)` ("OD: esf -1.25 · cil -0.50 · eixo 90°"; sem campos → "sem grau") e função pura `prescriptionDocument(prescription, patient)` → `PrescriptionDocument` (título "Receita óptica", paciente, profissional, `versionLine` "Versão N [· retificação]", data/hora pt-BR, uso opcional, OD/OE, observações, motivo de retificação; **não muta a prescrição** — CA de imutabilidade).
