@@ -81,6 +81,8 @@ export function validateBackup(value: unknown): BackupSnapshot {
       if (name === "inventoryItems" && row.category !== undefined && !isProductCategory(row.category)) throw invalid();
       if (name === "attendances" && row.priority !== undefined && !isAttendancePriority(row.priority)) throw invalid();
       if (name === "sales" && row.items !== undefined && (!Array.isArray(row.items) || row.items.some((item) => !object(item) || typeof item.inventoryItemId !== "string" || typeof item.name !== "string" || typeof item.quantity !== "number" || !Number.isFinite(item.quantity) || item.quantity <= 0 || typeof item.unitPrice !== "number" || !Number.isFinite(item.unitPrice) || item.unitPrice < 0))) throw invalid();
+      if (name === "sales" && row.items !== undefined && Array.isArray(row.items)) for (const item of row.items as Record<string, unknown>[]) if (item.category !== undefined && !isProductCategory(item.category)) throw invalid();
+      if (name === "sales" && row.treatments !== undefined && (!Array.isArray(row.treatments) || row.treatments.some((treatment) => !object(treatment) || typeof treatment.name !== "string" || !treatment.name.trim() || typeof treatment.price !== "number" || !Number.isFinite(treatment.price) || treatment.price < 0))) throw invalid();
       if (name === "sales" && row.prescription !== undefined) {
         const rx = row.prescription;
         if (!object(rx) || typeof rx.prescriptionId !== "string" || !rx.prescriptionId.trim() || typeof rx.customerId !== "string" || !rx.customerId.trim() || !Number.isSafeInteger(rx.version) || (rx.version as number) < 1) throw invalid();

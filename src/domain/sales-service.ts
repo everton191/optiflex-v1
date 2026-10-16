@@ -1,30 +1,26 @@
-import type { QuoteStatus, Sale, SaleItem, SalePrescription } from "./sales";
-import { assertValidSalePrescription, itemsTotalCents, quoteStatusOf, quoteTransitions, refundStockMovementsFor, stockMovementsFor } from "./sales";
+import type { QuoteStatus, Sale, SaleItem, SalePrescription, SaleTreatment } from "./sales";
+import { assertValidSaleItems, assertValidSalePrescription, assertValidSaleTreatments, itemsTotalCents, quoteStatusOf, quoteTransitions, refundStockMovementsFor, stockMovementsFor, treatmentsTotalCents } from "./sales";
 import { defaultOrganization } from "./access";
 import type { PrescriptionRepository, SaleRepository } from "./repositories";
 import { fromCents, requireMoney, toCents } from "./money";
 import type { Prescription } from "./clinical";
 
-const valid = (value: number) => Number.isFinite(value);
+export interface QuoteInput { customerId: string; description: string; total: number; items: readonly SaleItem[]; prescription?: SalePrescription; treatments?: readonly SaleTreatment[] }
 
-export interface QuoteInput { customerId: string; description: string; total: number; items: readonly SaleItem[]; prescription?: SalePrescription }
-
-function buildQuote(input: QuoteInput): { customerId: string; description: string; total: number; items?: SaleItem[]; prescription?: SalePrescription } {
-  const { items } = input;
-  for (const item of items) {
-    if (!item.name.trim() || !item.inventoryItemId.trim()) throw new Error("Informe o produto do estoque.");
-    if (!valid(item.quantity) || item.quantity <= 0) throw new Error("Informe uma quantidade válida para cada item.");
-    if (!valid(item.unitPrice) || item.unitPrice < 0) throw new Error("Informe um preço válido para cada item.");
-  }
+function buildQuote(input: QuoteInput): { customerId: string; description: string; total: number; items?: SaleItem[]; treatments?: SaleTreatment[]; prescription?: SalePrescription } {
+  const { items, treatments = [] } = input;
+  assertValidSaleItems(items);
   if (items.length && items.some((item, index) => items.findIndex((other) => other.inventoryItemId === item.inventoryItemId) !== index)) throw new Error("Produto repetido no orçamento.");
-  const finalTotal = items.length ? fromCents(itemsTotalCents(items)) : requireMoney(input.total, "Informe descrição e valor válido.");
-  const finalDescription = input.description.trim() || (items.length ? items.map((item) => item.name).join(", ") : "");
+  assertValidSaleTreatments(treatments);
+  const hasLines = items.length > 0 || treatments.length > 0;
+  const finalTotal = hasLines ? fromCents(itemsTotalCents(items) + treatmentsTotalCents(treatments)) : requireMoney(input.total, "Informe descrição e valor válido.");
+  const finalDescription = input.description.trim() || (hasLines ? [...items.map((item) => item.name), ...treatments.map((treatment) => treatment.name)].join(", ") : "");
   if (!finalDescription || toCents(finalTotal) <= 0) throw new Error("Informe descrição e valor válido.");
   if (input.prescription) {
     assertValidSalePrescription(input.prescription);
     if (input.prescription.customerId !== input.customerId) throw new Error("A prescrição vinculada pertence a outro cliente.");
   }
-  return { customerId: input.customerId, description: finalDescription, total: finalTotal, items: items.length ? [...items] : undefined, prescription: input.prescription };
+  return { customerId: input.customerId, description: finalDescription, total: finalTotal, items: items.length ? [...items] : undefined, treatments: treatments.length ? [...treatments] : undefined, prescription: input.prescription };
 }
 
 export class SalesService {
@@ -36,9 +32,9 @@ export class SalesService {
     return this.prescriptionRepository.listByCustomer(customerId, storeId);
   }
 
-  async createQuote(customerId: string, storeId: string, description: string, total: number, items: readonly SaleItem[] = [], prescription?: SalePrescription): Promise<Sale> {
-    const built = buildQuote({ customerId, description, total, items, prescription });
-    const sale: Sale = { id: `sale-${crypto.randomUUID()}`, customerId: built.customerId, storeId, status: "QUOTE", paymentStatus: "PENDING", description: built.description, total: built.total, items: built.items, prescription: built.prescription, createdAt: new Date().toISOString(), organizationId: defaultOrganization.id };
+  async createQuote(customerId: string, storeId: string, description: string, total: number, items: readonly SaleItem[] = [], prescription?: SalePrescription, treatments: readonly SaleTreatment[] = []): Promise<Sale> {
+    const built = buildQuote({ customerId, description, total, items, prescription, treatments });
+    const sale: Sale = { id: `sale-${crypto.randomUUID()}`, customerId: built.customerId, storeId, status: "QUOTE", paymentStatus: "PENDING", description: built.description, total: built.total, items: built.items, treatments: built.treatments, prescription: built.prescription, createdAt: new Date().toISOString(), organizationId: defaultOrganization.id };
     await this.repository.save(sale); return sale;
   }
 
@@ -47,7 +43,7 @@ export class SalesService {
     if (quoteStatusOf(sale) !== "DRAFT") throw new Error("Apenas rascunhos de orçamento podem ser editados.");
     const built = buildQuote(input);
     const keptPrescription = sale.prescription?.customerId === built.customerId ? sale.prescription : undefined;
-    const updated: Sale = { ...sale, customerId: built.customerId, description: built.description, total: built.total, items: built.items, prescription: built.prescription ?? keptPrescription };
+    const updated: Sale = { ...sale, customerId: built.customerId, description: built.description, total: built.total, items: built.items, treatments: built.treatments, prescription: built.prescription ?? keptPrescription };
     await this.repository.save(updated); return updated;
   }
 
@@ -69,6 +65,10 @@ export class SalesService {
       requireMoney(item.quantity, "Valores da venda inválidos.");
       requireMoney(item.unitPrice, "Valores da venda inválidos.");
       if (item.quantity <= 0 || toCents(item.unitPrice) < 0) throw new Error("Valores da venda inválidos.");
+    }
+    for (const treatment of sale.treatments ?? []) {
+      requireMoney(treatment.price, "Valores da venda inválidos.");
+      if (toCents(treatment.price) < 0) throw new Error("Valores da venda inválidos.");
     }
     const movements = stockMovementsFor(sale);
     await this.repository.confirm({ ...sale, status: "CONFIRMED" }, movements);

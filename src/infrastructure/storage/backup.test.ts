@@ -180,9 +180,9 @@ describe("encrypted backup and transactional restore", () => {
     const snapshot = await repository.snapshot();
     snapshot.tables.customers.push({ id: "customer-items", name: "Cliente Itens", createdAt: "2026-01-01T09:00:00.000Z" });
     snapshot.tables.inventoryItems.push({ id: "item-x", storeId: "store-centro", name: "Lente", quantity: 5, minimumQuantity: 1 });
-    snapshot.tables.sales.push({ id: "sale-items", customerId: "customer-items", storeId: "store-centro", status: "QUOTE", description: "Venda com item", total: 120, createdAt: "2026-01-01T11:00:00.000Z", items: [{ inventoryItemId: "item-x", name: "Lente", quantity: 1, unitPrice: 120 }] });
+    snapshot.tables.sales.push({ id: "sale-items", customerId: "customer-items", storeId: "store-centro", status: "QUOTE", description: "Venda com item", total: 120, createdAt: "2026-01-01T11:00:00.000Z", items: [{ inventoryItemId: "item-x", name: "Lente", quantity: 1, unitPrice: 120, category: "LENS" }], treatments: [{ name: "Antirreflexo", price: 80 }] });
     expect(() => validateBackup(snapshot)).not.toThrow();
-    type ItemRow = { inventoryItemId: string; name: string; quantity: number; unitPrice: number };
+    type ItemRow = { inventoryItemId: string; name: string; quantity: number; unitPrice: number; category?: string };
     const saleItems = (row: Record<string, unknown>) => row.items as ItemRow[];
     const badQuantity = structuredClone(snapshot); saleItems(badQuantity.tables.sales[0])[0].quantity = 0;
     expect(() => validateBackup(badQuantity)).toThrow("inválido");
@@ -190,6 +190,14 @@ describe("encrypted backup and transactional restore", () => {
     expect(() => validateBackup(badPrice)).toThrow("inválido");
     const badLink = structuredClone(snapshot); saleItems(badLink.tables.sales[0])[0].inventoryItemId = "missing-item";
     expect(() => validateBackup(badLink)).toThrow("inválido");
+    const badCategory = structuredClone(snapshot); saleItems(badCategory.tables.sales[0])[0].category = "SERVICO";
+    expect(() => validateBackup(badCategory)).toThrow("inválido");
+    type TreatmentRow = { name: string; price: number };
+    const saleTreatments = (row: Record<string, unknown>) => row.treatments as TreatmentRow[];
+    const blankTreatment = structuredClone(snapshot); saleTreatments(blankTreatment.tables.sales[0])[0].name = "   ";
+    expect(() => validateBackup(blankTreatment)).toThrow("inválido");
+    const badTreatmentPrice = structuredClone(snapshot); saleTreatments(badTreatmentPrice.tables.sales[0])[0].price = -1;
+    expect(() => validateBackup(badTreatmentPrice)).toThrow("inválido");
   });
 
   it("accepts cancelled sales with audit fields and refund entries, rejecting invalid values", async () => {

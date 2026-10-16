@@ -1,4 +1,5 @@
-import type { InventoryMovement } from "./inventory";
+import type { InventoryMovement, ProductCategory } from "./inventory";
+import { isProductCategory } from "./inventory";
 import { fromCents, toCents } from "./money";
 import { defaultOrganization } from "./access";
 import { assertValidPrescriptionEye, assertValidPrescriptionMeasures, assertValidPrescriptionUsage, type Prescription, type PrescriptionEye, type PrescriptionMeasures, type PrescriptionUsage } from "./clinical";
@@ -26,6 +27,33 @@ export interface SaleItem {
   name: string;
   quantity: number;
   unitPrice: number;
+  category?: ProductCategory;
+}
+
+// Service line configured at sale time (e.g. coating, photochromic): no stock impact, priced per sale.
+export interface SaleTreatment {
+  name: string;
+  price: number;
+}
+
+export function assertValidSaleTreatments(treatments: readonly SaleTreatment[]): void {
+  for (const treatment of treatments) {
+    if (typeof treatment.name !== "string" || !treatment.name.trim()) throw new Error("Tratamento sem nome.");
+    if (typeof treatment.price !== "number" || !Number.isFinite(treatment.price) || treatment.price < 0) throw new Error("Preço do tratamento inválido.");
+  }
+}
+
+export function treatmentsTotalCents(treatments: readonly SaleTreatment[]): number {
+  return treatments.reduce((total, treatment) => total + toCents(treatment.price), 0);
+}
+
+export function assertValidSaleItems(items: readonly SaleItem[]): void {
+  for (const item of items) {
+    if (!item.name.trim() || !item.inventoryItemId.trim()) throw new Error("Informe o produto do estoque.");
+    if (!Number.isFinite(item.quantity) || item.quantity <= 0) throw new Error("Informe uma quantidade válida para cada item.");
+    if (!Number.isFinite(item.unitPrice) || item.unitPrice < 0) throw new Error("Informe um preço válido para cada item.");
+    if (item.category !== undefined && !isProductCategory(item.category)) throw new Error("Categoria do item inválida.");
+  }
 }
 
 // Copy of the structured prescription at quote time so the sale never asks the client to retype degrees.
@@ -66,6 +94,7 @@ export interface Sale {
   description: string;
   total: number;
   items?: SaleItem[];
+  treatments?: SaleTreatment[];
   prescription?: SalePrescription;
   cancelReason?: string;
   cancelledAt?: string;

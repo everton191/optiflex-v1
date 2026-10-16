@@ -225,3 +225,57 @@ describe("prescription handoff", () => {
     await expect(service.listCustomerPrescriptions("customer-1", "store-centro")).rejects.toThrow("indisponível");
   });
 });
+
+describe("guided sale: categories and treatments", () => {
+  const treatment = (name: string, price: number) => ({ name, price });
+
+  it("carries the product category through the item lines", async () => {
+    repository.save.mockResolvedValue(undefined);
+    const created = await service.createQuote("customer-1", "store-centro", "", 0, [{ ...item("i1", 1, 100), category: "FRAME" }, { ...item("i2", 2, 120), category: "LENS" }]);
+    expect(created.items?.map((entry) => entry.category)).toEqual(["FRAME", "LENS"]);
+  });
+
+  it("rejects an invalid category on the item line", async () => {
+    await expect(service.createQuote("c", "s", "", 0, [{ ...item("i1", 1, 10), category: "SERVICO" as never }])).rejects.toThrow("Categoria do item inválida");
+    expect(repository.save).not.toHaveBeenCalled();
+  });
+
+  it("adds treatments into the total and the description", async () => {
+    repository.save.mockResolvedValue(undefined);
+    const created = await service.createQuote("customer-1", "store-centro", "", 0, [item("i1", 1, 200)], undefined, [treatment("Antirreflexo", 80), treatment("Transição", 0)]);
+    expect(created.total).toBe(280);
+    expect(created.description).toBe("Produto i1, Antirreflexo, Transição");
+    expect(created.treatments).toHaveLength(2);
+  });
+
+  it("keeps the manual total only when there are no items and no treatments", async () => {
+    repository.save.mockResolvedValue(undefined);
+    const withService = await service.createQuote("customer-1", "store-centro", "Serviço", 150, [], undefined, []);
+    expect(withService).toMatchObject({ total: 150, description: "Serviço", items: undefined, treatments: undefined });
+    const withTreatment = await service.createQuote("customer-1", "store-centro", "", 0, [], undefined, [treatment("Aplicação de antirreflexo", 50)]);
+    expect(withTreatment).toMatchObject({ total: 50, description: "Aplicação de antirreflexo", items: undefined });
+  });
+
+  it("rejects treatments without a name or with invalid prices", async () => {
+    await expect(service.createQuote("c", "s", "", 0, [], undefined, [treatment("  ", 10)])).rejects.toThrow("Tratamento sem nome");
+    await expect(service.createQuote("c", "s", "", 0, [], undefined, [treatment("Antirreflexo", Number.NaN)])).rejects.toThrow("Preço do tratamento inválido");
+    await expect(service.createQuote("c", "s", "", 0, [], undefined, [treatment("Antirreflexo", -1)])).rejects.toThrow("Preço do tratamento inválido");
+    expect(repository.save).not.toHaveBeenCalled();
+  });
+
+  it("confirms a sale with treatments moving only the stock items", async () => {
+    repository.confirm.mockResolvedValue(undefined);
+    await service.confirm(quote({ items: [item("i1", 1, 200)], treatments: [treatment("Antirreflexo", 80)], total: 280 }));
+    const [, movements] = repository.confirm.mock.calls[0];
+    expect(movements).toHaveLength(1);
+    expect(movements[0]).toMatchObject({ itemId: "i1", type: "OUT", quantity: 1 });
+  });
+
+  it("replaces the treatments when the draft is edited", async () => {
+    repository.save.mockResolvedValue(undefined);
+    const cleared = await service.updateQuote(quote({ treatments: [treatment("Antirreflexo", 80)] }), { customerId: "customer-1", description: "Armação", total: 200, items: [], treatments: [] });
+    expect(cleared.treatments).toBeUndefined();
+    const replaced = await service.updateQuote(quote(), { customerId: "customer-1", description: "", total: 0, items: [], treatments: [treatment("Polarizado", 120)] });
+    expect(replaced.treatments).toMatchObject([{ name: "Polarizado", price: 120 }]);
+  });
+});

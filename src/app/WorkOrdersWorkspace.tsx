@@ -5,6 +5,7 @@ import { Button, EmptyState, Input, PrintLayout, Skeleton } from "../design-syst
 import { hasPermission } from "../domain/access";
 import type { Customer } from "../domain/customer";
 import type { InventoryItem } from "../domain/inventory";
+import { productCategoryLabels } from "../domain/inventory";
 import type { Sale } from "../domain/sales";
 import type { WorkOrder, WorkOrderStatus } from "../domain/work-order";
 import { canTransition, workOrderEventLabels, workOrderStatusLabels, workOrderTransitions } from "../domain/work-order";
@@ -251,6 +252,13 @@ export function WorkOrderDetailPage() {
       <p className="help-text">Criada em {new Date(order.createdAt).toLocaleString("pt-BR")}{sale ? ` · Venda R$ ${sale.total.toFixed(2)}` : ""}</p>
       {customer && <Link to={`/clientes/${customer.id}`}>Ver histórico do cliente</Link>}
     </section>
+
+    {sale && <section className="card">
+      <h2>Venda</h2>
+      <p className="help-text">{sale.description}{sale.items?.length ? ` · ${sale.items.length} item(ns) de estoque` : " · sem itens de estoque"}{sale.treatments?.length ? ` · ${sale.treatments.length} tratamento(s)` : ""} — dados copiados da venda, sem redigitação.</p>
+      {sale.items?.length ? <ul>{sale.items.map((item, index) => <li key={`${item.inventoryItemId}-${index}`}>{item.name}{item.category ? ` · ${productCategoryLabels[item.category]}` : ""} × {item.quantity}</li>)}</ul> : null}
+      {sale.treatments?.length ? <ul>{sale.treatments.map((treatment, index) => <li key={`${treatment.name}-${index}`}>Tratamento: {treatment.name}</li>)}</ul> : null}
+    </section>}
 
     {sale?.prescription && <section className="card">
       <h2>Prescrição</h2>
