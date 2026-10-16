@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { WorkOrderService } from "./work-order-service";
 import type { Sale } from "./sales";
 import type { WorkOrder, WorkOrderStatus } from "./work-order";
-import { canTransition } from "./work-order";
+import { canTransition, stageEvent, stageIndexOf } from "./work-order";
 
 const repository = { listByStore: vi.fn(), getBySale: vi.fn(), create: vi.fn(), update: vi.fn(), recordInputs: vi.fn() };
 const service = new WorkOrderService(repository);
@@ -61,6 +61,69 @@ describe("status transitions", () => {
     expect(canTransition("READY", "OPEN")).toBe(false);
     expect(canTransition("DELIVERED", "CANCELLED")).toBe(false);
     expect(canTransition("CANCELLED", "READY")).toBe(false);
+  });
+
+  it("walks the fine-grained fabrication stages with author and date", async () => {
+    repository.update.mockImplementation(async (order) => order);
+    const sent = await service.transition(openOrder, "SENT_TO_LAB", "Operador");
+    expect(sent.status).toBe("SENT_TO_LAB");
+    const produced = await service.transition(sent, "IN_PRODUCTION", "Operador");
+    const returned = await service.transition(produced, "RETURNED", "Operador");
+    const inspected = await service.transition(returned, "IN_INSPECTION", "Operador");
+    const ready = await service.transition(inspected, "READY", "Operador");
+    const notified = await service.transition(ready, "AWAITING_PICKUP", "Operador");
+    const delivered = await service.transition(notified, "DELIVERED", "Operador");
+    expect(delivered.status).toBe("DELIVERED");
+    expect(repository.update).toHaveBeenCalledTimes(7);
+    expect(repository.update.mock.calls[6][1]).toBe("AWAITING_PICKUP");
+    expect(repository.update.mock.calls[6][0].events.at(-1)).toMatchObject({ type: "STATUS", from: "AWAITING_PICKUP", to: "DELIVERED", author: "Operador" });
+  });
+
+  it("blocks jumps that skip fabrication stages", async () => {
+    await expect(service.transition(openOrder, "READY", "Operador")).rejects.toThrow("Transição inválida");
+    await expect(service.transition({ ...openOrder, status: "SENT_TO_LAB" }, "READY", "Operador")).rejects.toThrow("Transição inválida");
+    await expect(service.transition({ ...openOrder, status: "RETURNED" }, "DELIVERED", "Operador")).rejects.toThrow("Transição inválida");
+    await expect(service.transition({ ...openOrder, status: "IN_INSPECTION" }, "DELIVERED", "Operador")).rejects.toThrow("Transição inválida");
+    await expect(service.transition({ ...openOrder, status: "AWAITING_PICKUP" }, "IN_PRODUCTION", "Operador")).rejects.toThrow("Transição inválida");
+    expect(repository.update).not.toHaveBeenCalled();
+  });
+
+  it("allows rework from returned and inspection back to production only", () => {
+    expect(canTransition("OPEN", "SENT_TO_LAB")).toBe(true);
+    expect(canTransition("SENT_TO_LAB", "IN_PRODUCTION")).toBe(true);
+    expect(canTransition("IN_PRODUCTION", "RETURNED")).toBe(true);
+    expect(canTransition("RETURNED", "IN_INSPECTION")).toBe(true);
+    expect(canTransition("RETURNED", "IN_PRODUCTION")).toBe(true);
+    expect(canTransition("IN_INSPECTION", "READY")).toBe(true);
+    expect(canTransition("IN_INSPECTION", "IN_PRODUCTION")).toBe(true);
+    expect(canTransition("READY", "AWAITING_PICKUP")).toBe(true);
+    expect(canTransition("AWAITING_PICKUP", "DELIVERED")).toBe(true);
+    expect(canTransition("AWAITING_PICKUP", "IN_PRODUCTION")).toBe(false);
+    expect(canTransition("READY", "CANCELLED")).toBe(false);
+    expect(canTransition("IN_PRODUCTION", "OPEN")).toBe(false);
+  });
+});
+
+describe("production stage helpers", () => {
+  const order: WorkOrder = {
+    id: "os-2", saleId: "sale-2", customerId: "customer-1", storeId: "store-centro", status: "IN_INSPECTION", createdAt: "2026-01-01T10:00:00.000Z",
+    events: [
+      { id: "e1", type: "CREATED", author: "Ana", at: "2026-01-01T10:00:00.000Z" },
+      { id: "e2", type: "STATUS", from: "OPEN", to: "SENT_TO_LAB", author: "Bia", at: "2026-01-02T10:00:00.000Z" },
+      { id: "e3", type: "STATUS", from: "SENT_TO_LAB", to: "IN_PRODUCTION", author: "Caio", at: "2026-01-03T10:00:00.000Z" },
+      { id: "e4", type: "STATUS", from: "IN_PRODUCTION", to: "RETURNED", author: "Caio", at: "2026-01-05T10:00:00.000Z" },
+      { id: "e5", type: "STATUS", from: "RETURNED", to: "IN_PRODUCTION", author: "Duda", at: "2026-01-06T10:00:00.000Z" },
+      { id: "e6", type: "STATUS", from: "IN_PRODUCTION", to: "IN_INSPECTION", author: "Duda", at: "2026-01-07T10:00:00.000Z" },
+    ],
+  };
+
+  it("derives the responsible and date of each stage from the history", () => {
+    expect(stageIndexOf(order.status)).toBe(4);
+    expect(stageIndexOf("CANCELLED")).toBe(-1);
+    expect(stageEvent(order, "OPEN")).toMatchObject({ type: "CREATED", author: "Ana" });
+    expect(stageEvent(order, "SENT_TO_LAB")).toMatchObject({ author: "Bia", at: "2026-01-02T10:00:00.000Z" });
+    expect(stageEvent(order, "IN_PRODUCTION")).toMatchObject({ author: "Duda", at: "2026-01-06T10:00:00.000Z" });
+    expect(stageEvent(order, "READY")).toBeUndefined();
   });
 });
 

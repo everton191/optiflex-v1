@@ -8,7 +8,7 @@ import type { InventoryItem } from "../domain/inventory";
 import { productCategoryLabels } from "../domain/inventory";
 import type { Sale } from "../domain/sales";
 import type { WorkOrder, WorkOrderStatus } from "../domain/work-order";
-import { canTransition, workOrderEventLabels, workOrderStatusLabels, workOrderTransitions } from "../domain/work-order";
+import { canTransition, productionPipeline, stageEvent, workOrderEventLabels, workOrderStatuses, workOrderStatusLabels, workOrderTransitions } from "../domain/work-order";
 import { isOverdueOrder, overdueOrders } from "../domain/dashboard";
 import { formatPrescriptionEye, formatPrescriptionMeasures, prescriptionUsageLabels } from "../domain/clinical";
 import { ReceptionService } from "../domain/reception-service";
@@ -24,14 +24,18 @@ const receptionService = new ReceptionService(new LocalCustomerRepository(), new
 const inventoryService = new InventoryService(new LocalInventoryRepository());
 const transitionLabels: Record<WorkOrderStatus, string> = {
   OPEN: "",
+  SENT_TO_LAB: "Enviar ao laboratório",
   IN_PRODUCTION: "Iniciar produção",
+  RETURNED: "Registrar retorno",
+  IN_INSPECTION: "Iniciar conferência",
   READY: "Marcar pronta",
+  AWAITING_PICKUP: "Avisar cliente",
   DELIVERED: "Entregar",
   CANCELLED: "Cancelar",
 };
 type Filter = "ALL" | "ATRASADAS" | WorkOrderStatus;
-const filters: readonly Filter[] = ["ALL", "ATRASADAS", "OPEN", "IN_PRODUCTION", "READY", "DELIVERED", "CANCELLED"];
-const filterLabels: Record<Filter, string> = { ALL: "Todas", ATRASADAS: "Atrasadas", OPEN: workOrderStatusLabels.OPEN, IN_PRODUCTION: workOrderStatusLabels.IN_PRODUCTION, READY: workOrderStatusLabels.READY, DELIVERED: workOrderStatusLabels.DELIVERED, CANCELLED: workOrderStatusLabels.CANCELLED };
+const filters: readonly Filter[] = ["ALL", "ATRASADAS", ...workOrderStatuses];
+const filterLabels: Record<Filter, string> = { ALL: "Todas", ATRASADAS: "Atrasadas", ...workOrderStatusLabels };
 const orderCode = (order: WorkOrder) => order.id.slice(-6).toUpperCase();
 
 export function WorkOrdersPage() {
@@ -237,7 +241,7 @@ export function WorkOrderDetailPage() {
   if (loading && !order) return <div className="page"><p className="eyebrow">Operação</p><h1>Abrindo ordem</h1><p role="status">Carregando os dados…</p></div>;
   if (!order) return <div className="page"><p className="eyebrow">Operação</p><h1>Ordem não encontrada</h1>{error && <p role="alert" className="notice error-text">{error}</p>}<Link className="button" to="/ordens-servico">Voltar às ordens</Link></div>;
   const events = [...(order.events ?? [])].reverse();
-  const acceptsInputs = order.status === "OPEN" || order.status === "IN_PRODUCTION" || order.status === "READY";
+  const acceptsInputs = order.status !== "DELIVERED" && order.status !== "CANCELLED";
   return <PrintLayout title={`Ordem ${orderCode(order)}`} meta={`${customer?.name ?? "Cliente"} · ${sale?.description ?? "Venda"} · ${workOrderStatusLabels[order.status]}`} actions={<Link className="button" to="/ordens-servico">Voltar à lista</Link>}>
     {message && <p className="notice success no-print" role="status">{message}</p>}
     {error && <p className="notice error-text no-print" role="alert">{error} <Button type="button" onClick={retry}>Tentar novamente</Button></p>}
@@ -251,6 +255,24 @@ export function WorkOrderDetailPage() {
       {order.cancelReason && <p className="error-text">Motivo do cancelamento: {order.cancelReason}</p>}
       <p className="help-text">Criada em {new Date(order.createdAt).toLocaleString("pt-BR")}{sale ? ` · Venda R$ ${sale.total.toFixed(2)}` : ""}</p>
       {customer && <Link to={`/clientes/${customer.id}`}>Ver histórico do cliente</Link>}
+    </section>
+
+    <section className="card">
+      <h2>Progresso da fabricação</h2>
+      <ol className="work-order-progress">
+        {productionPipeline.map((status) => {
+          const event = stageEvent(order, status);
+          const current = order.status === status;
+          const at = event?.at ?? (status === "OPEN" ? order.createdAt : undefined);
+          const author = event?.author ?? (status === "OPEN" ? "" : undefined);
+          return <li key={status} className={`progress-stage${current ? " is-current" : ""}${at ? " is-done" : ""}`}>
+            <strong>{workOrderStatusLabels[status]}</strong>
+            <span className="help-text">{current ? "Etapa atual" : at ? "Concluída" : "Pendente"}</span>
+            {at && <span className="help-text">{author ? `${author} · ` : ""}{new Date(at).toLocaleString("pt-BR")}</span>}
+          </li>;
+        })}
+      </ol>
+      {order.status === "CANCELLED" && <p className="help-text">Ordem cancelada — as etapas acima mostram o histórico registrado.</p>}
     </section>
 
     {sale && <section className="card">
