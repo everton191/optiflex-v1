@@ -4,6 +4,16 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `4f78fe6` + docs — Cadastro completo de empresas (F2-01)
+
+- `src/domain/organization.ts` (novo): `onlyDigits`, `formatCnpj` (máscara progressiva XX.XXX.XXX/XXXX-XX), `isValidCnpj` (dígitos verificadores — pesos 5432/98765432 e 6/5432/98765432; rejeita 14 dígitos repetidos), `normalizeOrganizationSettings` (trim; opcionais vazios → `undefined`; UF para maiúsculas) e `assertValidOrganizationSettings` (nome da organização e cargo clínico obrigatórios; CNPJ, e-mail, UF com 2 letras e CEP com 8 dígitos validados quando presentes).
+- `src/domain/access.ts`: `OrganizationSettings` estendido com `legalName?` (razão social), `cnpj?`, `phone?`, `email?` e endereço (`addressStreet/Number/District/City/State/Zip?`) — campos opcionais, **sem bump Dexie** (linha única `current`).
+- `src/app/providers.tsx`: `saveSettings` normaliza e valida antes de persistir e sincroniza o estado com o valor normalizado.
+- `src/app/AdminWorkspace.tsx` (`SettingsPage`): seções "Dados da empresa" (razão social, CNPJ formatado ao digitar, telefone, e-mail) e "Endereço" (rua, número, bairro, cidade, UF, CEP); erro exibido na UI com `errorMessage`; suporte/limpa o aviso de salvo ao editar.
+- `src/app/DashboardWorkspace.tsx`: identificação da empresa (razão social · CNPJ · cidade/UF) no cabeçalho quando preenchida (CA "exibidos na identificação da empresa").
+- `src/domain/backup.ts`: bloco `settings` valida tipos dos opcionais e CNPJ (string não vazia precisa ser válida) — risco do card coberto.
+- Testes novos: `organization.test.ts` (7: dígitos verificadores, formatação progressiva, normalização, payload completo, nomes em branco, CNPJ/e-mail/UF/CEP inválidos) + backup (+1: campos jurídicos aceitos, CNPJ inválido e e-mail não-string rejeitados, CNPJ em branco aceito). Total: **335/335** (32 arquivos), build 0, tsc 0. Card: F2-01/#23 → DONE.
+
 ### `7de46e6` + docs — Entrega ao cliente (F3-19)
 
 - `src/domain/work-order.ts`: `WorkOrder.receivedBy?`/`deliveredNote?`; novo tipo de evento `DELIVERY` ("Entrega registrada", label em `workOrderEventLabels` — backup aceita automaticamente via `Object.hasOwn`); `stageEvent` passou a reconhecer eventos `DELIVERY` para marcar a etapa final no card de progresso.

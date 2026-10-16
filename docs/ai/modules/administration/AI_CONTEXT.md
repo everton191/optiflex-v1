@@ -6,7 +6,7 @@
 - Contexto global carrega dados em paralelo.
 - CRUD de usuários (criar/editar função e lojas, inativar/reativar) com validação de e-mail/duplicidade.
 - CRUD de lojas em `/admin/lojas` (`StoresPage`, F2-02 `c4e4e31`): criar/renomear/inativar/reativar com nome único e inativação não destrutiva; `refreshStores` mantém o seletor do topo atualizado na hora.
-- Configuração permite nome da organização e cargo clínico exibido.
+- Configuração permite nome da organização, cargo clínico e **identificação completa da empresa** (F2-01 `4f78fe6`): razão social, CNPJ (formatado ao digitar e validado por dígito verificador), telefone, e-mail e endereço (rua, número, bairro, cidade, UF, CEP) — opcionais normalizados para `undefined` quando vazios; identificação (razão social · CNPJ · cidade/UF) aparece no dashboard.
 - Troca de loja persiste no IndexedDB.
 
 ## Current Decisions
@@ -38,6 +38,7 @@
 
 ## Recent Structural Changes
 
+- F2-01 (08/10/2026, `4f78fe6`): `src/domain/organization.ts` (CNPJ com dígitos verificadores, `normalizeOrganizationSettings`/`assertValidOrganizationSettings`); `OrganizationSettings` com campos jurídicos/endereço/contatos (opcionais, sem bump); `saveSettings` valida+normaliza antes de persistir; `SettingsPage` com seções "Dados da empresa" e "Endereço" + erro na UI; dashboard exibe a identificação; backup valida bloco `settings`; testes `organization.test.ts` (7) + backup (+1). 335/335.
 - F2-02 (08/10/2026, `c4e4e31`): `StoresPage` + rota `/admin/lojas` (`stores.manage`), `createStore/updateStore/setStoreActive`, `refreshStores` no contexto, guarda de loja atual no fallback do provider; `administration-service.test.ts` +7 e `storage/administration.test.ts` (3).
 - F2-04 (08/10/2026): CRUD de usuários em `administration-service.ts` + `UsersPage`; bloqueio de sessão inativa em `providers.tsx`; `administration-service.test.ts` (9) e `access.test.ts` (10).
 - Migração 9 adiciona os índices `name` de lojas/usuários que faltavam e causavam SchemaError no boot.
@@ -54,4 +55,4 @@
 
 ## Next Likely Task
 
-Fila do KANBAN: F3-02 cadastro de atendimento (`#41`) ou F2-07 validação de CPF/CNPJ (`#29`). (F2-02 concluída em `c4e4e31`.)
+Fila do KANBAN: F1-10 auditoria de alterações (`#18`).

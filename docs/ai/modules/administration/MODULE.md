@@ -6,7 +6,7 @@ Inicializar e expor organização, sessão, lojas, loja atual, usuários e confi
 
 ## Directory
 
-Código distribuído entre `src/app/providers.tsx`, `src/app/AdminWorkspace.tsx` (UI, F1-03), `src/domain/access.ts`, `src/domain/administration-service.ts` e storage local.
+Código distribuído entre `src/app/providers.tsx`, `src/app/AdminWorkspace.tsx` (UI, F1-03), `src/domain/access.ts`, `src/domain/organization.ts` (normalização/validação da identificação da empresa, F2-01), `src/domain/administration-service.ts` e storage local.
 
 ## Routes
 
@@ -17,7 +17,7 @@ Código distribuído entre `src/app/providers.tsx`, `src/app/AdminWorkspace.tsx`
 
 ## Main Pages
 
-`StoresPage`, `UsersPage`, `ProfilesPage`, `SettingsPage`.
+`StoresPage`, `UsersPage`, `ProfilesPage`, `SettingsPage` (identificação completa da organização: nome, cargo clínico, razão social, CNPJ formatado/validado, telefone, e-mail e endereço — campos opcionais normalizados para `undefined` quando vazios; exibição no dashboard).
 
 ## Components
 
@@ -37,7 +37,7 @@ Não há store dedicada. React Context mantém o estado global.
 
 ## Models
 
-`OrganizationSettings`, `LocalSession`, `Store`, `CurrentStoreContext`, `User`.
+`OrganizationSettings` (`organizationName`, `clinicalProfessionalLabel` + opcionais `legalName`, `cnpj`, `phone`, `email`, `addressStreet`, `addressNumber`, `addressDistrict`, `addressCity`, `addressState`, `addressZip` — sem bump Dexie: linha única `current`), `LocalSession`, `Store`, `CurrentStoreContext`, `User`; helpers em `organization.ts`: `onlyDigits`, `formatCnpj`, `isValidCnpj` (dígitos verificadores), `normalizeOrganizationSettings`, `assertValidOrganizationSettings`.
 
 ## Permissions
 
@@ -66,7 +66,7 @@ Não mudar schema ou seeds por ajuste visual. Preservar a experiência de falha 
 
 ### Alterar configuração
 
-→ `SettingsPage`, `OrganizationSettings`, SettingsRepository.
+→ `SettingsPage`, `OrganizationSettings`, `organization.ts` (normaliza/valida: CNPJ com dígito verificador, e-mail, UF com 2 letras, CEP com 8 dígitos), `saveSettings` do provider (valida antes do `SettingsRepository.save`) e bloco `settings` do `backup.ts` (aceita campos novos, rejeita CNPJ inválido).
 
 ### Alterar troca de loja
 
