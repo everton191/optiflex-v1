@@ -4,6 +4,16 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `09e816a` + docs — Impressões e PDFs: PrintLayout compartilhado (F7-13)
+
+- `src/design-system/components.tsx`: componente **`PrintLayout`** (`title`, `meta?`, `brand?` padrão `"Opticore"` — nome e paleta preto/branco ajustáveis —, `actions?`, `children`) com toolbar `.no-print` e botão "Imprimir" (`window.print()`), folha `.print-sheet` com cabeçalho da marca, título e meta.
+- `src/styles.css`: classes `.print-layout`/`.print-toolbar`/`.print-sheet`/`.print-brand`/`.print-table`/`.print-total` em preto e branco; `@media print` estendido (esconde toolbar, zera paddings, limpa bordas da folha e do `.card` interno; links em preto).
+- Receita: `PrescriptionDocumentPage` envolvida no `PrintLayout` (eyebrow de `settings` e `Card` removidos da página do documento).
+- Venda/orçamento: nova **`SaleDocumentPage`** na rota `/vendas/:saleId` (guard `sales.read` em `route-guards.ts`; guarda de loja — venda de outra loja retorna erro); botão "Imprimir" do Caixa virou link para QUOTE e CONFIRMED; popup `window.open` + helper `escapeHtml` removidos.
+- OS: `WorkOrderDetailPage` envolvida no `PrintLayout`; Ações, Insumos e Histórico com `.no-print` — na impressão sobram cabeçalho + Situação.
+- Matriz de rotas: `permission-routes.test.ts` 20→21 rotas (índice de guards).
+- Total: **308/308** (31 arquivos), build 0, tsc 0. Card: F7-13/#128 → DONE. **Teste manual de impressão dos 4 documentos pendente** (CA do card).
+
 ### `affd182` + docs — Indicadores de carregamento e erros (F7-11)
 
 - Componente `ErrorState` (`role="alert"`, mensagem + botão "Tentar novamente") em `src/design-system/components.tsx` + classe `.error-state` em `styles.css`.

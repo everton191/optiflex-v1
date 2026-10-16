@@ -18,6 +18,7 @@ Todas as rotas usam `AppShell` (exceto `/login` e `/bloqueado`). A configuraçã
 | `/clinico` | `ClinicalQueuePage` | clinical | `clinical.workspace.access` | AppShell |
 | `/clinico/atendimento/:attendanceId` | `ClinicalWorkspacePage` | clinical | `clinical.workspace.access` | AppShell |
 | `/caixa` | `CashDeskPage` | cash/sales | `cash.read` | AppShell |
+| `/vendas/:saleId` | `SaleDocumentPage` — orçamento/venda imprimível (`PrintLayout`) | cash/sales | `sales.read` | AppShell |
 | `/estoque` | `InventoryPage` | inventory | `inventory.read` | AppShell |
 | `/ordens-servico` | `WorkOrdersPage` | work-orders | `sales.read` | AppShell |
 | `/ordens-servico/:orderId` | `WorkOrderDetailPage` | work-orders | `sales.read` | AppShell |
@@ -33,6 +34,7 @@ Todas as rotas usam `AppShell` (exceto `/login` e `/bloqueado`). A configuraçã
 ## Parâmetros e query strings
 
 - `customerId`: identifica o cliente carregado por `ReceptionService.getCustomer`.
+- `saleId`: identifica o documento em `/vendas/:saleId` (`SaleRepository.get` + guarda de loja — venda de outra loja retorna erro).
 - `attendanceId`: chave do `ClinicalRecord` e vínculo com atendimento; em `/atendimentos/:attendanceId` identifica o detalhe (`ReceptionService.getAttendance`, escopo de loja aplicado).
 - Cadastro/perfil encaminham `/atendimentos?customer=<id>` para pré-seleção validada na fila; o parâmetro é removido após o envio. Cadastro sem `attendance.create` retorna ao perfil. `/atendimentos/novo` também aceita `?customer=<id>`.
 - Agenda: view dia/semana com navegação anterior/próximo/hoje; converter evento navega para `/atendimentos?customer=<id>` do cliente do evento.

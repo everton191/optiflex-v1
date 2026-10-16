@@ -109,6 +109,14 @@
 - Caminho: `src/design-system/components.tsx`; classes `.eyebrow`/`.page-title`.
 - Uso real: cabeçalho das páginas de Clientes e Usuários (`eyebrow`, `title`, `intro`, `actions`).
 
+### PrintLayout (F7-13)
+
+- Caminho: `src/design-system/components.tsx`; classes `.print-layout`/`.print-toolbar`/`.print-sheet`/`.print-brand`/`.print-title`/`.print-meta`/`.print-table`/`.print-total` em `styles.css`.
+- Props: `title` (obrigatório), `meta?`, `brand?` (padrão `"Opticore"` — nome e paleta preto/branco ajustáveis depois), `actions?`, `children`.
+- Estrutura: toolbar `.no-print` com ações da página + botão "Imprimir" (`window.print()`), folha `.print-sheet` com cabeçalho da marca, título e meta em preto/branco.
+- Uso real: receita (`PrescriptionDocumentPage`), documento de orçamento/venda (`SaleDocumentPage` em `/vendas/:saleId`) e detalhe da OS (`WorkOrderDetailPage` — Ações/Insumos/Histórico com `.no-print`).
+- `@media print` esconde shell/toolbar, zera paddings e limpa bordas da folha; PDF local = "Salvar como PDF" do diálogo nativo do navegador.
+
 ## Elementos compartilhados via classes
 
 - Page header: `.cash-heading` continua exclusiva do caixa; `.page-title` é consumido pelo componente `PageHeader`.
@@ -160,6 +168,6 @@ Não há tokens separados para sizes, z-index ou breakpoints.
 ## Regra de mudança
 
 - Cor/espaço/raio/sombra global → `tokens.css`.
-- Componentes globais (Button, Input, Card, Select, Badge, Tabs, Table, Dialog, Drawer, Toast, Tooltip, Search, EmptyState, Skeleton, ErrorState, PageHeader) → `components.tsx` e classe global em `styles.css`.
+- Componentes globais (Button, Input, Card, Select, Badge, Tabs, Table, Dialog, Drawer, Toast, Tooltip, Search, EmptyState, Skeleton, ErrorState, PageHeader, PrintLayout) → `components.tsx` e classe global em `styles.css`.
 - Menu/topbar/responsividade → `AppShell.tsx` + `styles.css`.
 - Estilo exclusivo de página → seção correspondente de `styles.css`.

@@ -56,7 +56,7 @@ Classificação de inventário (Etapa 4) no corpo de cada card:
 
 - Issues totais: **155** (8 épicas + 147 tarefas).
 - Tarefas por fase: F1=14 · F2=18 · F3=20 · F4=20 · F5=19 · F6=19 · F7=19 · F8=18.
-- Tarefas por status (revisado em 08/10/2026; F1-09, F2-04, F7-02, F1-11, F3-09, F3-14, F1-02, F1-06, F4-16, F2-05, F4-10, F4-18, F4-12, F2-06, F3-01, F8-06, F8-07, F1-07, F3-17, F2-11, F2-02, F3-02, F3-03, F2-07, F3-10, F4-11, F2-14, F3-07, F8-10, F8-02, F7-01, F1-05, F1-03, F7-03, F2-08, F7-05, F1-12, F3-06, F3-05 e F7-11 concluídas no mesmo dia): DONE=58 · IN PROGRESS=0 · READY=3 · TESTING=0 · CODE REVIEW=0 · BACKLOG=36 · BLOCKED=50.
+- Tarefas por status (revisado em 08/10/2026; F1-09, F2-04, F7-02, F1-11, F3-09, F3-14, F1-02, F1-06, F4-16, F2-05, F4-10, F4-18, F4-12, F2-06, F3-01, F8-06, F8-07, F1-07, F3-17, F2-11, F2-02, F3-02, F3-03, F2-07, F3-10, F4-11, F2-14, F3-07, F8-10, F8-02, F7-01, F1-05, F1-03, F7-03, F2-08, F7-05, F1-12, F3-06, F3-05, F7-11 e F7-13 concluídas no mesmo dia): DONE=59 · IN PROGRESS=0 · READY=2 · TESTING=0 · CODE REVIEW=0 · BACKLOG=36 · BLOCKED=50.
 - Bloqueios: **50 tarefas** bloqueadas — 47 por dependência de fase futura/externa + **3 reclassificadas em 08/10** (F4-13 #70, F8-03 #137, F3-20 #57: status desatualizado, decisão externa já registrada).
 - **Revisão de dependências 08/10/2026:** 7 ciclos detectados (SCC/Tarjan sobre este arquivo) e corrigidos em KANBAN + corpos das issues; **0 ciclos remanescentes**. Detalhe antes/depois em `DEPENDENCIES.md`.
 
@@ -233,7 +233,7 @@ Regra de ouro: **nunca mover para DONE sem evidência verificável** (comando de
 | F7-10 | [Busca global](https://github.com/everton191/optiflex-v1/issues/125) | Ux | BACKLOG | p2 | F1-11, F7-01. |
 | F7-11 | [Indicadores de carregamento e erros](https://github.com/everton191/optiflex-v1/issues/126) | Ux | DONE | p1 | F1-12 (feito). Entregue em `affd182` — componente `ErrorState` (`role="alert"` + botão "Tentar novamente") em `components.tsx` com `.error-state` em `styles.css`; `Skeleton` aplicado no carregamento de Estoque, Recepção (agenda e fila), Ordens e Caixa; `EmptyState` nos vazios de Estoque, Recepção e Ordens; erro com retry no Caixa e na fila; 308/308, build 0, tsc 0. Teste manual de falha simulada pendente (CA do card). |
 | F7-12 | [Notificações](https://github.com/everton191/optiflex-v1/issues/127) | Ux | BACKLOG | p2 | F4-13, F3-17, F4-04. |
-| F7-13 | [Impressões e PDFs](https://github.com/everton191/optiflex-v1/issues/128) | Ux | READY | p1 | F3-05, F3-10. Ciclo corrigido 08/10: F4-14 depende de F7-13. |
+| F7-13 | [Impressões e PDFs](https://github.com/everton191/optiflex-v1/issues/128) | Ux | DONE | p1 | F3-05, F3-10. Ciclo corrigido 08/10: F4-14 depende de F7-13. Entregue em `09e816a` — componente `PrintLayout` (`title`/`meta`/`brand`/`actions`; marca "Opticore" e paleta preto/branco ajustáveis) em `components.tsx` + classes `.print-*` em `styles.css` (`@media print` estendido); receita envolvida no layout; nova rota `/vendas/:saleId` (`SaleDocumentPage`, guard `sales.read`) com botão "Imprimir" no Caixa (popup `window.open` removido); detalhe da OS em `PrintLayout` com Ações/Insumos/Histórico em `.no-print`; matriz de guards = 21 rotas; 308/308, build 0, tsc 0. Teste manual de impressão dos 4 documentos pendente (CA do card). |
 | F7-14 | [Etiquetas e comprovantes](https://github.com/everton191/optiflex-v1/issues/129) | Ux | BACKLOG | p3 | F7-13, F2-14. |
 | F7-15 | [Assistente de configuração inicial](https://github.com/everton191/optiflex-v1/issues/130) | Ux | BACKLOG | p3 | F2-18. |
 | F7-16 | [Ajuda contextual](https://github.com/everton191/optiflex-v1/issues/131) | Ux | BACKLOG | p3 | F7-01. |
@@ -271,14 +271,13 @@ Ordem recomendada para a próxima sessão de desenvolvimento (status READY/IN PR
 
 | # | ID | Issue | Tarefa | Prioridade | Dependências | Justificativa |
 |---|---|---|---|---|---|---|
-| 1 | F7-13 | #128 | [Ux] Impressões e PDFs | P1 | F3-05 (feito), F3-10 (feito) | Design system e fluxos prontos; fecha impressão de receita, orçamento, venda e OS antes do piloto. |
-| 2 | F3-08 | #47 | [Clinical] DP/DNP e altura de montagem | P1 | F3-07 (feito) | Desbloqueada por F3-07; entra à frente de F3-11, que depende dela. |
-| 3 | F3-11 | #50 | [Sales] PDV de armações e lentes | P1 | F2-11, F3-10 (feitos); F3-08 (#2) | Dependência de F3-08 em fila logo acima; começa após concluir o card anterior. |
-| 4 | F3-16 | #154 | [Work-orders] Acompanhamento da fabricação | P2 | F3-14 (feito) | Desbloqueada por F3-14; entra à frente de F3-19, que depende dela. |
-| 5 | F3-19 | #56 | [Work-orders] Entrega ao cliente | P1 | F3-16 (#4); F4-12 (feito) | Entrega fecha a cadeia OS→cliente; F3-16 em fila logo acima. |
-| 6 | F2-01 | #23 | [Administration] Cadastro completo de empresas | P1 | nenhuma | Sem dependências; F2-03 depende dela (ciclo corrigido 08/10). |
-| 7 | F1-10 | #18 | [Infraestrutura] Auditoria de alterações | P1 | F1-02 (feito), F2-05 (feito) | Dependências concluídas; libera F3-12. |
-| 8 | F8-17 | #151 | [Infraestrutura] Preparação de versões | P2 | F8-02 (feito) | Reserva promovida: F8-02 entregue e nenhuma outra dependência. |
+| 1 | F3-08 | #47 | [Clinical] DP/DNP e altura de montagem | P1 | F3-07 (feito) | Desbloqueada por F3-07; entra à frente de F3-11, que depende dela. |
+| 2 | F3-11 | #50 | [Sales] PDV de armações e lentes | P1 | F2-11, F3-10 (feitos); F3-08 (#1) | Dependência de F3-08 em fila logo acima; começa após concluir o card anterior. |
+| 3 | F3-16 | #154 | [Work-orders] Acompanhamento da fabricação | P2 | F3-14 (feito) | Desbloqueada por F3-14; entra à frente de F3-19, que depende dela. |
+| 4 | F3-19 | #56 | [Work-orders] Entrega ao cliente | P1 | F3-16 (#3); F4-12 (feito) | Entrega fecha a cadeia OS→cliente; F3-16 em fila logo acima. |
+| 5 | F2-01 | #23 | [Administration] Cadastro completo de empresas | P1 | nenhuma | Sem dependências; F2-03 depende dela (ciclo corrigido 08/10). |
+| 6 | F1-10 | #18 | [Infraestrutura] Auditoria de alterações | P1 | F1-02 (feito), F2-05 (feito) | Dependências concluídas; libera F3-12. |
+| 7 | F8-17 | #151 | [Infraestrutura] Preparação de versões | P2 | F8-02 (feito) | Reserva promovida: F8-02 entregue e nenhuma outra dependência. |
 
 Os `#?` devem ser resolvidos pela tabela acima (coluna ID → link da issue). Os números já estão fixados nas tabelas das fases; para referência rápida: consulte `DEPENDENCIES.md`.
 

@@ -2,7 +2,7 @@
 
 **Não duplica:** a lista canônica de rotas está em `docs/ai/04_ROUTE_MAP.md`; a situação detalhada na auditoria (`docs/DEVELOPMENT_AUDIT_A_H.md`, seção "Inventário completo de rotas e guias"). Aqui: visão de produto com **status + card responsável**.
 
-Atualizado em: 07/10/2026 (verificação de `router.tsx` no mesmo dia).
+Atualizado em: 08/10/2026 (verificação de `router.tsx`; impressões F7-13).
 
 ## Status atual por grupo de tela
 
@@ -15,21 +15,21 @@ Atualizado em: 07/10/2026 (verificação de `router.tsx` no mesmo dia).
 | Atendimento | `/atendimentos` | PARCIAL (fila WAITING) | F3-02, F3-03 |
 | Agenda | `/agenda`, `/agenda/dia`, `/agenda/semana` | AUSENTE | F3-01 |
 | Clínico | `/clinico`, `/clinico/atendimento/:id` | PARCIAL (sem sub-rotas/guia; anexos com conteúdo real) | F3-06..08, F1-12 |
-| Prescrições/Exames | `/prescricoes*`, `/exames*` | AUSENTE | F3-05, F3-06 |
-| Comercial | `/caixa` (+ redirects `/vendas`, `/pagamentos`) | OK/parcial — abas Vendas/Recebimentos/Sessão + itens de estoque | F3-10, F3-11, F4-10..16 |
-| OS | `/ordens-servico` | PARCIAL — em desenvolvimento; sem detalhe por URL | F3-14 (IN PROGRESS) |
+| Prescrições/Exames | `/prescricoes/:prescriptionId` (documento por versão) | OK parcial — receita com impressão (F3-05/06 feitos); `/exames*` ausente | F3-05 (feito), F3-06 (feito) |
+| Comercial | `/caixa`, `/vendas/:saleId` (documento) (+ redirects `/vendas`, `/pagamentos`) | OK/parcial — abas Vendas/Recebimentos/Sessão + itens de estoque + impressão de orçamento/venda (F7-13) | F3-10, F3-11, F4-10..16, F7-13 |
+| OS | `/ordens-servico`, `/ordens-servico/:orderId` | PARCIAL — lista e detalhe por URL com impressão integrada (F7-13) | F3-14 (feito) |
 | Estoque | `/estoque` | OK — cadastro/movimentação/histórico/alertas | F4-01..04 DONE; F2-11 (catálogo) |
 | Estoque extra | `/estoque/produto/:id`, `/movimentacoes`, `/transferencias` | AUSENTE | F4-06, F2-14 |
 | Financeiro | `/financeiro*` (receber, carnê, pagar) | AUSENTE | F4-13..15 |
 | Caixa subrotas | `/caixa/abrir`, `/caixa/sessao/:id`, `/caixa/fechar` | Parcial (abas) — subrotas não usadas | F4-16, F4-17 DONE |
-| Relatórios | `/relatorios*` | AUSENTE | F4-19, F7-13 |
+| Relatórios | `/relatorios*` | AUSENTE | F4-19 |
 | Administração | `/admin/usuarios`, `/admin/perfis`, `/admin/configuracoes` | PARCIAL (listas/config básica) | F2-04, F2-05, F2-01 |
 | Administração extra | `/admin/lojas`, `/permissoes`, `/integracoes`, `/auditoria`, `/importacao` | AUSENTE | F2-02, F1-10, F2-16 |
 | Pós-venda | `/garantias`, `/reparos` | AUSENTE | F3-20 |
 | Avisos | `/notificacoes` | AUSENTE | F7-12 |
 | Busca global | (atalho Ctrl+K) | AUSENTE | F7-10 |
 | Erros | `/sem-acesso` existe; rota `*` (página desconhecida) | AUSENTE p/ `*` | F1-12 |
-| Impressão | telas de print/PDF | AUSENTE | F7-13, F7-14 |
+| Impressão | PrintLayout + 4 documentos: receita (`/prescricoes/:id`), orçamento/venda (`/vendas/:saleId`) e OS (detalhe) | OK parcial — impressão/PDF local via `window.print()`; etiquetas/comprovantes pendentes | F7-13 (feito), F7-14 |
 
 ## Regras para novas telas
 
