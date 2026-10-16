@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { errorMessage } from "../domain/errors";
 import { Link, useBlocker, useParams } from "react-router-dom";
-import { Button, Card, Input } from "../design-system/components";
+import { Button, Card, Input, PrintLayout } from "../design-system/components";
 import { ClinicalService } from "../domain/clinical-service";
 import { ATTACHMENT_MAX_BYTES, ATTACHMENT_TYPE_LABEL, activePrescription, attachmentCategoryKeys, clinicalAttachmentCategoryLabels, formatPrescriptionEye, prescriptionDocument, prescriptionUsageKeys, prescriptionUsageLabels, type ClinicalAttachment, type ClinicalAttachmentCategory, type ClinicalVersion, type Prescription, type PrescriptionUsage } from "../domain/clinical";
 import type { Customer } from "../domain/customer";
@@ -189,7 +189,7 @@ function ClinicalWorkspace({ attendanceId }: { attendanceId: string }) {
 
 export function PrescriptionDocumentPage() {
   const { prescriptionId = "" } = useParams();
-  const { currentStoreId, settings } = useAppContext();
+  const { currentStoreId } = useAppContext();
   const session = useSession();
   const [prescription, setPrescription] = useState<Prescription>();
   const [customer, setCustomer] = useState<Customer>();
@@ -210,17 +210,14 @@ export function PrescriptionDocumentPage() {
   if (error) return <div className="page"><h1>Receita óptica</h1><p role="alert" className="notice error-text">{error}</p><div className="form-actions"><Button onClick={() => setAttempt((value) => value + 1)}>Tentar novamente</Button>{prescription && <Link className="button" to={`/clinico/atendimento/${prescription.attendanceId}`}>Voltar à consulta</Link>}</div></div>;
   if (!prescription) return <div className="page"><h1>Receita óptica</h1><p role="status">Carregando a receita…</p></div>;
   const document = prescriptionDocument(prescription, customer?.name ?? "");
-  return <div className="page prescription-document">
-    <div className="page-title no-print"><div><p className="eyebrow">{settings.organizationName || "Opticore"}</p><h1>{document.title}</h1><p>{document.versionLine} · {document.issuedAtLine}</p></div><div className="form-actions"><Button type="button" onClick={() => window.print()}>Imprimir</Button><Link className="button" to={`/clinico/atendimento/${prescription.attendanceId}`}>Voltar à consulta</Link></div></div>
-    <Card>
-      <p><strong>Paciente:</strong> {document.patient}</p>
-      <p><strong>Profissional:</strong> {document.professional}</p>
-      {document.usage && <p><strong>Tipo de uso:</strong> {document.usage}</p>}
-      <p>{document.odLine}</p>
-      <p>{document.oeLine}</p>
-      {document.notes && <p><strong>Observações:</strong> {document.notes}</p>}
-      {document.retificationLine && <p><strong>{document.retificationLine}</strong></p>}
-      <p className="help-text no-print">Documento por versão: a receita é imutável — reimpressões sempre mostram o número da versão.</p>
-    </Card>
-  </div>;
+  return <PrintLayout title={document.title} meta={`${document.versionLine} · ${document.issuedAtLine}`} actions={<Link className="button" to={`/clinico/atendimento/${prescription.attendanceId}`}>Voltar à consulta</Link>}>
+    <p><strong>Paciente:</strong> {document.patient}</p>
+    <p><strong>Profissional:</strong> {document.professional}</p>
+    {document.usage && <p><strong>Tipo de uso:</strong> {document.usage}</p>}
+    <p>{document.odLine}</p>
+    <p>{document.oeLine}</p>
+    {document.notes && <p><strong>Observações:</strong> {document.notes}</p>}
+    {document.retificationLine && <p><strong>{document.retificationLine}</strong></p>}
+    <p className="help-text no-print">Documento por versão: a receita é imutável — reimpressões sempre mostram o número da versão.</p>
+  </PrintLayout>;
 }

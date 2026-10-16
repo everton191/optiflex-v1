@@ -104,3 +104,25 @@ export function ErrorState({ message, onRetry, retryLabel = "Tentar novamente" }
 export function PageHeader({ eyebrow, title, intro, actions }: { eyebrow?: string; title: string; intro?: string; actions?: ReactNode }) {
   return <>{eyebrow && <p className="eyebrow">{eyebrow}</p>}<div className="page-title"><div><h1>{title}</h1>{intro && <p className="page-intro">{intro}</p>}</div>{actions && <div className="page-title-actions">{actions}</div>}</div></>;
 }
+
+export interface PrintLayoutProps {
+  title: string;
+  meta?: string;
+  brand?: string;
+  actions?: ReactNode;
+  children: ReactNode;
+}
+
+export function PrintLayout({ title, meta, brand = "Opticore", actions, children }: PrintLayoutProps) {
+  return <div className="page print-layout">
+    <div className="print-toolbar no-print">{actions}<Button type="button" onClick={() => window.print()}>Imprimir</Button></div>
+    <article className="print-sheet">
+      <header className="print-sheet-header">
+        <p className="print-brand">{brand}</p>
+        <h1 className="print-title">{title}</h1>
+        {meta && <p className="print-meta">{meta}</p>}
+      </header>
+      <div className="print-body">{children}</div>
+    </article>
+  </div>;
+}

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { errorMessage } from "../domain/errors";
 import { Link, useParams } from "react-router-dom";
-import { Button, EmptyState, Input, Skeleton } from "../design-system/components";
+import { Button, EmptyState, Input, PrintLayout, Skeleton } from "../design-system/components";
 import { hasPermission } from "../domain/access";
 import type { Customer } from "../domain/customer";
 import type { InventoryItem } from "../domain/inventory";
@@ -236,13 +236,9 @@ export function WorkOrderDetailPage() {
   if (!order) return <div className="page"><p className="eyebrow">Operação</p><h1>Ordem não encontrada</h1>{error && <p role="alert" className="notice error-text">{error}</p>}<Link className="button" to="/ordens-servico">Voltar às ordens</Link></div>;
   const events = [...(order.events ?? [])].reverse();
   const acceptsInputs = order.status === "OPEN" || order.status === "IN_PRODUCTION" || order.status === "READY";
-  return <div className="page work-orders-page">
-    <div className="page-title">
-      <div><p className="eyebrow">Operação</p><h1>Ordem {orderCode(order)}</h1><p className="page-intro">{customer?.name ?? "Cliente"} · {sale?.description ?? "Venda"}</p></div>
-      <Link className="button" to="/ordens-servico">Voltar à lista</Link>
-    </div>
-    {message && <p className="notice success" role="status">{message}</p>}
-    {error && <p className="notice error-text" role="alert">{error} <Button type="button" onClick={retry}>Tentar novamente</Button></p>}
+  return <PrintLayout title={`Ordem ${orderCode(order)}`} meta={`${customer?.name ?? "Cliente"} · ${sale?.description ?? "Venda"} · ${workOrderStatusLabels[order.status]}`} actions={<Link className="button" to="/ordens-servico">Voltar à lista</Link>}>
+    {message && <p className="notice success no-print" role="status">{message}</p>}
+    {error && <p className="notice error-text no-print" role="alert">{error} <Button type="button" onClick={retry}>Tentar novamente</Button></p>}
 
     <section className="card">
       <h2>Situação</h2>
@@ -255,7 +251,7 @@ export function WorkOrderDetailPage() {
       {customer && <Link to={`/clientes/${customer.id}`}>Ver histórico do cliente</Link>}
     </section>
 
-    {canManage && <section className="card">
+    {canManage && <section className="card no-print">
       <h2>Ações</h2>
       <div className="form-actions">
         {workOrderTransitions[order.status].filter((status) => status !== "CANCELLED").map((status) => <Button type="button" key={status} onClick={() => void transition(status)}>{transitionLabels[status]}</Button>)}
@@ -273,7 +269,7 @@ export function WorkOrderDetailPage() {
       </form>}
     </section>}
 
-    {canManage && acceptsInputs && <section className="card">
+    {canManage && acceptsInputs && <section className="card no-print">
       <h2>Insumos</h2>
       <form className="orders-form" onSubmit={recordInput}>
         <label>Produto<select value={inputItem} onChange={(event) => setInputItem(event.target.value)}><option value="">Selecione um item do estoque</option>{items.map((item) => <option key={item.id} value={item.id}>{item.name} · saldo {item.quantity}</option>)}</select></label>
@@ -283,8 +279,8 @@ export function WorkOrderDetailPage() {
       </form>
     </section>}
 
-    <h2 className="section-title">Histórico da ordem</h2>
-    <div className="list-card compact-list">
+    <h2 className="section-title no-print">Histórico da ordem</h2>
+    <div className="list-card compact-list no-print">
       {events.length ? events.map((event) => <article className="list-row" key={event.id}>
         <div>
           <strong>{workOrderEventLabels[event.type]}</strong>
@@ -294,5 +290,5 @@ export function WorkOrderDetailPage() {
         <div><span className="help-text">{new Date(event.at).toLocaleString("pt-BR")} · {event.author || "Sistema"}</span></div>
       </article>) : <p className="empty-state">Sem eventos registrados.</p>}
     </div>
-  </div>;
+  </PrintLayout>;
 }

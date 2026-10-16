@@ -1,6 +1,6 @@
 import { createBrowserRouter, Navigate, RouterProvider } from "react-router-dom";
 import { RequirePermission, RequireSession } from "./permissions";
-import { AttendanceDetailPage, AttendanceNewPage, AttendancePage, BlockedPage, CashDeskPage, ChangePasswordPage, ClinicalQueuePage, ClinicalWorkspacePage, CustomerEditPage, CustomerNewPage, CustomerProfilePage, CustomersPage, DashboardPage, ForbiddenPage, InventoryPage, LoginPage, ProfilesPage, PrescriptionDocumentPage, SettingsPage, StoresPage, UsersPage, WorkOrderDetailPage, WorkOrdersPage, AgendaPage } from "./pages";
+import { AttendanceDetailPage, AttendanceNewPage, AttendancePage, BlockedPage, CashDeskPage, ChangePasswordPage, ClinicalQueuePage, ClinicalWorkspacePage, CustomerEditPage, CustomerNewPage, CustomerProfilePage, CustomersPage, DashboardPage, ForbiddenPage, InventoryPage, LoginPage, ProfilesPage, PrescriptionDocumentPage, SaleDocumentPage, SettingsPage, StoresPage, UsersPage, WorkOrderDetailPage, WorkOrdersPage, AgendaPage } from "./pages";
 import { routeGuards } from "./route-guards";
 import { RouteErrorBoundary } from "./RouteErrorBoundary";
 import { AppShell } from "../shell/AppShell";
@@ -18,6 +18,7 @@ const guardedPages: Record<string, React.ReactNode> = {
   "clinico/atendimento/:attendanceId": <ClinicalWorkspacePage />,
   "prescricoes/:prescriptionId": <PrescriptionDocumentPage />,
   "caixa": <CashDeskPage />,
+  "vendas/:saleId": <SaleDocumentPage />,
   "estoque": <InventoryPage />,
   "ordens-servico": <WorkOrdersPage />,
   "ordens-servico/:orderId": <WorkOrderDetailPage />,
