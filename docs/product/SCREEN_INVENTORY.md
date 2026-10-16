@@ -14,7 +14,7 @@ Atualizado em: 08/10/2026 (verificação de `router.tsx`; impressões F7-13).
 | Perfil do cliente | abas resumo/clínico/óculos/compras/financeiro/garantias/documentos/histórico | AUSENTE | F2-09, F3-04, F3-20 |
 | Atendimento | `/atendimentos` | PARCIAL (fila WAITING) | F3-02, F3-03 |
 | Agenda | `/agenda`, `/agenda/dia`, `/agenda/semana` | AUSENTE | F3-01 |
-| Clínico | `/clinico`, `/clinico/atendimento/:id` | PARCIAL (sem sub-rotas/guia; anexos com conteúdo real) | F3-06..08, F1-12 |
+| Clínico | `/clinico`, `/clinico/atendimento/:id` | OK parcial — refração estruturada, uso/retificação e medidas de montagem (F3-06..08 feitos); sem sub-rotas/guia | F3-06/07/08 (feitos), F1-12 |
 | Prescrições/Exames | `/prescricoes/:prescriptionId` (documento por versão) | OK parcial — receita com impressão (F3-05/06 feitos); `/exames*` ausente | F3-05 (feito), F3-06 (feito) |
 | Comercial | `/caixa`, `/vendas/:saleId` (documento) (+ redirects `/vendas`, `/pagamentos`) | OK/parcial — abas Vendas/Recebimentos/Sessão + itens de estoque + impressão de orçamento/venda (F7-13) | F3-10, F3-11, F4-10..16, F7-13 |
 | OS | `/ordens-servico`, `/ordens-servico/:orderId` | PARCIAL — lista e detalhe por URL com impressão integrada (F7-13) | F3-14 (feito) |

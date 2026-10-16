@@ -19,6 +19,15 @@ Documento de regras operacionais relevantes para a ótica. Este arquivo nasceu c
 - **Persistência:** tabela `prescriptions` (Dexie v13) com guarda de loja pelo atendimento; backup `schema: 13` (schemas 10–12 importam com a tabela vazia).
 - **Fora do escopo:** cálculo automático de grau e decisões de tratamento. Regras clínicas devem ser homologadas com o responsável da operação.
 
+## Medidas de montagem: DP/DNP e altura (F3-08, 08/10/2026)
+
+- **Campos estruturados:** `Prescription.measures` opcional (`PrescriptionMeasures`) com DP total, DP longe, DP perto, altura OD e altura OE — todos em milímetros — e `origin` (`MEASURED` medido / `INFORMED` informado; rótulos em `measurementOriginLabels`). A origem é registrada e exibida para mitigar o risco de medida errada propagada.
+- **Validação:** `assertValidPrescriptionMeasures` — medidas precisam ser finitas e positivas ("Medida de montagem inválida (use milímetros positivos)."); origem desconhecida é rejeitada ("Origem das medidas inválida."). Medidas vazias são normalizadas para `undefined`; prescrições antigas sem medidas continuam válidas.
+- **Formulário clínico:** bloco DP total/DP longe/DP perto/Altura OD/Altura OE/Origem no formulário de refração; a retificação pré-preenche as medidas vigentes (mesmo fluxo dos graus) e emite nova versão append-only.
+- **Handoff até a OS (CA):** as medidas entram no snapshot `SalePrescription.measures` (`salePrescriptionSnapshot`) e o detalhe da OS exibe o cartão "Prescrição" com OD/OE e as medidas formatadas (`formatPrescriptionMeasures` → "DP total 63.00 mm · … · Medido") **sem redigitação**; sem medidas, a OS mostra "Medidas de montagem não registradas nesta prescrição."
+- **Documento imprimível:** a receita (`prescriptionDocument`) inclui a linha "Medidas de montagem:" quando presente.
+- **Fora do escopo:** captura por equipamento (autorefrator/pupillômetro) e cálculo automático.
+
 ## Prescrição estruturada: uso, retificação e venda (F3-06, 08/10/2026)
 
 - **Tipo de uso:** `Prescription.usage` opcional (`DISTANCE` à distância / `NEAR` à perto / `CONTINUOUS` uso contínuo / `MULTIFOCAL` multifocal), validado por `assertValidPrescriptionUsage` ("Tipo de uso inválido."). Prescrições antigas sem uso continuam válidas.

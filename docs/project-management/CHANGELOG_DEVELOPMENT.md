@@ -4,6 +4,14 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `ad8f5be` + docs — DP/DNP e altura de montagem (F3-08)
+
+- `src/domain/clinical.ts`: tipo **`PrescriptionMeasures`** — DP total/longe/perto, altura OD/OE (mm) + `origin` (`MEASURED` medido / `INFORMED` informado, rótulos em `measurementOriginLabels`); `assertValidPrescriptionMeasures` (finitas e positivas; origem válida), `normalizeMeasures` (vazio → `undefined`, prescrições antigas continuam válidas) e `formatPrescriptionMeasures` ("DP total 64.00 mm · … · Medido"); `Prescription.measures`/`PrescriptionInput.measures` e `measuresLine` no `prescriptionDocument`.
+- `src/domain/clinical-service.ts`: `issuePrescription`/`retifyPrescription` aceitam e repassam `measures`.
+- UI clínica (`ClinicalWorkspace.tsx`): bloco DP total/longe/perto, Altura OD/OE e Origem no formulário de refração; retificação pré-preenche as medidas; linha de medidas na lista de versões e no documento imprimível.
+- Handoff até a OS: `SalePrescription.measures` (snapshot + validação em `assertValidSalePrescription`); `WorkOrderDetailPage` ganha cartão "Prescrição" com OD/OE e medidas **sem redigitação** (sem medidas → aviso explícito).
+- Testes novos: `prescription.test.ts` +3 (medições impressas, validação, normalização/retificação), `sales-service.test.ts` +1 (snapshot com medidas e rejeição). Total: **312/312** (31 arquivos), build 0, tsc 0. Card: F3-08/#47 → DONE.
+
 ### `09e816a` + docs — Impressões e PDFs: PrintLayout compartilhado (F7-13)
 
 - `src/design-system/components.tsx`: componente **`PrintLayout`** (`title`, `meta?`, `brand?` padrão `"Opticore"` — nome e paleta preto/branco ajustáveis —, `actions?`, `children`) com toolbar `.no-print` e botão "Imprimir" (`window.print()`), folha `.print-sheet` com cabeçalho da marca, título e meta.
