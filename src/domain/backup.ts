@@ -4,6 +4,7 @@ import { isAttendancePriority } from "./customer";
 import { isProductCategory } from "./inventory";
 import { prescriptionUsageLabels } from "./clinical";
 import { quoteStatusLabels } from "./sales";
+import { isValidCnpj } from "./organization";
 import { workOrderEventLabels, workOrderStatusLabels } from "./work-order";
 
 // Session is intentionally excluded: restoring business data must not import a login.
@@ -71,6 +72,10 @@ export function validateBackup(value: unknown): BackupSnapshot {
       if ((name === "stores" || name === "users") && typeof row.active !== "boolean") throw invalid();
       if (name === "users" && (!Array.isArray(row.storeIds) || row.storeIds.some((id) => typeof id !== "string"))) throw invalid();
       if (name === "users" && (!Object.hasOwn(rolePermissions, row.role as string) || !["SELF", "STORE", "ORGANIZATION", "NETWORK"].includes(row.scope as string))) throw invalid();
+      if (name === "settings") {
+        for (const field of ["legalName", "phone", "email", "addressStreet", "addressNumber", "addressDistrict", "addressCity", "addressState", "addressZip"]) if (row[field] !== undefined && typeof row[field] !== "string") throw invalid();
+        if (row.cnpj !== undefined && (typeof row.cnpj !== "string" || (row.cnpj.trim() && !isValidCnpj(row.cnpj)))) throw invalid();
+      }
       if (name === "sales" && row.paymentStatus !== undefined && !["PENDING", "PARTIAL", "PAID"].includes(row.paymentStatus as string)) throw invalid();
       if (name === "sales" && row.quoteStatus !== undefined && !Object.hasOwn(quoteStatusLabels, row.quoteStatus as string)) throw invalid();
       if (name === "cashEntries" && row.paymentMethod !== undefined && !Object.hasOwn(paymentMethodLabels, row.paymentMethod as string)) throw invalid();

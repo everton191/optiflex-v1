@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { LocalSession, OrganizationSettings, Store, User } from "../domain/access";
 import { isSessionExpired, syncSessionRole } from "../domain/access";
+import { assertValidOrganizationSettings, normalizeOrganizationSettings } from "../domain/organization";
 import { buildAccessContext, canAccessStore, setAccessContext } from "../domain/access-context";
 import { AdministrationService, type StoreInput, type UserInput } from "../domain/administration-service";
 import { AuthenticationService } from "../domain/authentication-service";
@@ -100,8 +101,10 @@ export function AppProviders({ children }: { children: ReactNode }) {
   }, [attempt]);
 
   async function saveSettings(nextSettings: OrganizationSettings) {
-    await settingsRepository.save(nextSettings);
-    setSettings(nextSettings);
+    const normalized = normalizeOrganizationSettings(nextSettings);
+    assertValidOrganizationSettings(normalized);
+    await settingsRepository.save(normalized);
+    setSettings(normalized);
   }
   async function selectStore(storeId: string) {
     if (navigationLocked) throw new Error("Salve as alterações antes de trocar de loja.");

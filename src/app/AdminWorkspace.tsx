@@ -3,6 +3,7 @@ import { errorMessage } from "../domain/errors";
 import { Badge, Button, Input, PageHeader, Select, Table } from "../design-system/components";
 import { allPermissions, hasPermission, roleDefinitions } from "../domain/access";
 import type { RoleKey, Store, User } from "../domain/access";
+import { formatCnpj } from "../domain/organization";
 import { useAppContext, useSession } from "./providers";
 import { BackupPanel } from "./BackupPanel";
 
@@ -13,12 +14,31 @@ export function SettingsPage() {
   const { settings, saveSettings } = useAppContext();
   const [draft, setDraft] = useState(settings);
   const [saved, setSaved] = useState(false);
-  async function submit(event: React.FormEvent) { event.preventDefault(); await saveSettings(draft); setSaved(true); }
+  const [error, setError] = useState("");
+  async function submit(event: React.FormEvent) {
+    event.preventDefault();
+    setSaved(false); setError("");
+    try { await saveSettings(draft); setSaved(true); } catch (reason) { setError(errorMessage(reason, "Não foi possível salvar as configurações.")); }
+  }
+  const field = (key: keyof typeof draft) => ({ value: draft[key] ?? "", onChange: (event: React.ChangeEvent<HTMLInputElement>) => { setSaved(false); setDraft({ ...draft, [key]: event.target.value }); } });
   return <div className="page"><p className="eyebrow">Administração</p><h1>Configurações da organização</h1><form className="settings-form" onSubmit={submit}>
-    <label>Nome da organização<Input value={draft.organizationName} onChange={(event) => setDraft({ ...draft, organizationName: event.target.value })} required /></label>
-    <label>Cargo exibido na área clínica<Input value={draft.clinicalProfessionalLabel} onChange={(event) => setDraft({ ...draft, clinicalProfessionalLabel: event.target.value })} required /></label>
+    <label>Nome da organização<Input value={draft.organizationName} onChange={(event) => { setSaved(false); setDraft({ ...draft, organizationName: event.target.value }); }} required /></label>
+    <label>Cargo exibido na área clínica<Input value={draft.clinicalProfessionalLabel} onChange={(event) => { setSaved(false); setDraft({ ...draft, clinicalProfessionalLabel: event.target.value }); }} required /></label>
     <p className="help-text">Use o nome adotado pela empresa, como Médico, Oftalmologista ou Profissional autorizado.</p>
-    <Button type="submit">Salvar alterações</Button>{saved && <span className="success">Configuração salva.</span>}
+    <h2>Dados da empresa</h2>
+    <label>Razão social<Input {...field("legalName")} placeholder="Opcional" /></label>
+    <label>CNPJ<Input {...field("cnpj")} inputMode="numeric" placeholder="00.000.000/0000-00" onChange={(event) => { setSaved(false); setDraft({ ...draft, cnpj: formatCnpj(event.target.value) }); }} /></label>
+    <label>Telefone<Input {...field("phone")} placeholder="Opcional" /></label>
+    <label>E-mail<Input {...field("email")} type="email" placeholder="Opcional" /></label>
+    <h2>Endereço</h2>
+    <label>Rua<Input {...field("addressStreet")} placeholder="Opcional" /></label>
+    <label>Número<Input {...field("addressNumber")} placeholder="Opcional" /></label>
+    <label>Bairro<Input {...field("addressDistrict")} placeholder="Opcional" /></label>
+    <label>Cidade<Input {...field("addressCity")} placeholder="Opcional" /></label>
+    <label>UF<Input {...field("addressState")} maxLength={2} placeholder="Opcional" onChange={(event) => { setSaved(false); setDraft({ ...draft, addressState: event.target.value.toUpperCase() }); }} /></label>
+    <label>CEP<Input {...field("addressZip")} inputMode="numeric" placeholder="00000-000" /></label>
+    <p className="help-text">Campos opcionais: o CNPJ, e-mail e CEP são validados quando preenchidos; tudo aparece na identificação da empresa no painel.</p>
+    <div className="form-actions"><Button type="submit">Salvar alterações</Button>{saved && <span className="success">Configuração salva.</span>}{error && <span className="error-text" role="alert">{error}</span>}</div>
   </form><BackupPanel /></div>;
 }
 

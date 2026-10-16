@@ -100,9 +100,11 @@ export function DashboardPage() {
     { label: "Estoque", to: "/estoque", show: canReadInventory },
   ].filter((step) => step.show);
 
+  const organizationLine = [settings.legalName, settings.cnpj, [settings.addressCity, settings.addressState].filter(Boolean).join("/")].filter(Boolean).join(" · ");
+
   return <div className="page dashboard">
     <section className="flow-card"><p className="eyebrow">Fluxo principal do atendimento</p><div className="flow-steps">{flow.map((step, index) => <Link className="flow-step" key={step.label} to={step.to}><span>{index + 1}</span><strong>{step.label}</strong></Link>)}</div></section>
-    <section className="page-title"><div><p className="eyebrow">Visão geral</p><h1>Olá, {session.userName}</h1><p className="page-intro">Acompanhe a operação de {settings.organizationName}.</p></div>{hasPermission(session.role, "customers.manage") && <Link className="button" to="/clientes/novo">Iniciar atendimento</Link>}</section>
+    <section className="page-title"><div><p className="eyebrow">Visão geral</p><h1>Olá, {session.userName}</h1><p className="page-intro">Acompanhe a operação de {settings.organizationName}.</p>{organizationLine && <p className="help-text">{organizationLine}</p>}</div>{hasPermission(session.role, "customers.manage") && <Link className="button" to="/clientes/novo">Iniciar atendimento</Link>}</section>
     {error && <p className="notice error-text" role="alert">{error} <Button type="button" onClick={retry}>Tentar novamente</Button></p>}
     {loading ? <Skeleton lines={4} label="Carregando visão geral…" /> : <>
       {metrics.length ? <div className="metric-grid">{metrics.map((metric) => <Card key={metric.key}><small>{metric.label}</small><strong>{metric.value}</strong><span className="help-text">{metric.hint}</span></Card>)}</div> : <EmptyState>Seu perfil não possui indicadores de visão geral nesta loja.</EmptyState>}

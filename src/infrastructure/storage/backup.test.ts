@@ -327,3 +327,17 @@ describe("encrypted backup and transactional restore", () => {
     expect(() => validateBackup(badVersion)).toThrow("inválido");
   });
 });
+
+describe("organization settings in backups", () => {
+  it("accepts legal identification fields and rejects invalid cnpj or non-string optionals", async () => {
+    const snapshot = await repository.snapshot();
+    snapshot.tables.settings.push({ id: "current", organizationName: "Ótica Central", clinicalProfessionalLabel: "Optometrista", legalName: "Central Serviços Ópticos Ltda", cnpj: "11.222.333/0001-81", email: "contato@central.com", addressCity: "São Paulo", addressState: "SP", addressZip: "01310-100" });
+    expect(() => validateBackup(snapshot)).not.toThrow();
+    const badCnpj = structuredClone(snapshot); badCnpj.tables.settings[0].cnpj = "11.222.333/0001-82";
+    expect(() => validateBackup(badCnpj)).toThrow("inválido");
+    const badEmail = structuredClone(snapshot); (badEmail.tables.settings[0] as { email: unknown }).email = 42;
+    expect(() => validateBackup(badEmail)).toThrow("inválido");
+    const blankCnpj = structuredClone(snapshot); blankCnpj.tables.settings[0].cnpj = "   ";
+    expect(() => validateBackup(blankCnpj)).not.toThrow();
+  });
+});

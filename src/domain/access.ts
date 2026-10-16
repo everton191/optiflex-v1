@@ -51,6 +51,16 @@ export interface OrganizationSettings {
   id: "current";
   organizationName: string;
   clinicalProfessionalLabel: string;
+  legalName?: string;
+  cnpj?: string;
+  phone?: string;
+  email?: string;
+  addressStreet?: string;
+  addressNumber?: string;
+  addressDistrict?: string;
+  addressCity?: string;
+  addressState?: string;
+  addressZip?: string;
 }
 
 export interface LocalSession {
