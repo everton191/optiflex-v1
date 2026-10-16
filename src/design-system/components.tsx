@@ -97,6 +97,10 @@ export function Skeleton({ lines = 3, label = "Carregando…" }: { lines?: numbe
   return <div className="skeleton" role="status" aria-busy="true" aria-label={label}>{Array.from({ length: lines }, (_, index) => <span className="skeleton-line" key={index} />)}</div>;
 }
 
+export function ErrorState({ message, onRetry, retryLabel = "Tentar novamente" }: { message: string; onRetry?: () => void; retryLabel?: string }) {
+  return <div className="error-state" role="alert"><p>{message}</p>{onRetry && <Button type="button" onClick={onRetry}>{retryLabel}</Button>}</div>;
+}
+
 export function PageHeader({ eyebrow, title, intro, actions }: { eyebrow?: string; title: string; intro?: string; actions?: ReactNode }) {
   return <>{eyebrow && <p className="eyebrow">{eyebrow}</p>}<div className="page-title"><div><h1>{title}</h1>{intro && <p className="page-intro">{intro}</p>}</div>{actions && <div className="page-title-actions">{actions}</div>}</div></>;
 }

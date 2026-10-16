@@ -247,6 +247,8 @@ textarea { min-height: 6rem; }
 .skeleton-line:nth-child(3) { width: 65%; }
 @keyframes skeleton-shimmer { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
 @media (prefers-reduced-motion: reduce) { .skeleton-line { animation: none; } }
+.error-state { display: grid; gap: var(--space-3); justify-items: start; padding: var(--space-6); color: var(--color-text); }
+.error-state p { margin: 0; color: #b42318; font-weight: 600; }
 .cancel-sale-form label { display: grid; gap: var(--space-2); font-weight: 600; }
 .cancel-sale-form .form-actions { grid-column: 1 / -1; }
 

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { errorMessage } from "../domain/errors";
 import { Link, useParams } from "react-router-dom";
-import { Button, Input } from "../design-system/components";
+import { Button, EmptyState, Input, Skeleton } from "../design-system/components";
 import { hasPermission } from "../domain/access";
 import type { Customer } from "../domain/customer";
 import type { InventoryItem } from "../domain/inventory";
@@ -125,7 +125,7 @@ export function WorkOrdersPage() {
 
     <h2 className="section-title">{filterLabels[filter] === "Todas" ? "Todas as ordens" : filter === "ATRASADAS" ? "Ordens com prazo vencido" : workOrderStatusLabels[filter as WorkOrderStatus]}</h2>
     <div className="list-card compact-list">
-      {loading ? <p className="empty-state" role="status">Carregando ordens…</p> : visible.length ? visible.map((order) => {
+      {loading ? <Skeleton lines={4} label="Carregando ordens…" /> : visible.length ? visible.map((order) => {
         const sale = saleOf(order.saleId);
         return <article className="list-row work-order-row" key={order.id}>
           <div>
@@ -154,7 +154,7 @@ export function WorkOrdersPage() {
             <div className="form-actions"><Button type="submit" disabled={!cancelReason.trim()}>Confirmar cancelamento</Button><Button type="button" onClick={closeCancel}>Voltar</Button></div>
           </form>}
         </article>;
-      }) : <p className="empty-state">Nenhuma ordem nesta situação.</p>}
+      }) : <EmptyState>Nenhuma ordem nesta situação.</EmptyState>}
     </div>
   </div>;
 }

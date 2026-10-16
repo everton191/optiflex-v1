@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { errorMessage } from "../domain/errors";
-import { Button, Drawer, Input, Select } from "../design-system/components";
+import { Button, Drawer, ErrorState, Input, Select, Skeleton } from "../design-system/components";
 import { hasPermission } from "../domain/access";
 import { InventoryService } from "../domain/inventory-service";
 import type { InventoryItem, InventoryMovement, InventoryMovementType, ProductCategory, ProductCategoryFilter } from "../domain/inventory";
@@ -135,7 +135,7 @@ export function InventoryPage() {
       <button type="button" role="tab" aria-selected={catalogFilter === "ALL"} className={catalogFilter === "ALL" ? "active" : ""} onClick={() => setCatalogFilter("ALL")}>Todas <span>{items.length}</span></button>
       {productCategories.map((value) => <button type="button" role="tab" key={value} aria-selected={catalogFilter === value} className={catalogFilter === value ? "active" : ""} onClick={() => setCatalogFilter(value)}>{productCategoryLabels[value]} <span>{items.filter((item) => item.category === value).length}</span></button>)}
     </div>
-    <div className="list-card compact-list">{loading ? <p role="status" className="empty-state">Carregando estoque…</p> : visibleItems.length ? visibleItems.map((item) => {
+    <div className="list-card compact-list">{loading ? <Skeleton lines={4} label="Carregando estoque…" /> : !error && (visibleItems.length ? visibleItems.map((item) => {
       const state = stockState(item);
       const margin = item.defaultPrice !== undefined && item.cost !== undefined ? marginCents(item.defaultPrice, item.cost) : undefined;
       return <article className="list-row" key={item.id}>
@@ -146,7 +146,7 @@ export function InventoryPage() {
           {canManage && <Button type="button" onClick={() => { resetMovement(); editProduct(item); }}>Editar</Button>}
         </div>
       </article>;
-    }) : items.length ? <p className="empty-state">Nenhum produto nesta categoria.</p> : <p className="empty-state">Nenhum produto cadastrado nesta loja.</p>}</div>
+    }) : items.length ? <p className="empty-state">Nenhum produto nesta categoria.</p> : <p className="empty-state">Nenhum produto cadastrado nesta loja.</p>)}</div>
 
     <h2 className="section-title">Histórico de movimentações</h2>
     <div className="list-card compact-list">{movements.length ? movements.map((movement) => <article className="list-row" key={movement.id}>

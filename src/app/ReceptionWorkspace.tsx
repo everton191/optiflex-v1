@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { errorMessage } from "../domain/errors";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAppContext, useSession } from "./providers";
-import { Button } from "../design-system/components";
+import { Button, EmptyState, Skeleton } from "../design-system/components";
 import { hasPermission } from "../domain/access";
 import type { Attendance, AttendancePriority, AttendanceStatus, AttendanceType, Customer } from "../domain/customer";
 import { isActiveQueueStatus, waitingMinutes } from "../domain/customer";
@@ -110,7 +110,7 @@ export function AgendaPage() {
     </form>}
     {error && <p role="alert" className="error-text">{error}</p>}
     {message && <p role="status" className="success">{message}</p>}
-    {loading ? <p role="status" className="empty-state">Carregando agenda…</p> : view === "day" ? <div className="list-card">{dayEvents(anchor).length ? dayEvents(anchor).map(renderEvent) : <p className="empty-state">Nenhum evento neste dia.</p>}</div> : <>{weekDays.map((day) => <section key={day.toISOString()}><h2 className="section-title">{day.toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "2-digit" })}</h2><div className="list-card">{dayEvents(day).length ? dayEvents(day).map(renderEvent) : <p className="empty-state">Sem eventos.</p>}</div></section>)}</>}</div>;
+    {loading ? <Skeleton lines={4} label="Carregando agenda…" /> : view === "day" ? <div className="list-card">{dayEvents(anchor).length ? dayEvents(anchor).map(renderEvent) : <EmptyState>Nenhum evento neste dia.</EmptyState>}</div> : <>{weekDays.map((day) => <section key={day.toISOString()}><h2 className="section-title">{day.toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "2-digit" })}</h2><div className="list-card">{dayEvents(day).length ? dayEvents(day).map(renderEvent) : <EmptyState>Sem eventos.</EmptyState>}</div></section>)}</>}</div>;
 }
 
 function AttendanceQueue() {
@@ -186,7 +186,7 @@ function AttendanceQueue() {
       {filterButton("WAITING", "Aguardando", active.filter((item) => item.status === "WAITING").length)}
       {filterButton("IN_PROGRESS", "Em atendimento", active.filter((item) => item.status === "IN_PROGRESS").length)}
     </div>
-    <h2 className="section-title">Fila atual</h2><div className="list-card">{loading ? <p role="status" className="empty-state">Carregando atendimentos…</p> : visible.length ? visible.map((item) => {
+    <h2 className="section-title">Fila atual</h2><div className="list-card">{loading ? <Skeleton lines={4} label="Carregando atendimentos…" /> : visible.length ? visible.map((item) => {
       const professional = professionalName(item.professionalId);
       const detail = `${attendanceTypeLabels[item.type]} · ${attendanceStatusLabels[item.status]} · ${professional ?? "Sem responsável"}${item.status === "WAITING" ? ` · espera ${waitLabel(item)}` : ""}`;
       const content = <div><strong>{customerName(item.customerId)}</strong><span>{detail}</span></div>;
@@ -200,7 +200,7 @@ function AttendanceQueue() {
         <Link className="button secondary" to={`/atendimentos/${item.id}`}>Ver detalhe</Link>
       </div>;
       return <article className="list-row" key={item.id}>{content}{urgent}{actions}</article>;
-    }) : !error && <p className="empty-state">{emptyLabel}</p>}</div></div>;
+    }) : !error && <EmptyState>{emptyLabel}</EmptyState>}</div></div>;
 }
 
 export function AttendanceNewPage() {
