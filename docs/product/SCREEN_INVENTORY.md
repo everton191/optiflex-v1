@@ -16,7 +16,7 @@ Atualizado em: 08/10/2026 (verificação de `router.tsx`; impressões F7-13).
 | Agenda | `/agenda`, `/agenda/dia`, `/agenda/semana` | AUSENTE | F3-01 |
 | Clínico | `/clinico`, `/clinico/atendimento/:id` | OK parcial — refração estruturada, uso/retificação e medidas de montagem (F3-06..08 feitos); sem sub-rotas/guia | F3-06/07/08 (feitos), F1-12 |
 | Prescrições/Exames | `/prescricoes/:prescriptionId` (documento por versão) | OK parcial — receita com impressão (F3-05/06 feitos); `/exames*` ausente | F3-05 (feito), F3-06 (feito) |
-| Comercial | `/caixa`, `/vendas/:saleId` (documento) (+ redirects `/vendas`, `/pagamentos`) | OK/parcial — abas Vendas/Recebimentos/Sessão + itens de estoque + impressão de orçamento/venda (F7-13) | F3-10, F3-11, F4-10..16, F7-13 |
+| Comercial | `/caixa`, `/vendas/:saleId` (documento) (+ redirects `/vendas`, `/pagamentos`) | OK/parcial — abas Vendas/Recebimentos/Sessão + PDV guiado (categoria, tratamentos, medidas da receita — F3-11) + impressão de orçamento/venda (F7-13) | F3-10, F3-11, F4-10..16, F7-13 |
 | OS | `/ordens-servico`, `/ordens-servico/:orderId` | PARCIAL — lista e detalhe por URL com impressão integrada (F7-13) | F3-14 (feito) |
 | Estoque | `/estoque` | OK — cadastro/movimentação/histórico/alertas | F4-01..04 DONE; F2-11 (catálogo) |
 | Estoque extra | `/estoque/produto/:id`, `/movimentacoes`, `/transferencias` | AUSENTE | F4-06, F2-14 |

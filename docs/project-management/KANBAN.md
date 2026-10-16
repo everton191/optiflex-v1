@@ -56,7 +56,7 @@ Classificação de inventário (Etapa 4) no corpo de cada card:
 
 - Issues totais: **155** (8 épicas + 147 tarefas).
 - Tarefas por fase: F1=14 · F2=18 · F3=20 · F4=20 · F5=19 · F6=19 · F7=19 · F8=18.
-- Tarefas por status (revisado em 08/10/2026; F1-09, F2-04, F7-02, F1-11, F3-09, F3-14, F1-02, F1-06, F4-16, F2-05, F4-10, F4-18, F4-12, F2-06, F3-01, F8-06, F8-07, F1-07, F3-17, F2-11, F2-02, F3-02, F3-03, F2-07, F3-10, F4-11, F2-14, F3-07, F8-10, F8-02, F7-01, F1-05, F1-03, F7-03, F2-08, F7-05, F1-12, F3-06, F3-05, F7-11, F7-13 e F3-08 concluídas no mesmo dia): DONE=60 · IN PROGRESS=0 · READY=1 · TESTING=0 · CODE REVIEW=0 · BACKLOG=35 · BLOCKED=50.
+- Tarefas por status (revisado em 08/10/2026; F1-09, F2-04, F7-02, F1-11, F3-09, F3-14, F1-02, F1-06, F4-16, F2-05, F4-10, F4-18, F4-12, F2-06, F3-01, F8-06, F8-07, F1-07, F3-17, F2-11, F2-02, F3-02, F3-03, F2-07, F3-10, F4-11, F2-14, F3-07, F8-10, F8-02, F7-01, F1-05, F1-03, F7-03, F2-08, F7-05, F1-12, F3-06, F3-05, F7-11, F7-13, F3-08 e F3-11 concluídas no mesmo dia): DONE=61 · IN PROGRESS=0 · READY=0 · TESTING=0 · CODE REVIEW=0 · BACKLOG=35 · BLOCKED=50.
 - Bloqueios: **50 tarefas** bloqueadas — 47 por dependência de fase futura/externa + **3 reclassificadas em 08/10** (F4-13 #70, F8-03 #137, F3-20 #57: status desatualizado, decisão externa já registrada).
 - **Revisão de dependências 08/10/2026:** 7 ciclos detectados (SCC/Tarjan sobre este arquivo) e corrigidos em KANBAN + corpos das issues; **0 ciclos remanescentes**. Detalhe antes/depois em `DEPENDENCIES.md`.
 
@@ -129,7 +129,7 @@ Regra de ouro: **nunca mover para DONE sem evidência verificável** (comando de
 | F3-08 | [DP/DNP e altura de montagem](https://github.com/everton191/optiflex-v1/issues/47) | Clinical | DONE | p1 | F3-07 (feito). Entregue em `ad8f5be` — `PrescriptionMeasures` (DP total/longe/perto, altura OD/OE em mm + origem medido/informado) em `clinical.ts` com `assertValidPrescriptionMeasures`/`formatPrescriptionMeasures`; bloco de medidas no formulário clínico (retificação pré-preenche); snapshot `SalePrescription.measures` no handoff da venda; cartão "Prescrição" com medidas no detalhe da OS (sem redigitação); linha "Medidas de montagem" no documento imprimível; 312/312, build 0, tsc 0. Captura por equipamento fora de escopo. |
 | F3-09 | [Anexos e documentos](https://github.com/everton191/optiflex-v1/issues/48) | Clinical | DONE | p0 | F1-08 (migração de store de anexos). |
 | F3-10 | [Orçamentos detalhados](https://github.com/everton191/optiflex-v1/issues/49) | Sales | DONE | p1 | F1-09 (monetário). |
-| F3-11 | [PDV de armações e lentes](https://github.com/everton191/optiflex-v1/issues/50) | Sales | READY | p1 | F2-11, F3-08, F3-10. |
+| F3-11 | [PDV de armações e lentes](https://github.com/everton191/optiflex-v1/issues/50) | Sales | DONE | p1 | F2-11, F3-08, F3-10 (feitos). Entregue em `3dc784c` — `SaleItem.category` (vem do produto, validada) + filtro de categoria (FRAME/LENS/ACCESSORY) no seletor do PDV; `Sale.treatments?` (`{ name, price }`, serviços sem estoque) somados no total/descrição via `treatmentsTotalCents`; medidas da receita importadas no formulário (snapshot F3-08, modo leitura); card "Venda" (itens+categoria+tratamentos) no detalhe da OS; documento de venda com tabela de tratamentos; backup valida `category`/`treatments`; 319/319, build 0, tsc 0. |
 | F3-12 | [Descontos e aprovação](https://github.com/everton191/optiflex-v1/issues/51) | Sales | BACKLOG | p1 | F1-10 (auditoria), F3-10. |
 | F3-13 | [Confirmação de vendas](https://github.com/everton191/optiflex-v1/issues/52) | Sales | DONE | p1 | F4-7. |
 | F3-14 | [Ordens de serviço](https://github.com/everton191/optiflex-v1/issues/53) | Work-orders | DONE | p1 | F1-07 (parte de OS já testada em 8a68d67; concluída em `e56939e` — rota de detalhe, histórico, cancelamento auditado, insumos). Ciclo corrigido 08/10: F3-15 depende de F3-14 (feito). |
@@ -271,12 +271,11 @@ Ordem recomendada para a próxima sessão de desenvolvimento (status READY/IN PR
 
 | # | ID | Issue | Tarefa | Prioridade | Dependências | Justificativa |
 |---|---|---|---|---|---|---|
-| 1 | F3-11 | #50 | [Sales] PDV de armações e lentes | P1 | F2-11, F3-10 (feitos); F3-08 (feito) | Desbloqueada por F3-08 (#47); começa após concluir o card anterior. |
-| 2 | F3-16 | #154 | [Work-orders] Acompanhamento da fabricação | P2 | F3-14 (feito) | Desbloqueada por F3-14; entra à frente de F3-19, que depende dela. |
-| 3 | F3-19 | #56 | [Work-orders] Entrega ao cliente | P1 | F3-16 (#2); F4-12 (feito) | Entrega fecha a cadeia OS→cliente; F3-16 em fila logo acima. |
-| 4 | F2-01 | #23 | [Administration] Cadastro completo de empresas | P1 | nenhuma | Sem dependências; F2-03 depende dela (ciclo corrigido 08/10). |
-| 5 | F1-10 | #18 | [Infraestrutura] Auditoria de alterações | P1 | F1-02 (feito), F2-05 (feito) | Dependências concluídas; libera F3-12. |
-| 6 | F8-17 | #151 | [Infraestrutura] Preparação de versões | P2 | F8-02 (feito) | Reserva promovida: F8-02 entregue e nenhuma outra dependência. |
+| 1 | F3-16 | #154 | [Work-orders] Acompanhamento da fabricação | P2 | F3-14 (feito) | Desbloqueada por F3-14; entra à frente de F3-19, que depende dela. |
+| 2 | F3-19 | #56 | [Work-orders] Entrega ao cliente | P1 | F3-16 (#1); F4-12 (feito) | Entrega fecha a cadeia OS→cliente; F3-16 em fila logo acima. |
+| 3 | F2-01 | #23 | [Administration] Cadastro completo de empresas | P1 | nenhuma | Sem dependências; F2-03 depende dela (ciclo corrigido 08/10). |
+| 4 | F1-10 | #18 | [Infraestrutura] Auditoria de alterações | P1 | F1-02 (feito), F2-05 (feito) | Dependências concluídas; libera F3-12. |
+| 5 | F8-17 | #151 | [Infraestrutura] Preparação de versões | P2 | F8-02 (feito) | Reserva promovida: F8-02 entregue e nenhuma outra dependência. |
 
 Os `#?` devem ser resolvidos pela tabela acima (coluna ID → link da issue). Os números já estão fixados nas tabelas das fases; para referência rápida: consulte `DEPENDENCIES.md`.
 

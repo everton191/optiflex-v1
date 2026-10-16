@@ -4,6 +4,15 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `3dc784c` + docs — PDV guiado: categoria, tratamentos e medidas (F3-11)
+
+- `src/domain/sales.ts`: `SaleItem.category?` (vem do produto, validada por `assertValidSaleItems` → "Categoria do item inválida."); novo **`SaleTreatment`** `{ name, price }` com `assertValidSaleTreatments` ("Tratamento sem nome." / "Preço do tratamento inválido.") e `treatmentsTotalCents` (soma em centavos); `Sale.treatments?`.
+- `src/domain/sales-service.ts`: `buildQuote` valida itens + tratamentos e soma os dois no total (descrição vazia junta nomes de itens e tratamentos); total manual só sem linhas; `createQuote`/`updateQuote` persistem `treatments`; `confirm` revalida preços de tratamentos.
+- PDV (`CashWorkspace.tsx`): filtro de categoria (FRAME/LENS/ACCESSORY) no seletor de itens; formulário de tratamentos (nome + preço) com lista de remoção; medidas da receita exibidas em modo leitura quando há prescrição vinculada (importadas do snapshot F3-08); itens exibem categoria; documento de venda com tabela de tratamentos.
+- OS (`WorkOrdersWorkspace.tsx`): card "Venda" no detalhe (itens com categoria + tratamentos, copiados, sem redigitação).
+- Backup (`backup.ts`): valida `sales.treatments` (nome/preço) e `category` dos itens.
+- Testes novos: `sales-service.test.ts` +6 (categoria, tratamentos no total/descrição, validação, baixa de estoque só nos itens, edição de rascunho), `backup.test.ts` estendido (+3 casos). Total: **319/319** (31 arquivos), build 0, tsc 0. Card: F3-11/#50 → DONE.
+
 ### `ad8f5be` + docs — DP/DNP e altura de montagem (F3-08)
 
 - `src/domain/clinical.ts`: tipo **`PrescriptionMeasures`** — DP total/longe/perto, altura OD/OE (mm) + `origin` (`MEASURED` medido / `INFORMED` informado, rótulos em `measurementOriginLabels`); `assertValidPrescriptionMeasures` (finitas e positivas; origem válida), `normalizeMeasures` (vazio → `undefined`, prescrições antigas continuam válidas) e `formatPrescriptionMeasures` ("DP total 64.00 mm · … · Medido"); `Prescription.measures`/`PrescriptionInput.measures` e `measuresLine` no `prescriptionDocument`.

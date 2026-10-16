@@ -3,7 +3,7 @@
 ## Current Status
 
 - Página `/ordens-servico` com filtros por status **e por atraso** (`ATRASADAS`), transições, prazo, observações, cancelamento auditado e badge "Atrasada" (`.badge.is-out`) nas linhas atrasadas.
-- Rota de detalhe `/ordens-servico/:orderId` (`WorkOrderDetailPage`): situação (com badge de atraso), ações, insumos e histórico de eventos.
+- Rota de detalhe `/ordens-servico/:orderId` (`WorkOrderDetailPage`): situação (com badge de atraso), card "Venda" (itens com categoria + tratamentos copiados da venda, F3-11), card "Prescrição" (graus + medidas da montagem, F3-08), ações, insumos e histórico de eventos — todos sem redigitação.
 - Criação atômica por `saleId` (mesma transação) e ação rápida no `/caixa`.
 - Baixa de insumos com atomicidade (order + estoque + movimento numa transação só).
 - Laboratório: campo `laboratory?` + evento `LABORATORY` via `setLaboratory` (F1-07 `41f0bfd`).
@@ -43,6 +43,7 @@
 
 ## Recent Structural Changes
 
+- F3-11 `3dc784c`: card "Venda" no detalhe da OS (itens com categoria + tratamentos vindos do snapshot da venda).
 - Filtro `ATRASADAS` + badge de atraso e seletor compartilhado (F3-17 `e6e525d`).
 - Laboratório da ordem (`laboratory?` + evento `LABORATORY`) em F1-07 `41f0bfd`.
 - Rota de detalhe da OS com histórico de eventos.
@@ -59,4 +60,4 @@
 
 ## Next Likely Task
 
-Fila do KANBAN: F2-11 catálogo de produtos (`#32`) ou F2-02 matriz/filiais (`#24`). (F3-17 concluída em `e6e525d`.)
+Fila do KANBAN: F3-16 acompanhamento da fabricação (`#154`).
