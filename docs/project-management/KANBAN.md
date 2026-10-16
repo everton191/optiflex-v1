@@ -56,7 +56,7 @@ Classificação de inventário (Etapa 4) no corpo de cada card:
 
 - Issues totais: **155** (8 épicas + 147 tarefas).
 - Tarefas por fase: F1=14 · F2=18 · F3=20 · F4=20 · F5=19 · F6=19 · F7=19 · F8=18.
-- Tarefas por status (revisado em 08/10/2026; F1-09, F2-04, F7-02, F1-11, F3-09, F3-14, F1-02, F1-06, F4-16, F2-05, F4-10, F4-18, F4-12, F2-06, F3-01, F8-06, F8-07, F1-07, F3-17, F2-11, F2-02, F3-02, F3-03, F2-07, F3-10, F4-11, F2-14, F3-07, F8-10, F8-02, F7-01, F1-05, F1-03, F7-03, F2-08, F7-05, F1-12, F3-06, F3-05, F7-11, F7-13, F3-08 e F3-11 concluídas no mesmo dia): DONE=61 · IN PROGRESS=0 · READY=0 · TESTING=0 · CODE REVIEW=0 · BACKLOG=35 · BLOCKED=50.
+- Tarefas por status (revisado em 08/10/2026; F1-09, F2-04, F7-02, F1-11, F3-09, F3-14, F1-02, F1-06, F4-16, F2-05, F4-10, F4-18, F4-12, F2-06, F3-01, F8-06, F8-07, F1-07, F3-17, F2-11, F2-02, F3-02, F3-03, F2-07, F3-10, F4-11, F2-14, F3-07, F8-10, F8-02, F7-01, F1-05, F1-03, F7-03, F2-08, F7-05, F1-12, F3-06, F3-05, F7-11, F7-13, F3-08, F3-11 e F3-16 concluídas no mesmo dia): DONE=62 · IN PROGRESS=0 · READY=0 · TESTING=0 · CODE REVIEW=0 · BACKLOG=34 · BLOCKED=50.
 - Bloqueios: **50 tarefas** bloqueadas — 47 por dependência de fase futura/externa + **3 reclassificadas em 08/10** (F4-13 #70, F8-03 #137, F3-20 #57: status desatualizado, decisão externa já registrada).
 - **Revisão de dependências 08/10/2026:** 7 ciclos detectados (SCC/Tarjan sobre este arquivo) e corrigidos em KANBAN + corpos das issues; **0 ciclos remanescentes**. Detalhe antes/depois em `DEPENDENCIES.md`.
 
@@ -134,7 +134,7 @@ Regra de ouro: **nunca mover para DONE sem evidência verificável** (comando de
 | F3-13 | [Confirmação de vendas](https://github.com/everton191/optiflex-v1/issues/52) | Sales | DONE | p1 | F4-7. |
 | F3-14 | [Ordens de serviço](https://github.com/everton191/optiflex-v1/issues/53) | Work-orders | DONE | p1 | F1-07 (parte de OS já testada em 8a68d67; concluída em `e56939e` — rota de detalhe, histórico, cancelamento auditado, insumos). Ciclo corrigido 08/10: F3-15 depende de F3-14 (feito). |
 | F3-15 | [Laboratórios parceiros](https://github.com/everton191/optiflex-v1/issues/54) | Work-orders | BACKLOG | p2 | F2-10, F3-14 (feito). |
-| F3-16 | [Acompanhamento da fabricação](https://github.com/everton191/optiflex-v1/issues/154) | Work-orders | BACKLOG | p2 | F3-14 (feito). |
+| F3-16 | [Acompanhamento da fabricação](https://github.com/everton191/optiflex-v1/issues/154) | Work-orders | DONE | p2 | F3-14 (feito). Entregue em `f92ab0a` — `WorkOrderStatus` fino (`OPEN`→`SENT_TO_LAB`→`IN_PRODUCTION`→`RETURNED`→`IN_INSPECTION`→`READY`→`AWAITING_PICKUP`→`DELIVERED` + `CANCELLED`, com rework p/ produção e atalhos antigos preservados para compat); `productionPipeline`/`stageEvent`/`stageIndexOf` derivam responsável/data por etapa do histórico (sem schema novo); card "Progresso da fabricação" no detalhe da OS; filtros por todos os status; backup com os 9 status; testes de transições inválidas (+4); 323/323, build 0, tsc 0. |
 | F3-17 | [Prazos e alertas](https://github.com/everton191/optiflex-v1/issues/55) | Work-orders | DONE | p1 | F3-14 (feito; entregue em `e6e525d` — filtro `ATRASADAS`, badge de atraso e seletor compartilhado `isOverdueOrder`/`overdueOrders` com contagem coerente no dashboard). |
 | F3-18 | [Produtos prontos](https://github.com/everton191/optiflex-v1/issues/155) | Work-orders | BACKLOG | p2 | F3-16, F4-5 (reserva). |
 | F3-19 | [Entrega ao cliente](https://github.com/everton191/optiflex-v1/issues/56) | Work-orders | READY | p1 | F3-16, F4-12 (saldo). |
@@ -271,11 +271,10 @@ Ordem recomendada para a próxima sessão de desenvolvimento (status READY/IN PR
 
 | # | ID | Issue | Tarefa | Prioridade | Dependências | Justificativa |
 |---|---|---|---|---|---|---|
-| 1 | F3-16 | #154 | [Work-orders] Acompanhamento da fabricação | P2 | F3-14 (feito) | Desbloqueada por F3-14; entra à frente de F3-19, que depende dela. |
-| 2 | F3-19 | #56 | [Work-orders] Entrega ao cliente | P1 | F3-16 (#1); F4-12 (feito) | Entrega fecha a cadeia OS→cliente; F3-16 em fila logo acima. |
-| 3 | F2-01 | #23 | [Administration] Cadastro completo de empresas | P1 | nenhuma | Sem dependências; F2-03 depende dela (ciclo corrigido 08/10). |
-| 4 | F1-10 | #18 | [Infraestrutura] Auditoria de alterações | P1 | F1-02 (feito), F2-05 (feito) | Dependências concluídas; libera F3-12. |
-| 5 | F8-17 | #151 | [Infraestrutura] Preparação de versões | P2 | F8-02 (feito) | Reserva promovida: F8-02 entregue e nenhuma outra dependência. |
+| 1 | F3-19 | #56 | [Work-orders] Entrega ao cliente | P1 | F3-16 (feito); F4-12 (feito) | Entrega fecha a cadeia OS→cliente; F3-16 concluída em `f92ab0a`. |
+| 2 | F2-01 | #23 | [Administration] Cadastro completo de empresas | P1 | nenhuma | Sem dependências; F2-03 depende dela (ciclo corrigido 08/10). |
+| 3 | F1-10 | #18 | [Infraestrutura] Auditoria de alterações | P1 | F1-02 (feito), F2-05 (feito) | Dependências concluídas; libera F3-12. |
+| 4 | F8-17 | #151 | [Infraestrutura] Preparação de versões | P2 | F8-02 (feito) | Reserva promovida: F8-02 entregue e nenhuma outra dependência. |
 
 Os `#?` devem ser resolvidos pela tabela acima (coluna ID → link da issue). Os números já estão fixados nas tabelas das fases; para referência rápida: consulte `DEPENDENCIES.md`.
 

@@ -4,6 +4,14 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `f92ab0a` + docs — Acompanhamento da fabricação (F3-16)
+
+- `src/domain/work-order.ts`: `workOrderStatuses`/`WorkOrderStatus` fino — `OPEN` → `SENT_TO_LAB` ("Enviada ao laboratório") → `IN_PRODUCTION` → `RETURNED` ("Retornada") → `IN_INSPECTION` ("Em conferência") → `READY` → `AWAITING_PICKUP` ("Cliente avisado") → `DELIVERED` (+ `CANCELLED`); rework `RETURNED`/`IN_INSPECTION` → `IN_PRODUCTION`; atalhos antigos (`OPEN`→`IN_PRODUCTION`, `IN_PRODUCTION`→`READY`, `READY`→`DELIVERED`) mantidos — dados persistidos e fluxos de teste/integração continuam válidos; `READY`/`AWAITING_PICKUP` não cancelam (igual ao antigo `READY`).
+- Helpers de progresso: `productionPipeline` (ordem canônica sem o exit cancelado), `stageIndexOf` (−1 para `CANCELLED`) e `stageEvent(order, status)` — responsável/data por etapa derivados do histórico embutido (evento `CREATED` para OPEN, último `STATUS` que atingiu a etapa; rework fica com o carimbo mais novo). **Sem schema novo, sem bump Dexie.**
+- UI (`WorkOrdersWorkspace.tsx`): card **"Progresso da fabricação"** no detalhe (etapas com estado atual/concluída/pendente + autor/data), filtros da lista com todos os status (`...workOrderStatuses`), botões de transição para as novas etapas, insumos aceitos em qualquer status pré-entrega; CSS `.work-order-progress`/`.progress-stage` (is-current/is-done).
+- `src/domain/backup.ts`: enum de `workOrders.status` com os 9 status.
+- Testes novos: `work-order-service.test.ts` +4 (fluxo fino completo, pulos bloqueados, matriz de rework, `stageEvent`/`stageIndexOf` com rework), `backup.test.ts` aceitando `IN_INSPECTION`. Total: **323/323** (31 arquivos), build 0, tsc 0. Card: F3-16/#154 → DONE.
+
 ### `3dc784c` + docs — PDV guiado: categoria, tratamentos e medidas (F3-11)
 
 - `src/domain/sales.ts`: `SaleItem.category?` (vem do produto, validada por `assertValidSaleItems` → "Categoria do item inválida."); novo **`SaleTreatment`** `{ name, price }` com `assertValidSaleTreatments` ("Tratamento sem nome." / "Preço do tratamento inválido.") e `treatmentsTotalCents` (soma em centavos); `Sale.treatments?`.

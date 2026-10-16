@@ -3,7 +3,8 @@
 ## Current Status
 
 - Página `/ordens-servico` com filtros por status **e por atraso** (`ATRASADAS`), transições, prazo, observações, cancelamento auditado e badge "Atrasada" (`.badge.is-out`) nas linhas atrasadas.
-- Rota de detalhe `/ordens-servico/:orderId` (`WorkOrderDetailPage`): situação (com badge de atraso), card "Venda" (itens com categoria + tratamentos copiados da venda, F3-11), card "Prescrição" (graus + medidas da montagem, F3-08), ações, insumos e histórico de eventos — todos sem redigitação.
+- Máquina de estados fina (F3-16 `f92ab0a`): `WorkOrderStatus` = `OPEN` → `SENT_TO_LAB` → `IN_PRODUCTION` → `RETURNED` → `IN_INSPECTION` → `READY` → `AWAITING_PICKUP` → `DELIVERED` (+ `CANCELLED` auditado); rework `RETURNED`/`IN_INSPECTION` → `IN_PRODUCTION`; transições pulando etapas são bloqueadas com teste. Status coarse antigos (`IN_PRODUCTION`, `READY`…) seguem válidos (compat com dados persistidos).
+- Rota de detalhe `/ordens-servico/:orderId` (`WorkOrderDetailPage`): situação (com badge de atraso), **card "Progresso da fabricação"** (pipeline com etapa atual/concluída/pendente + responsável/data por etapa derivados dos eventos via `stageEvent`), card "Venda" (itens com categoria + tratamentos copiados da venda, F3-11), card "Prescrição" (graus + medidas da montagem, F3-08), ações, insumos e histórico de eventos — todos sem redigitação.
 - Criação atômica por `saleId` (mesma transação) e ação rápida no `/caixa`.
 - Baixa de insumos com atomicidade (order + estoque + movimento numa transação só).
 - Laboratório: campo `laboratory?` + evento `LABORATORY` via `setLaboratory` (F1-07 `41f0bfd`).
@@ -13,7 +14,7 @@
 ## Current Decisions
 
 - Ordem é criada manualmente a partir de venda `CONFIRMED`; `createFromConfirmedSale(sale, author)` grava o evento `CREATED`.
-- Fluxo de status: OPEN → IN_PRODUCTION → READY → DELIVERED; OPEN/IN_PRODUCTION podem ir para CANCELLED **somente** via `cancel(order, reason, author)` — `transition` para `CANCELLED` lança "Cancelamento auditado".
+- Fluxo de status fino (F3-16): OPEN → SENT_TO_LAB → IN_PRODUCTION → RETURNED → IN_INSPECTION → READY → AWAITING_PICKUP → DELIVERED (atalhos `OPEN`→`IN_PRODUCTION`, `IN_PRODUCTION`→`READY` e `READY`→`DELIVERED` mantidos para fluxos simples/lab único); `RETURNED`/`IN_INSPECTION` podem voltar a `IN_PRODUCTION` (rework). Cancelamento somente via `cancel(order, reason, author)` até `IN_INSPECTION` — `transition` para `CANCELLED` lança "Cancelamento auditado"; `READY`/`AWAITING_PICKUP` não cancelam (igual ao antigo `READY`).
 - Cancelamento exige motivo (`cancelReason` persistido) e autor; gera evento `CANCELLED`.
 - Histórico embutido em `WorkOrder.events` (`WorkOrderEvent[]`) — sem tabela nova, sem bump de versão Dexie; validado no backup (bloco `workOrders`).
 - Eventos: `CREATED`, `STATUS`, `SCHEDULE`, `CANCELLED`, `INPUTS`, `LABORATORY` (com autor e `at`).
@@ -43,6 +44,7 @@
 
 ## Recent Structural Changes
 
+- F3-16 `f92ab0a`: estados finos de fabricação (`workOrderStatuses`/labels/transições), helpers `productionPipeline`/`stageEvent`/`stageIndexOf` (responsável/data por etapa do histórico, sem schema novo), card "Progresso da fabricação" no detalhe, filtros por todos os status, backup com os 9 status, testes de transições inválidas.
 - F3-11 `3dc784c`: card "Venda" no detalhe da OS (itens com categoria + tratamentos vindos do snapshot da venda).
 - Filtro `ATRASADAS` + badge de atraso e seletor compartilhado (F3-17 `e6e525d`).
 - Laboratório da ordem (`laboratory?` + evento `LABORATORY`) em F1-07 `41f0bfd`.
@@ -60,4 +62,4 @@
 
 ## Next Likely Task
 
-Fila do KANBAN: F3-16 acompanhamento da fabricação (`#154`).
+Fila do KANBAN: F3-19 entrega ao cliente (`#56`).
