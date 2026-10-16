@@ -4,6 +4,14 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `7de46e6` + docs — Entrega ao cliente (F3-19)
+
+- `src/domain/work-order.ts`: `WorkOrder.receivedBy?`/`deliveredNote?`; novo tipo de evento `DELIVERY` ("Entrega registrada", label em `workOrderEventLabels` — backup aceita automaticamente via `Object.hasOwn`); `stageEvent` passou a reconhecer eventos `DELIVERY` para marcar a etapa final no card de progresso.
+- `src/domain/work-order-service.ts`: **`WorkOrderDeliveryInput`** `{ receivedBy, note?, pendingCents, acknowledgePending? }` e **`deliver(order, input, author)`** — recebedor obrigatório (trim), transição auditada via `canTransition` até `DELIVERED` (READY/AVISO→cliente), evento `DELIVERY` com "Recebido por …" + observação no note, `receivedBy`/`deliveredNote` persistidos; **guarda de saldo**: `pendingCents` > 0 sem `acknowledgePending` → "Entrega com saldo pendente de R$ X: confirme a ciência para continuar." (`pendingCents` é informado pela UI, apurado no caixa — domínio não consulta cash); saldo negativo/inválido rejeitado.
+- UI (`WorkOrdersWorkspace.tsx`): botão genérico "Entregar" removido da lista e do detalhe (fluxo auditado); em `READY`/`AWAITING_PICKUP` o detalhe mostra **"Registrar entrega"** com checklist: "Recebido por" (obrigatório), "Assinatura/observação" (opcional, digitação do nome do recebedor — sem captura de imagem), saldo a receber apurado via `CashRepository.listEntries` (total da venda − RECEIPTs) com checkbox de ciência quando > 0 e resumo no help-text; situação exibe "Recebido por X · observação · data"; entrega sai das pendências do dashboard (`openOrders`).
+- `src/domain/backup.ts`: valida `receivedBy` (não vazio se presente) e `deliveredNote` (string).
+- Testes novos: `work-order-service.test.ts` +4 (entrega com evento/CA das pendências, recebedor obrigatório, saldo pendente bloqueado sem confirmação, status inválidos/saldo negativo), `backup.test.ts` estendido (os-delivered com evento DELIVERY + receivedBy/deliveredNote inválidos). Total: **327/327** (31 arquivos), build 0, tsc 0. Card: F3-19/#56 → DONE.
+
 ### `f92ab0a` + docs — Acompanhamento da fabricação (F3-16)
 
 - `src/domain/work-order.ts`: `workOrderStatuses`/`WorkOrderStatus` fino — `OPEN` → `SENT_TO_LAB` ("Enviada ao laboratório") → `IN_PRODUCTION` → `RETURNED` ("Retornada") → `IN_INSPECTION` ("Em conferência") → `READY` → `AWAITING_PICKUP` ("Cliente avisado") → `DELIVERED` (+ `CANCELLED`); rework `RETURNED`/`IN_INSPECTION` → `IN_PRODUCTION`; atalhos antigos (`OPEN`→`IN_PRODUCTION`, `IN_PRODUCTION`→`READY`, `READY`→`DELIVERED`) mantidos — dados persistidos e fluxos de teste/integração continuam válidos; `READY`/`AWAITING_PICKUP` não cancelam (igual ao antigo `READY`).
