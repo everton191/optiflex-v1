@@ -5,18 +5,18 @@
 
 ## Estado atual
 
-- **Data da última atualização:** 08/10/2026 (F3-12 concluída; F3-04, F2-09, F8-17, F1-10, F2-01, F3-19, F3-16, F3-11, F3-08, F7-13, F7-11, F3-05, F3-06, F1-09, F2-04, F7-02, F1-11, F3-09, F3-14, F1-02, F1-06, F4-16, F2-05, F4-10, F4-18, F4-12, F2-06, F3-01, F8-06, F8-07, F1-07, F3-17, F2-11, F2-02, F3-02 e F3-03 concluídas; revisão de publicação, dependências e bloqueios).
+- **Data da última atualização:** 08/10/2026 (F8-04 em andamento — automatizado entregue, evidência de aparelho pendente; F3-12, F3-04, F2-09, F8-17, F1-10, F2-01, F3-19, F3-16, F3-11, F3-08, F7-13, F7-11, F3-05, F3-06, F1-09, F2-04, F7-02, F1-11, F3-09, F3-14, F1-02, F1-06, F4-16, F2-05, F4-10, F4-18, F4-12, F2-06, F3-01, F8-06, F8-07, F1-07, F3-17, F2-11, F2-02, F3-02 e F3-03 concluídas; revisão de publicação, dependências e bloqueios).
 - **Branch analisada:** `docs/master-kanban` (documentação/planejamento).
-- **Branch de desenvolvimento:** `feat/operational-flow-v2` (60 commits à frente de `v1`; merge-base `3510602`).
-- **Último commit (código):** `93ebb03` — *feat: discounts with per-role limits and manager approval (refs #51)* (tag publicada: `v0.1.0` em `2a58572`).
-- **Último commit (documentação):** branch publicada de `634eb37` até o commit atual desta branch (`f0e094b` + esta atualização).
+- **Branch de desenvolvimento:** `feat/operational-flow-v2` (61 commits à frente de `v1`; merge-base `3510602`).
+- **Último commit (código):** `f5b8e0b` — *test: offline session reopen integrity (refs #138)* (tag publicada: `v0.1.0` em `2a58572`).
+- **Último commit (documentação):** branch publicada de `634eb37` até o commit atual desta branch (`330924b` + esta atualização).
 - **Remote:** `https://github.com/everton191/optiflex-v1.git`.
 
 ### Publicação (executada em 08/10/2026, com autorização do usuário)
 
 - Varredura de sigilos **antes do push** (repo público): chaves/certificados, tokens cloud, segredos em literais, CPF/CNPJ, JWT, `.env`, binários e históricos = **limpo**; caminho pessoal generalizado (`c4192c2`); autor dos commits = e-mail noreply do GitHub.
 - Push normal (`-u`, **sem force-push**) das duas branches; **`v1` preservada** (`3510602` local = remoto) e **nenhum merge executado**.
-- SHAs no remoto: `feat/operational-flow-v2` = `93ebb03` (tag `v0.1.0` em `2a58572`) · `docs/master-kanban` = `f0e094b` + commits desta revisão.
+- SHAs no remoto: `feat/operational-flow-v2` = `f5b8e0b` (tag `v0.1.0` em `2a58572`) · `docs/master-kanban` = `330924b` + commits desta revisão.
 - Documentos do Kanban acessíveis via `raw.githubusercontent.com/.../docs/master-kanban/docs/project-management/`.
 - PR `docs/master-kanban` → `feat/operational-flow-v2` (somente documentação; ver relatório da sessão).
 
@@ -101,18 +101,18 @@
 56. `634eb37`/`b8d1a84` — Kanban mestre + Issues (#1–#155) + árvore de documentação.
 50. 08/10/2026 — Revisão: 7 ciclos → 0, 3 reclassificações de status, revalidação dos 18 DONE (só documentação/Issues).
 
-## Próxima execução — fila reaberta (8 tarefas com dependências concluídas)
+## Próxima execução — F8-04 em andamento + fila (7 tarefas com dependências concluídas)
 
-| # | Card | Issue | Prio | Deps reais | Por quê |
+| # | Card | Issue | Prio | Status | Por quê |
 |---|---|---|---|---|---|
-| 1 | F8-04 testes offline | #138 | P1 | F3-09 (feito), F8-01 (feito) | cobre o app instalado sem rede (PWA já gerada); imediato, sem decisão pendente. |
-| 2 | F2-03 dados jurídicos e tributários | #25 | P2 | F2-01 (feito) | alimenta F6 quando a especificação fiscal existir. |
-| 3 | F4-05 reserva de itens por venda | #62 | P2 | F3-10 (feito), F4-07 (feito) | base para produtos prontos (F3-18). |
-| 4 | F4-06 transferência entre filiais | #63 | P2 | F4-02 (feito), F2-02 (feito) | multi-loja já existe. |
-| 5 | F2-12 serviços | #33 | P2 | F2-11 (feito) | catálogo completa o inventário não físico. |
-| 6 | F7-08 tabelas e filtros | #123 | p2 | F7-01 (feito) | consolida primitivas; libera F7-18. |
-| 7 | F7-09 modais e diálogos | #124 | P2 | F7-01 (feito) | primitivas já em uso disperso. |
-| 8 | F2-18 cadastro inicial assistido | #39 | P3 | F2-01/F2-02/F2-04 (feitos) | onboarding; libera F7-15. |
+| 0 | F8-04 testes offline | #138 | P1 | IN PROGRESS | automatizado entregue (`f5b8e0b`); falta executar o procedimento de aparelho real (RELEASE_CHECKLIST §5.1) e registrar a evidência por dispositivo. |
+| 1 | F2-03 dados jurídicos e tributários | #25 | P2 | BACKLOG | alimenta F6 quando a especificação fiscal existir (deps: F2-01 feito). |
+| 2 | F4-05 reserva de itens por venda | #62 | P2 | BACKLOG | base para produtos prontos (F3-18); deps F3-10/F4-07 feitas. |
+| 3 | F4-06 transferência entre filiais | #63 | P2 | BACKLOG | multi-loja já existe; deps F4-02/F2-02 feitas. |
+| 4 | F2-12 serviços | #33 | P2 | BACKLOG | catálogo completa o inventário não físico (dep F2-11 feita). |
+| 5 | F7-08 tabelas e filtros | #123 | P2 | BACKLOG | consolida primitivas; libera F7-18 (dep F7-01 feita). |
+| 6 | F7-09 modais e diálogos | #124 | P2 | BACKLOG | primitivas já em uso disperso (dep F7-01 feita). |
+| 7 | F2-18 cadastro inicial assistido | #39 | P3 | BACKLOG | onboarding; libera F7-15 (deps F2-01/F2-02/F2-04 feitas). |
 
 Reservas (mesma ordem de prioridade): F2-13 variantes, F2-15 campos fiscais (sem spec F6, campos opcionais), F2-16 importação por planilha, F7-06 tablets, F7-07 formulários, F7-10 busca global, F7-14 etiquetas, F7-16 ajuda, F7-17 acessibilidade. **Correção:** a declaração anterior de "fila esvaziada / todo BACKLOG depende de decisões externas" estava errada — a fila havia sido consumida card a card, mas dezenas de cards de BACKLOG têm dependências já concluídas; a fila acima foi reaberta por auditoria das deps.
 
@@ -134,7 +134,7 @@ Reservas: ver lista acima (F2-13, F2-15, F2-16, F7-06, F7-07, F7-10, F7-14, F7-1
 
 ## Resultados dos testes disponíveis
 
-- `npm.cmd test` → **362/362** (36 arquivos) em 08/10/2026 sobre `93ebb03`.
+- `npm.cmd test` → **363/363** (37 arquivos) em 08/10/2026 sobre `f5b8e0b`.
 - `npm.cmd run build` → exit 0 (PWA gerada).
 - `npx.cmd tsc -b --pretty false` → exit 0.
 - Não existe script `lint` (não declarar lint executado).

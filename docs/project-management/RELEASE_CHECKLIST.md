@@ -60,6 +60,28 @@ Nenhuma versão é liberada com apenas "build verde".
 - [ ] Offline real (aparelho), instalação PWA, reabertura.
 - [ ] Anexos duráveis com conteúdo.
 
+### 5.1 Procedimento offline em aparelho real (F8-04)
+
+Evidência automatizada entregue (`f5b8e0b`): `src/infrastructure/storage/offline-persistence.test.ts` — sessão inteira (cliente, atendimento, prescrição, orçamento com desconto, confirmação com baixa de estoque, recebimento no caixa e OS) sobrevive a `database.close()` + `database.open()` com backup `validateBackup` íntegro (363/363). **Isso não substitui a execução em aparelho** (fora de escopo: simular offline só no DevTools e chamar de aprovado).
+
+Passos para o aparelho real (celular ou desktop com Chrome/Edge; instalação exige HTTPS ou localhost):
+
+1. Publicar/ servir o `dist/` do build por HTTPS (ex.: `npm run build` + host estático com TLS) e abrir a URL.
+2. Instalar a PWA ("Instalar aplicativo" no menu do navegador) e abrir pelo ícone.
+3. Fazer login (perfil OWNER ou conforme o teste) e selecionar a loja.
+4. **Ligar o modo avião** (offline real) e aguardar 10 s.
+5. Sem rede, criar os dados sintéticos: cliente "Offline Teste <data>", atendimento, prescrição com graus, item de estoque (se necessário), orçamento com 1 linha de R$ 300 e desconto de 5%, confirmar a venda, abrir o caixa com R$ 0 e receber os R$ 285 em dinheiro, criar a OS.
+6. **Fechar o app por completo** (force stop / fechar abas) ainda offline.
+7. Reabrir pelo ícone **ainda offline** e conferir, um a um: cliente na listagem, venda confirmada com total R$ 285 e desconto "Aplicado por…", estoque do produto com saldo menor em 1, recebimento de R$ 285 nos movimentos do caixa, OS vinculada, prescrição no perfil/guia clínico.
+8. Sair do modo avião e recarregar: nada deve quebrar nem duplicar.
+9. (Opcional, OWNER) Exportar backup offline e conferir que o arquivo é válido.
+
+Registrar a evidência na tabela abaixo (uma linha por dispositivo); só então marcar o card como DONE:
+
+| Dispositivo | SO | Navegador/Versão | Data | Resultado | Observações |
+|---|---|---|---|---|---|
+| (pendente) | | | | | aguardando execução manual |
+
 ## 6. Permissões (todos os perfis)
 
 - [ ] Recepção sem financeiro; vendedor sem anamnese; clínico sem fechamento de caixa.

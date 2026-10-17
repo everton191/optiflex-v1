@@ -6,6 +6,12 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `f5b8e0b` + docs — Testes offline, parte automatizada (F8-04, em andamento)
+
+- `src/infrastructure/storage/offline-persistence.test.ts` (novo): evidência automatizada do Fluxo 5 — sessão completa criada sem rede (cliente, atendimento, prescrição, orçamento com desconto de 5%, confirmação com baixa de estoque, recebimento de R$ 285 no caixa e OS) sobrevive a `database.close()` + `database.open()`; integridade conferida por reabertura (venda líquida + desconto com bruto, saldo do estoque, recebimento, OS, prescrição) e por `validateBackup` do snapshot completo. **363/363**, tsc 0, build 0.
+- Procedimento de aparelho real documentado em `RELEASE_CHECKLIST.md` §5.1 (instalação PWA por HTTPS, modo avião, dados sintéticos, force stop, reabertura offline, checklist de conferência e tabela de evidência por dispositivo).
+- Card **F8-04 permanece IN PROGRESS**: o CA exige evidência executada em aparelho real (DevTools não conta); fecha quando a tabela §5.1 for preenchida.
+
 ### `93ebb03` + docs — Descontos e aprovação (F3-12)
 
 - `sales.ts`: `SaleDiscount` (`type` PERCENT/AMOUNT, `value`, `reason?`, `grossTotal`, `appliedBy`/`appliedByRole`/`appliedAt`, `approvedBy?`/`approvedAt?`) em `Sale.discount?` (campo opcional, sem bump Dexie); `Sale.total` passa a ser o líquido; `discountAuthorityByRole` (vendedor/caixa 5% ou R$ 50; gerente 15% ou R$ 300; dono/rede 30% ou R$ 1000 — as duas barreiras valem juntas; acima do topo ninguém aprova); funções puras `assertValidSaleDiscount`, `saleDiscountAmountCents` (clampa ao bruto), `saleTotalWithDiscount`, `discountWithinAuthority`/`discountRequiresApproval`/`canApproveDiscount`, `assertDiscountNotZeroing`, `saleGrossTotal`, `saleDiscountAmount`.
