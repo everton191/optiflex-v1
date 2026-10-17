@@ -3,6 +3,20 @@
 Base: checklist final da `docs/DEVELOPMENT_AUDIT_A_H.md` (seções 125–128) + regras de execução deste repositório.
 Nenhuma versão é liberada com apenas "build verde".
 
+## Convenção de versionamento e tags (F8-17, entregue em `v0.1.0`)
+
+- **Formato:** tags anotadas semânticas `vMAJOR.MINOR.PATCH` (semver).
+  - `MAJOR`: incompatibilidades de dados/migração ou mudança de contrato público do app.
+  - `MINOR`: funcionalidades novas compatíveis com dados existentes.
+  - `PATCH`: correções e ajustes sem mudança de comportamento esperado.
+- **Faixa 0.x:** enquanto as Fases 5 (SaaS) e 6 (NF-e) estiverem bloqueadas e não houver piloto/lançamento, o `MAJOR` fica em `0` — `1.0.0` é reservado para o primeiro lançamento com Fase 8 completa (e2e, piloto, LGPD).
+- **Origem da tag:** apenas commits de `feat/operational-flow-v2` com `npx.cmd tsc -b` exit 0, `npm.cmd test` 100% verde e `npm.cmd run build` exit 0 — **validações executadas imediatamente antes de criar a tag** (risco do card: "tag apontando para commit quebrado").
+- **Mensagem da tag:** anotada (`git tag -a vX.Y.Z -m ...`), citando o escopo incluído, os números de validação e o caminho do changelog correspondente.
+- **Changelog correspondente:** entrada em `CHANGELOG_DEVELOPMENT.md` (branch `docs/master-kanban`) cujo SHA de commit corresponde ao commit da tag; a tag pode viver na branch de código enquanto o changelog vive na branch de docs — o elo é o SHA citado nos dois lados.
+- **Imutabilidade:** tag publicada nunca é movida ou apagada (`git tag -d` local só para erro antes do push); defeitos corrigem-se para frente com tag nova.
+- **Publicação explícita:** sem automação — `git push origin vX.Y.Z` após revisão humana (fora do escopo do card: publicação automática).
+- **Lista de tags:** `git tag` (local) ou `git ls-remote --tags origin`.
+
 ## 0. Pré-condições de qualquer release
 
 - [ ] Branch e escopo revisados (`git log` da release, `git status` limpo).
@@ -76,3 +90,9 @@ Nenhuma versão é liberada com apenas "build verde".
 - [ ] Tag semântica criada **após** testes verdes.
 - [ ] `PROJECT_STATUS.md` atualizado com commit/tag da release.
 - [ ] Monitoramento pós-release (quando F5-17 existir).
+
+## Releases publicadas
+
+| Tag | Data | Commit | Validações | Changelog correspondente |
+|---|---|---|---|---|
+| `v0.1.0` | 08/10/2026 | `2a58572` (`feat/operational-flow-v2`) | tsc 0 · 346/346 · build 0 (executadas antes da tag) | `CHANGELOG_DEVELOPMENT.md` — entrada `2a58572` e anteriores (F1-10, F2-01, F3-19, F3-16, F3-11, F3-08 e levas anteriores de 08/10/2026) |

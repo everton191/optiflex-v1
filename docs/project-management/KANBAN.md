@@ -56,7 +56,7 @@ Classificação de inventário (Etapa 4) no corpo de cada card:
 
 - Issues totais: **155** (8 épicas + 147 tarefas).
 - Tarefas por fase: F1=14 · F2=18 · F3=20 · F4=20 · F5=19 · F6=19 · F7=19 · F8=18.
-- Tarefas por status (revisado em 08/10/2026; F1-09, F2-04, F7-02, F1-11, F3-09, F3-14, F1-02, F1-06, F4-16, F2-05, F4-10, F4-18, F4-12, F2-06, F3-01, F8-06, F8-07, F1-07, F3-17, F2-11, F2-02, F3-02, F3-03, F2-07, F3-10, F4-11, F2-14, F3-07, F8-10, F8-02, F7-01, F1-05, F1-03, F7-03, F2-08, F7-05, F1-12, F3-06, F3-05, F7-11, F7-13, F3-08, F3-11, F3-16, F3-19, F2-01 e F1-10 concluídas no mesmo dia): DONE=65 · IN PROGRESS=0 · READY=0 · TESTING=0 · CODE REVIEW=0 · BACKLOG=31 · BLOCKED=50.
+- Tarefas por status (revisado em 08/10/2026; F1-09, F2-04, F7-02, F1-11, F3-09, F3-14, F1-02, F1-06, F4-16, F2-05, F4-10, F4-18, F4-12, F2-06, F3-01, F8-06, F8-07, F1-07, F3-17, F2-11, F2-02, F3-02, F3-03, F2-07, F3-10, F4-11, F2-14, F3-07, F8-10, F8-02, F7-01, F1-05, F1-03, F7-03, F2-08, F7-05, F1-12, F3-06, F3-05, F7-11, F7-13, F3-08, F3-11, F3-16, F3-19, F2-01, F1-10 e F8-17 concluídas no mesmo dia): DONE=66 · IN PROGRESS=0 · READY=0 · TESTING=0 · CODE REVIEW=0 · BACKLOG=30 · BLOCKED=50.
 - Bloqueios: **50 tarefas** bloqueadas — 47 por dependência de fase futura/externa + **3 reclassificadas em 08/10** (F4-13 #70, F8-03 #137, F3-20 #57: status desatualizado, decisão externa já registrada).
 - **Revisão de dependências 08/10/2026:** 7 ciclos detectados (SCC/Tarjan sobre este arquivo) e corrigidos em KANBAN + corpos das issues; **0 ciclos remanescentes**. Detalhe antes/depois em `DEPENDENCIES.md`.
 
@@ -262,7 +262,7 @@ Regra de ouro: **nunca mover para DONE sem evidência verificável** (comando de
 | F8-14 | [Documentação para usuários](https://github.com/everton191/optiflex-v1/issues/148) | Infraestrutura | BACKLOG | p2 | F7-16. |
 | F8-15 | [Suporte](https://github.com/everton191/optiflex-v1/issues/149) | Infraestrutura | BACKLOG | p3 | F8-14. |
 | F8-16 | [Políticas comerciais](https://github.com/everton191/optiflex-v1/issues/150) | Infraestrutura | BLOCKED | p2 | decisão comercial. |
-| F8-17 | [Preparação de versões](https://github.com/everton191/optiflex-v1/issues/151) | Infraestrutura | BACKLOG | p2 | F8-02. |
+| F8-17 | [Preparação de versões](https://github.com/everton191/optiflex-v1/issues/151) | Infraestrutura | DONE | p2 | F8-02 (feito; entregue em `v0.1.0` — primeira tag semântica anotada em `2a58572` com validações pré-tag verdes, convenção semver documentada em `RELEASE_CHECKLIST.md` e changelog correspondente em `CHANGELOG_DEVELOPMENT.md`). |
 | F8-18 | [Monitoramento pós-lançamento](https://github.com/everton191/optiflex-v1/issues/152) | Saas | BLOCKED | p2 | F5-17. |
 
 ## Dez próximas tarefas prioritárias (com dependências)
@@ -271,7 +271,7 @@ Ordem recomendada para a próxima sessão de desenvolvimento (status READY/IN PR
 
 | # | ID | Issue | Tarefa | Prioridade | Dependências | Justificativa |
 |---|---|---|---|---|---|---|
-| 1 | F8-17 | #151 | [Infraestrutura] Preparação de versões | P2 | F8-02 (feito) | Reserva promovida: F8-02 entregue e nenhuma outra dependência. |
+| — | (fila esvaziada) | — | — | — | — | Todas as tarefas sem bloqueio externo foram concluídas (última: F8-17 `#151`, tag `v0.1.0`); o restante do BACKLOG depende de decisões do usuário (F5 backend, F6 especificação fiscal, F4-13 juros/prazo, F1-04 permissão/policy server-side). |
 
 Os `#?` devem ser resolvidos pela tabela acima (coluna ID → link da issue). Os números já estão fixados nas tabelas das fases; para referência rápida: consulte `DEPENDENCIES.md`.
 

@@ -2,7 +2,16 @@
 
 Registro de entregas relevantes. Formato: data · commit · escopo · evidência.
 
+**Versões publicadas:** `v0.1.0` (08/10/2026, tag em `2a58572` + docs `44d1258`) — primeiro checkpoint versionado; cobre todas as entregas de 08/10/2026 listadas abaixo (F8-17 até F3-03). Convenção semver em `RELEASE_CHECKLIST.md`.
+
 ## 08/10/2026
+
+### `v0.1.0` + docs — Preparação de versões (F8-17)
+
+- Nenhum código alterado; entrega de processo.
+- Primeira tag semântica anotada `v0.1.0` criada e enviada (`git push origin v0.1.0`) apontando para `2a58572`, com validações obrigatórias executadas antes da tag: tsc 0, **346/346** testes, build 0.
+- Convenção de versionamento documentada em `RELEASE_CHECKLIST.md`: semver `vMAJOR.MINOR.PATCH`, faixa 0.x até o lançamento, origem apenas de commits verdes de `feat/operational-flow-v2`, mensagem anotada citando o changelog, imutabilidade de tags publicadas e publicação explícita (sem automação — fora do escopo do card).
+- Changelog correspondente: entradas `2a58572` e anteriores deste arquivo (elo por SHA entre tag na branch de código e changelog na branch de docs).
 
 ### `2a58572` + docs — Auditoria de alterações (F1-10)
 
