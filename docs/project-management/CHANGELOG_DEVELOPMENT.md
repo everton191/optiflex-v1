@@ -6,6 +6,14 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `93ebb03` + docs — Descontos e aprovação (F3-12)
+
+- `sales.ts`: `SaleDiscount` (`type` PERCENT/AMOUNT, `value`, `reason?`, `grossTotal`, `appliedBy`/`appliedByRole`/`appliedAt`, `approvedBy?`/`approvedAt?`) em `Sale.discount?` (campo opcional, sem bump Dexie); `Sale.total` passa a ser o líquido; `discountAuthorityByRole` (vendedor/caixa 5% ou R$ 50; gerente 15% ou R$ 300; dono/rede 30% ou R$ 1000 — as duas barreiras valem juntas; acima do topo ninguém aprova); funções puras `assertValidSaleDiscount`, `saleDiscountAmountCents` (clampa ao bruto), `saleTotalWithDiscount`, `discountWithinAuthority`/`discountRequiresApproval`/`canApproveDiscount`, `assertDiscountNotZeroing`, `saleGrossTotal`, `saleDiscountAmount`.
+- `sales-service.ts`: `createQuote`/`updateQuote` aceitam `discount` + contexto {appliedBy, role}; `approveDiscount` grava quem aprovou, proíbe autoprovação, valida limite do aprovador e audita (`UPDATE`/`sale`); `confirm` bloqueia desconto acima do limite do aplicante sem aprovação.
+- `CashWorkspace`: campos tipo/valor/motivo no formulário de orçamento com prévia "bruto → desconto → final" e aviso de aprovação/limite; linha da venda com status do desconto e botão "Aprovar desconto" para perfis autorizados; `SaleDocumentPage` exibe bruto, desconto (motivo + aprovador) e total.
+- Regras documentadas em `OPTICAL_BUSINESS_RULES.md` (seção "Descontos com limite por perfil e aprovação").
+- Testes `sales-discount.test.ts` (+8: matemática/clamp, limites por perfil, criação com e sem desconto, bloqueio de confirmação, aprovação/autoprovação/dupla aprovação, update/clear). **362/362**, tsc 0, build 0.
+
 ### `f43627c` + docs — Guia clínico do perfil (F3-04)
 
 - `src/domain/customer-clinical-history.ts` (novo): `CustomerClinicalDocumentKind` (PRESCRIPTION/CLINICAL_RECORD/ATTACHMENT), `canViewClinicalHistory(role)` (gate `clinical.workspace.access`) e `buildCustomerClinicalDocuments` puro — prescrições com uso/versão/retificação, prontuários (finalizado/em edição) apenas quando há conteúdo, anexos com categoria; resumo `CustomerClinicalRecordSummary` só com flags booleanas (texto de anamnese/exame nunca sai do repositório — P0 de segurança).

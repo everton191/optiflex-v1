@@ -2,6 +2,7 @@
 
 ## Current Status
 
+- Descontos com limite por perfil e aprovação (F3-12/#51, `93ebb03`): `Sale.discount` (`SaleDiscount` com bruto, aplicante, perfil e aprovador), limites em `discountAuthorityByRole` (vendedor/caixa 5% ou R$ 50; gerente 15% ou R$ 300; dono/rede 30% ou R$ 1000), `createQuote`/`updateQuote` com `discount` + contexto, `approveDiscount` (sem autoprovação, com auditoria) e bloqueio em `confirm` sem aprovação; UI no caixa com prévia bruto→desconto→final, botão "Aprovar desconto" e linhas no documento imprimível; `Sale.total` é o líquido; testes `sales-discount.test.ts` (+8).
 - PDV guiado no `/caixa` (F3-11): filtro de categoria (FRAME/LENS/ACCESSORY) no seletor de itens, tratamentos por venda e medidas da receita importadas no formulário (sem redigitação).
 - `Sale.items?` guarda `{ inventoryItemId, name, quantity, unitPrice, category? }`; `Sale.treatments?` guarda `{ name, price }` (serviços, sem baixa de estoque).
 - Confirmação transacional (`LocalSaleRepository.confirm`) muda para `CONFIRMED` **e** baixa o saldo gerando movimentos `OUT` na mesma transação — tratamentos **não** geram movimento.
@@ -9,6 +10,7 @@
 
 ## Current Decisions
 
+- Desconto: as duas barreiras (percentual **e** valor) valem juntas; acima do topo (30% ou R$ 1000) ninguém aprova; desconto que zeraria o total é rejeitado; `grossTotal` fica gravado no desconto (fonte da verdade do bruto, sem recomputar); motivo é opcional mas exibido no documento.
 - Sem linhas (itens nem tratamentos): total e descrição são digitados; a confirmação não toca no estoque.
 - Com linhas: total = soma em centavos de itens + tratamentos; descrição (quando vazia) junta nomes de itens e tratamentos.
 - Preço unitário é digitado por venda (ainda sem catálogo de preços); `defaultPrice` do produto pré-preenche o campo.

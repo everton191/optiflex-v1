@@ -2,6 +2,16 @@
 
 Documento de regras operacionais relevantes para a ótica. Este arquivo nasceu com o ciclo de pagamentos (F4-11) e cresce por card.
 
+## Descontos com limite por perfil e aprovação (F3-12, 08/10/2026)
+
+- **Modelo:** `Sale.discount?` (`SaleDiscount`) com tipo `PERCENT` (percentual) ou `AMOUNT` (valor em reais), valor, motivo opcional, base bruta (`grossTotal`) e registro imutável de **quem aplicou** (`appliedBy` + `appliedByRole` + `appliedAt`) e de **quem aprovou** (`approvedBy`/`approvedAt`, quando exigido). `Sale.total` passa a ser o valor **líquido** (bruto − desconto); o bruto fica no registro do desconto.
+- **Limites por perfil (defaults v0.x — ajustáveis):** vendedor e caixa **5% ou R$ 50**; gerente da loja **15% ou R$ 300**; dono e administrador de rede **30% ou R$ 1000**. As duas barreiras valem juntas (percentual **e** valor). Tabela central em `discountAuthorityByRole` (`sales.ts`).
+- **Aprovação (CA):** desconto acima do limite de quem aplica é salvo no orçamento **sem** `approvedBy`; `SalesService.confirm` bloqueia a confirmação até a aprovação. `approveDiscount(sale, aprovador, perfil)` grava quem aprovou, **proíbe autoprovação** (quem aplicou ≠ quem aprova) e rejeita aprovação acima do limite do aprovador; a aprovação gera evento de auditoria (`UPDATE`/`sale`, resumo "Desconto aprovado em …").
+- **Teto absoluto:** desconto que zeraria o total é rejeitado na gravação ("O desconto não pode zerar o total da venda."). Acima do topo (30% ou R$ 1000) **ninguém** aprova — margem protegida por construção.
+- **UI:** formulário de orçamento no caixa com tipo/valor/motivo, prévia "bruto → desconto → final" com aviso de aprovação e limite do perfil; linha da venda mostra desconto com status ("Aguardando aprovação" / "Aprovado por …") e botão "Aprovar desconto" para perfis autorizados; documento imprimível (`/vendas/:id`) exibe bruto, desconto (com motivo e aprovador) e total líquido.
+- **Auditoria/histórico:** o registro do desconto vive na própria venda (quem, quando, quanto, sobre qual bruto, quem aprovou); cancelamento da venda continua auditado à parte (F1-10).
+- **Fora do escopo:** promoções automátáticas, tabelas de preço e desconto por produto/cliente (decisão de catálogo futuro).
+
 ## Pagamentos por forma (F4-11, 08/10/2026)
 
 - **Dinheiro (CASH):** o operador informa o valor recebido; o sistema calcula o troco em centavos (`receiptPlan` em `src/domain/cash.ts`, sem drift de arredondamento) e grava no caixa **apenas o valor aplicado à venda** — o troco sai do caixa e não vira movimento. O troco aparece em tempo real ao digitar o valor e na mensagem de confirmação ("Recebimento registrado. Troco: R$ X.").

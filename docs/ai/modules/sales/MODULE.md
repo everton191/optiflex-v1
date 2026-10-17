@@ -23,7 +23,7 @@ UI em `CashDeskPage`; domínio em `sales.ts` e `sales-service.ts`; repository em
 
 ## Services
 
-`SalesService.list`, `createQuote` (calcula total e descrição a partir dos itens), `updateQuote` (edita apenas rascunho, com a mesma validação do create), `transitionQuote` (muda `quoteStatus` conforme `quoteTransitions`), `confirm` (transação que confirma a venda e baixa o estoque; bloqueia recusado/expirado), `cancel` (motivo obrigatório; cotação via `save`, confirmada via `repository.cancel` devolvendo estoque e estornando caixa).
+`SalesService.list`, `createQuote` (calcula total e descrição a partir dos itens; aceita `discount?` + `context` {appliedBy, role} — F3-12), `updateQuote` (edita apenas rascunho, com a mesma validação do create; substitui/limpa o desconto), `transitionQuote` (muda `quoteStatus` conforme `quoteTransitions`), `confirm` (transação que confirma a venda e baixa o estoque; bloqueia recusado/expirado e desconto acima do limite sem aprovação), `approveDiscount` (grava `approvedBy`/`approvedAt`, proíbe autoprovação, valida limite do aprovador e audita — F3-12), `cancel` (motivo obrigatório; cotação via `save`, confirmada via `repository.cancel` devolvendo estoque e estornando caixa).
 
 ## Repositories
 
@@ -36,6 +36,8 @@ Estado React local; sem store/hook dedicado.
 ## Models
 
 `Sale`, `SaleStatus`, `SalePaymentStatus`, `QuoteStatus` (`DRAFT`/`SENT`/`ACCEPTED`/`REJECTED`/`EXPIRED` em `Sale.quoteStatus?`, ausente = rascunho), `quoteStatusLabels`, `quoteTransitions`, `quoteStatusOf`, `SaleItem` (com `cancelReason?`/`cancelledAt?`/`cancelledBy?`); helpers `itemsTotalCents`/`itemsTotal` (regra em `src/domain/money.ts`), `stockMovementsFor` e `refundStockMovementsFor`.
+
+`SaleDiscount` (F3-12): `{ type: PERCENT|AMOUNT, value, reason?, grossTotal, appliedBy, appliedByRole, appliedAt, approvedBy?, approvedAt? }` em `Sale.discount?`; `Sale.total` é o líquido. Funções puras: `assertValidSaleDiscount`, `saleDiscountAmountCents` (clampa ao bruto), `saleTotalWithDiscount`, `discountWithinAuthority`/`discountRequiresApproval`/`canApproveDiscount` (limites em `discountAuthorityByRole`: SELLER/CASHIER 5% ou R$ 50, STORE_MANAGER 15% ou R$ 300, OWNER/NETWORK_ADMINISTRATOR 30% ou R$ 1000), `assertDiscountNotZeroing`, `saleGrossTotal`, `saleDiscountAmount`, `saleDiscountTypeLabels`.
 
 ## Permissions
 
