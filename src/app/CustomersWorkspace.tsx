@@ -8,11 +8,12 @@ import type { Customer } from "../domain/customer";
 import { findDuplicateCustomer } from "../domain/customer";
 import { CustomerHistoryService } from "../domain/customer-history-service";
 import { customerHistoryKinds, customerHistoryKindLabels, historyKindsFor, type CustomerHistoryEvent, type CustomerHistoryKind } from "../domain/customer-history";
+import { canViewClinicalHistory, customerClinicalDocumentKinds, customerClinicalDocumentKindLabels, type CustomerClinicalDocument, type CustomerClinicalDocumentKind } from "../domain/customer-clinical-history";
 import { ReceptionService } from "../domain/reception-service";
-import { LocalAttendanceRepository, LocalCashRepository, LocalCustomerRepository, LocalSaleRepository, LocalWorkOrderRepository } from "../infrastructure/storage/local-repositories";
+import { LocalAttendanceRepository, LocalCashRepository, LocalClinicalRepository, LocalCustomerRepository, LocalPrescriptionRepository, LocalSaleRepository, LocalWorkOrderRepository } from "../infrastructure/storage/local-repositories";
 
 const receptionService = new ReceptionService(new LocalCustomerRepository(), new LocalAttendanceRepository());
-const historyService = new CustomerHistoryService(new LocalAttendanceRepository(), new LocalSaleRepository(), new LocalWorkOrderRepository(), new LocalCashRepository());
+const historyService = new CustomerHistoryService(new LocalAttendanceRepository(), new LocalSaleRepository(), new LocalWorkOrderRepository(), new LocalCashRepository(), new LocalPrescriptionRepository(), new LocalClinicalRepository());
 
 export function CustomersPage() {
   const session = useSession();
@@ -33,19 +34,27 @@ export function CustomerProfilePage() {
   const { currentStoreId } = useAppContext();
   const session = useSession();
   const { customerId = "" } = useParams(); const [customer, setCustomer] = useState<Customer>(); const [events, setEvents] = useState<CustomerHistoryEvent[]>([]);
+  const [documents, setDocuments] = useState<CustomerClinicalDocument[]>([]);
   const [kindFilter, setKindFilter] = useState<"" | CustomerHistoryKind>("");
+  const [documentKindFilter, setDocumentKindFilter] = useState<"" | CustomerClinicalDocumentKind>("");
   const [loading, setLoading] = useState(true); const [error, setError] = useState(""); const [attempt, setAttempt] = useState(0);
   const visibleKinds = historyKindsFor(session.role);
+  const canClinical = canViewClinicalHistory(session.role);
   useEffect(() => {
     let active = true;
     setLoading(true); setError("");
-    void Promise.all([receptionService.getCustomer(customerId), historyService.list(customerId, { storeId: currentStoreId, role: session.role })])
-      .then(([loadedCustomer, loadedHistory]) => { if (active) { setCustomer(loadedCustomer); setEvents(loadedHistory); } })
+    void Promise.all([
+      receptionService.getCustomer(customerId),
+      historyService.list(customerId, { storeId: currentStoreId, role: session.role }),
+      canClinical ? historyService.listClinicalDocuments(customerId, { storeId: currentStoreId, role: session.role }) : Promise.resolve([] as CustomerClinicalDocument[])
+    ])
+      .then(([loadedCustomer, loadedHistory, loadedDocuments]) => { if (active) { setCustomer(loadedCustomer); setEvents(loadedHistory); setDocuments(loadedDocuments); } })
       .catch((reason) => { if (active) setError(errorMessage(reason, "Não foi possível abrir este cliente.")); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [customerId, currentStoreId, session.role, attempt]);
+  }, [customerId, currentStoreId, session.role, attempt, canClinical]);
   const timeline = events.filter((event) => !kindFilter || event.kind === kindFilter);
+  const clinicalDocuments = documents.filter((document) => !documentKindFilter || document.kind === documentKindFilter);
   if (loading) return <div className="page" role="status">Carregando cliente…</div>;
   if (error) return <div className="page"><p role="alert">{error}</p><Button type="button" onClick={() => setAttempt((value) => value + 1)}>Tentar novamente</Button></div>;
   if (!customer) return <div className="page"><h1>Cliente não encontrado</h1></div>;
@@ -54,7 +63,13 @@ export function CustomerProfilePage() {
       <button type="button" role="tab" aria-selected={kindFilter === ""} className={kindFilter === "" ? "active" : ""} onClick={() => setKindFilter("")}>Todos <span>{events.length}</span></button>
       {customerHistoryKinds.filter((kind) => visibleKinds.includes(kind)).map((kind) => <button key={kind} type="button" role="tab" aria-selected={kindFilter === kind} className={kindFilter === kind ? "active" : ""} onClick={() => setKindFilter(kind)}>{customerHistoryKindLabels[kind]} <span>{events.filter((event) => event.kind === kind).length}</span></button>)}
     </div>
-    <div className="list-card">{timeline.length ? timeline.map((event) => <article className="list-row" key={event.id}><div><strong>{event.title}</strong><span>{new Date(event.at).toLocaleString("pt-BR")} · {customerHistoryKindLabels[event.kind]}</span>{event.otherStore && <small>Outra loja — troque de loja no topo para abrir o registro.</small>}</div><div>{event.detail && <span className="badge">{event.detail}</span>}{event.href && <Link to={event.href}>Ver registro</Link>}</div></article>) : <p className="empty-state">Nenhum registro no histórico para esta loja.</p>}</div></div>;
+    <div className="list-card">{timeline.length ? timeline.map((event) => <article className="list-row" key={event.id}><div><strong>{event.title}</strong><span>{new Date(event.at).toLocaleString("pt-BR")} · {customerHistoryKindLabels[event.kind]}</span>{event.otherStore && <small>Outra loja — troque de loja no topo para abrir o registro.</small>}</div><div>{event.detail && <span className="badge">{event.detail}</span>}{event.href && <Link to={event.href}>Ver registro</Link>}</div></article>) : <p className="empty-state">Nenhum registro no histórico para esta loja.</p>}</div>
+    {canClinical && <><h2 className="section-title">Guia clínica</h2>
+      <div className="status-filters" role="tablist" aria-label="Filtrar documentos clínicos por tipo">
+        <button type="button" role="tab" aria-selected={documentKindFilter === ""} className={documentKindFilter === "" ? "active" : ""} onClick={() => setDocumentKindFilter("")}>Todos <span>{documents.length}</span></button>
+        {customerClinicalDocumentKinds.filter((kind) => documents.some((document) => document.kind === kind)).map((kind) => <button key={kind} type="button" role="tab" aria-selected={documentKindFilter === kind} className={documentKindFilter === kind ? "active" : ""} onClick={() => setDocumentKindFilter(kind)}>{customerClinicalDocumentKindLabels[kind]} <span>{documents.filter((document) => document.kind === kind).length}</span></button>)}
+      </div>
+      <div className="list-card">{clinicalDocuments.length ? clinicalDocuments.map((document) => <article className="list-row" key={document.id}><div><strong>{document.title}</strong><span>{new Date(document.at).toLocaleString("pt-BR")} · {customerClinicalDocumentKindLabels[document.kind]}</span>{document.otherStore && <small>Outra loja — troque de loja no topo para abrir o documento.</small>}</div><div>{document.detail && <span className="badge">{document.detail}</span>}{document.href && <Link to={document.href}>Abrir consulta</Link>}</div></article>) : <p className="empty-state">Nenhum documento clínico para este cliente.</p>}</div></>}</div>;
 }
 
 export function CustomerNewPage() {
