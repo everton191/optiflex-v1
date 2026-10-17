@@ -4,6 +4,17 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `2a58572` + docs — Auditoria de alterações (F1-10)
+
+- `src/domain/audit.ts` (novo): `AuditEntry` imutável (`organizationId?`, `id`, `storeId`, `action` CREATE/UPDATE/CANCEL/ADJUSTMENT, `entity` sale/inventoryItem/user/store, `entityId`, `author`, `at`, `reason?`, `summary?`), labels (`auditActionLabels`/`auditEntityLabels`), contrato `AuditRepository` (`create`/`list` com filtros), `isAuditAction`/`isAuditEntity` e `assertValidAuditEntry`.
+- `src/domain/audit-service.ts` (novo): `AuditService.log` monta a entrada (`audit-` + uuid, organização, data ISO, autor vazio → "sistema", trim + validação) e `AuditService.list`.
+- `src/infrastructure/storage/database.ts`: Dexie **v15** com tabela `auditEntries` (índices `id, storeId, action, entity, entityId, at`); v14 preservada.
+- `src/infrastructure/storage/local-repositories.ts`: `LocalAuditRepository` (create + list ordenado por data com filtros).
+- Serviços auditam ocorrências críticas com `AuditService` opcional e autor da sessão: `SalesService.cancel` (CANCEL/sale), `InventoryService.adjust` (ADJUSTMENT/inventoryItem) e `AdministrationService` (CREATE/UPDATE em lojas e usuários; `updateUser` resume os campos alterados). Wiring em `providers.tsx`, `CashWorkspace` e `InventoryWorkspace` passando `session.userName`.
+- `/admin/auditoria` (`AuditPage` em `AdminWorkspace`): filtros de ação/registro/autor, coluna de loja, guarda `settings.manage` (22 rotas), menu Administração.
+- Backup **schema 14** inclui `auditEntries` (schemas legados 10–13 injetam `[]` com offsets -4/-3/-2/-1; validação de ação/entidade/data/reason/summary).
+- Testes: `audit-service.test.ts` (4), sales-service +2, inventory-service +1, administration-service +3, backup +1, guards 21→22; **346/346 (33 arquivos)**, build 0, tsc 0.
+
 ### `4f78fe6` + docs — Cadastro completo de empresas (F2-01)
 
 - `src/domain/organization.ts` (novo): `onlyDigits`, `formatCnpj` (máscara progressiva XX.XXX.XXX/XXXX-XX), `isValidCnpj` (dígitos verificadores — pesos 5432/98765432 e 6/5432/98765432; rejeita 14 dígitos repetidos), `normalizeOrganizationSettings` (trim; opcionais vazios → `undefined`; UF para maiúsculas) e `assertValidOrganizationSettings` (nome da organização e cargo clínico obrigatórios; CNPJ, e-mail, UF com 2 letras e CEP com 8 dígitos validados quando presentes).

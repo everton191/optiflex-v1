@@ -56,7 +56,7 @@ Classificação de inventário (Etapa 4) no corpo de cada card:
 
 - Issues totais: **155** (8 épicas + 147 tarefas).
 - Tarefas por fase: F1=14 · F2=18 · F3=20 · F4=20 · F5=19 · F6=19 · F7=19 · F8=18.
-- Tarefas por status (revisado em 08/10/2026; F1-09, F2-04, F7-02, F1-11, F3-09, F3-14, F1-02, F1-06, F4-16, F2-05, F4-10, F4-18, F4-12, F2-06, F3-01, F8-06, F8-07, F1-07, F3-17, F2-11, F2-02, F3-02, F3-03, F2-07, F3-10, F4-11, F2-14, F3-07, F8-10, F8-02, F7-01, F1-05, F1-03, F7-03, F2-08, F7-05, F1-12, F3-06, F3-05, F7-11, F7-13, F3-08, F3-11, F3-16, F3-19 e F2-01 concluídas no mesmo dia): DONE=64 · IN PROGRESS=0 · READY=0 · TESTING=0 · CODE REVIEW=0 · BACKLOG=32 · BLOCKED=50.
+- Tarefas por status (revisado em 08/10/2026; F1-09, F2-04, F7-02, F1-11, F3-09, F3-14, F1-02, F1-06, F4-16, F2-05, F4-10, F4-18, F4-12, F2-06, F3-01, F8-06, F8-07, F1-07, F3-17, F2-11, F2-02, F3-02, F3-03, F2-07, F3-10, F4-11, F2-14, F3-07, F8-10, F8-02, F7-01, F1-05, F1-03, F7-03, F2-08, F7-05, F1-12, F3-06, F3-05, F7-11, F7-13, F3-08, F3-11, F3-16, F3-19, F2-01 e F1-10 concluídas no mesmo dia): DONE=65 · IN PROGRESS=0 · READY=0 · TESTING=0 · CODE REVIEW=0 · BACKLOG=31 · BLOCKED=50.
 - Bloqueios: **50 tarefas** bloqueadas — 47 por dependência de fase futura/externa + **3 reclassificadas em 08/10** (F4-13 #70, F8-03 #137, F3-20 #57: status desatualizado, decisão externa já registrada).
 - **Revisão de dependências 08/10/2026:** 7 ciclos detectados (SCC/Tarjan sobre este arquivo) e corrigidos em KANBAN + corpos das issues; **0 ciclos remanescentes**. Detalhe antes/depois em `DEPENDENCIES.md`.
 
@@ -84,7 +84,7 @@ Regra de ouro: **nunca mover para DONE sem evidência verificável** (comando de
 | F1-07 | [Modelos de prescrições e ordens de serviço](https://github.com/everton191/optiflex-v1/issues/15) | Infraestrutura | DONE | p1 | nenhuma. Ciclo corrigido 08/10: F3-06/F3-07 dependem de F1-07 (entregue em `41f0bfd` — `Prescription` versionada + retificação append-only + contrato `PrescriptionRepository`; `WorkOrder.laboratory?` + evento `LABORATORY`). |
 | F1-08 | [Estratégia de migração do IndexedDB](https://github.com/everton191/optiflex-v1/issues/16) | Infraestrutura | DONE | p1 | nenhuma. |
 | F1-09 | [Valores monetários e precisão decimal](https://github.com/everton191/optiflex-v1/issues/17) | Infraestrutura | DONE | p1 | nenhuma. Concluído 08/10/2026 (`7dc1d7b`, 115 testes). |
-| F1-10 | [Auditoria de alterações](https://github.com/everton191/optiflex-v1/issues/18) | Infraestrutura | BACKLOG | p1 | F1-02 (feito), F2-05 (permissões por loja). |
+| F1-10 | [Auditoria de alterações](https://github.com/everton191/optiflex-v1/issues/18) | Infraestrutura | DONE | p1 | F1-02 (feito), F2-05 (feito; entregue em `2a58572` — trilha imutável de ações críticas: cancelamento de venda, ajuste de estoque e cadastros administrativos com `AuditService`, página `/admin/auditoria` sob `settings.manage` e backup schema 14). |
 | F1-11 | [Permissões e autorização](https://github.com/everton191/optiflex-v1/issues/19) | Access | DONE | p0 | F7-02 (login local identidade). Concluído 08/10/2026 (`a2c1369`, 149 testes). |
 | F1-12 | [Tratamento global de erros](https://github.com/everton191/optiflex-v1/issues/20) | Infraestrutura | DONE | p1 | nenhuma. Ciclo corrigido 08/10: F7-11 depende de F1-12. Entregue em `a30f165` — helper `errorMessage` + `RouteErrorBoundary` envolvendo AppShell/login/bloqueado, 24 ternários unificados, serviços sem `catch` vazio; 297/297; teste manual de falha de storage pendente. |
 | F1-13 | [Testes de domínio](https://github.com/everton191/optiflex-v1/issues/21) | Infraestrutura | DONE | p1 | nenhuma. |
@@ -130,7 +130,7 @@ Regra de ouro: **nunca mover para DONE sem evidência verificável** (comando de
 | F3-09 | [Anexos e documentos](https://github.com/everton191/optiflex-v1/issues/48) | Clinical | DONE | p0 | F1-08 (migração de store de anexos). |
 | F3-10 | [Orçamentos detalhados](https://github.com/everton191/optiflex-v1/issues/49) | Sales | DONE | p1 | F1-09 (monetário). |
 | F3-11 | [PDV de armações e lentes](https://github.com/everton191/optiflex-v1/issues/50) | Sales | DONE | p1 | F2-11, F3-08, F3-10 (feitos). Entregue em `3dc784c` — `SaleItem.category` (vem do produto, validada) + filtro de categoria (FRAME/LENS/ACCESSORY) no seletor do PDV; `Sale.treatments?` (`{ name, price }`, serviços sem estoque) somados no total/descrição via `treatmentsTotalCents`; medidas da receita importadas no formulário (snapshot F3-08, modo leitura); card "Venda" (itens+categoria+tratamentos) no detalhe da OS; documento de venda com tabela de tratamentos; backup valida `category`/`treatments`; 319/319, build 0, tsc 0. |
-| F3-12 | [Descontos e aprovação](https://github.com/everton191/optiflex-v1/issues/51) | Sales | BACKLOG | p1 | F1-10 (auditoria), F3-10. |
+| F3-12 | [Descontos e aprovação](https://github.com/everton191/optiflex-v1/issues/51) | Sales | BACKLOG | p1 | F1-10 (feito), F3-10. |
 | F3-13 | [Confirmação de vendas](https://github.com/everton191/optiflex-v1/issues/52) | Sales | DONE | p1 | F4-7. |
 | F3-14 | [Ordens de serviço](https://github.com/everton191/optiflex-v1/issues/53) | Work-orders | DONE | p1 | F1-07 (parte de OS já testada em 8a68d67; concluída em `e56939e` — rota de detalhe, histórico, cancelamento auditado, insumos). Ciclo corrigido 08/10: F3-15 depende de F3-14 (feito). |
 | F3-15 | [Laboratórios parceiros](https://github.com/everton191/optiflex-v1/issues/54) | Work-orders | BACKLOG | p2 | F2-10, F3-14 (feito). |
@@ -157,7 +157,7 @@ Regra de ouro: **nunca mover para DONE sem evidência verificável** (comando de
 | F4-10 | [Formas de pagamento](https://github.com/everton191/optiflex-v1/issues/67) | Cash | DONE | p1 | F4-9, F1-08 (feitos; entregue em `7f1d6e4` — forma obrigatória, `DEBIT`/`CREDIT`, `byMethod` no fechamento). |
 | F4-11 | [PIX, dinheiro e cartão](https://github.com/everton191/optiflex-v1/issues/68) | Cash | DONE | p1 | F4-10, F1-09. |
 | F4-12 | [Pagamentos parciais](https://github.com/everton191/optiflex-v1/issues/69) | Cash | DONE | p1 | F4-9, F4-10 (feitos; entregue em `60e2ca4` — status `PARTIAL`, input de valor na aba Recebimentos, saldo durável). |
-| F4-13 | [Parcelamentos](https://github.com/everton191/optiflex-v1/issues/70) | Cash | BLOCKED | p1 | F4-12, F1-09, F1-10 + decisão P4 (juros/multas/prazo). |
+| F4-13 | [Parcelamentos](https://github.com/everton191/optiflex-v1/issues/70) | Cash | BLOCKED | p1 | F4-12, F1-09, F1-10 (feitos) + decisão P4 (juros/multas/prazo). |
 | F4-14 | [Crediário e carnês](https://github.com/everton191/optiflex-v1/issues/71) | Cash | BACKLOG | p2 | F4-13, F7-13. |
 | F4-15 | [Contas a receber](https://github.com/everton191/optiflex-v1/issues/72) | Cash | BACKLOG | p2 | F4-13. |
 | F4-16 | [Suprimento e sangria](https://github.com/everton191/optiflex-v1/issues/73) | Cash | DONE | p1 | F4-8 (feito; entregue em `6a59f2b` — form na aba Sessão, motivo obrigatório, guarda de saldo na transação). |
@@ -188,7 +188,7 @@ Regra de ouro: **nunca mover para DONE sem evidência verificável** (comando de
 | F5-15 | [Limites por plano](https://github.com/everton191/optiflex-v1/issues/92) | Saas | BLOCKED | p2 | F5-12. |
 | F5-16 | [Painel de administração do SaaS](https://github.com/everton191/optiflex-v1/issues/93) | Saas | BLOCKED | p3 | F5-01, F5-12. |
 | F5-17 | [Monitoramento de incidentes](https://github.com/everton191/optiflex-v1/issues/94) | Saas | BLOCKED | p2 | F5-01. |
-| F5-18 | [Logs de auditoria na nuvem](https://github.com/everton191/optiflex-v1/issues/95) | Saas | BLOCKED | p1 | F5-01, F1-10. |
+| F5-18 | [Logs de auditoria na nuvem](https://github.com/everton191/optiflex-v1/issues/95) | Saas | BLOCKED | p1 | F5-01, F1-10 (feito). |
 | F5-19 | [Recuperação de conta](https://github.com/everton191/optiflex-v1/issues/96) | Saas | BLOCKED | p2 | F5-02. |
 
 ### FASE 6 — NOTAS FISCAIS E CONFORMIDADE — épica #6
@@ -253,7 +253,7 @@ Regra de ouro: **nunca mover para DONE sem evidência verificável** (comando de
 | F8-05 | [Testes multiempresa](https://github.com/everton191/optiflex-v1/issues/139) | Saas | BLOCKED | p1 | F5-04. |
 | F8-06 | [Testes de permissões](https://github.com/everton191/optiflex-v1/issues/140) | Access | DONE | p1 | F1-11, F2-05 (entregue em `94b9d50` — matriz rota×perfil em `route-guards.ts`, negativos de vendedor/clínico/caixa, escopo por perfil). |
 | F8-07 | [Auditoria de segurança](https://github.com/everton191/optiflex-v1/issues/141) | Access | DONE | p1 | F7-02, F1-11 (entregue em `277fdde` — `SECURITY_PLAN.md` com threat model, varredura automatizada de segredos e achados P0–P3; único P0 aberto = F1-12 erros globais, já em BACKLOG). |
-| F8-08 | [Verificação de LGPD](https://github.com/everton191/optiflex-v1/issues/142) | Compliance | BLOCKED | p2 | orientação jurídica; F3-09 (anexos), F1-10 (auditoria). |
+| F8-08 | [Verificação de LGPD](https://github.com/everton191/optiflex-v1/issues/142) | Compliance | BLOCKED | p2 | orientação jurídica; F3-09 (anexos), F1-10 (feito). |
 | F8-09 | [Testes de migração](https://github.com/everton191/optiflex-v1/issues/143) | Infraestrutura | DONE | p1 | F1-08. |
 | F8-10 | [Recuperação de dados](https://github.com/everton191/optiflex-v1/issues/144) | Infraestrutura | DONE | p1 | F3-09. |
 | F8-11 | [Homologação fiscal](https://github.com/everton191/optiflex-v1/issues/145) | Fiscal | BLOCKED | p2 | F6-08. |
@@ -271,8 +271,7 @@ Ordem recomendada para a próxima sessão de desenvolvimento (status READY/IN PR
 
 | # | ID | Issue | Tarefa | Prioridade | Dependências | Justificativa |
 |---|---|---|---|---|---|---|
-| 1 | F1-10 | #18 | [Infraestrutura] Auditoria de alterações | P1 | F1-02 (feito), F2-05 (feito) | Dependências concluídas; libera F3-12. |
-| 2 | F8-17 | #151 | [Infraestrutura] Preparação de versões | P2 | F8-02 (feito) | Reserva promovida: F8-02 entregue e nenhuma outra dependência. |
+| 1 | F8-17 | #151 | [Infraestrutura] Preparação de versões | P2 | F8-02 (feito) | Reserva promovida: F8-02 entregue e nenhuma outra dependência. |
 
 Os `#?` devem ser resolvidos pela tabela acima (coluna ID → link da issue). Os números já estão fixados nas tabelas das fases; para referência rápida: consulte `DEPENDENCIES.md`.
 

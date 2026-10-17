@@ -27,6 +27,7 @@ Todas as rotas usam `AppShell` (exceto `/login` e `/bloqueado`). A configuraçã
 | `/admin/lojas` | `StoresPage` | administration | `stores.manage` | AppShell |
 | `/admin/usuarios` | `UsersPage` | administration | `users.read` | AppShell |
 | `/admin/perfis` | `ProfilesPage` | access/admin | `roles.read` | AppShell |
+| `/admin/auditoria` | `AuditPage` — trilha de alterações críticas com filtros | administration | `settings.manage` | AppShell |
 | `/admin/configuracoes` | `SettingsPage` | administration | `settings.manage` | AppShell |
 | `/trocar-senha` | `ChangePasswordPage` | access | nenhuma (sessão ativa) | AppShell |
 | `/sem-acesso` | `ForbiddenPage` | access | nenhuma | AppShell |

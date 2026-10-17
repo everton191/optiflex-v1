@@ -1,9 +1,9 @@
 # SECURITY PLAN — plano de segurança
 
-**Status:** login local + escopo por registro entregues (F7-02, F1-11); auditoria F8-07 publicada em 08/10/2026 (nenhum P0 novo; lacuna P0 restante: F1-12 tratamento global de erros).
-Cartões: F1-10, F1-12, F8-08 + F5-02/04/05/11/18 (bloqueados com a Fase 5).
+**Status:** login local + escopo por registro entregues (F7-02, F1-11); auditoria F8-07 publicada em 08/10/2026 (nenhum P0 novo; lacuna P0 restante: F1-12 tratamento global de erros); F1-10 auditoria de alterações entregue em `2a58572` (trilha local imutável + página de consulta).
+Cartões: F1-12, F8-08 + F5-02/04/05/11/18 (bloqueados com a Fase 5).
 
-Atualizado em: 08/10/2026 · Base do código: `feat/operational-flow-v2` até `277fdde`.
+Atualizado em: 08/10/2026 · Base do código: `feat/operational-flow-v2` até `2a58572`.
 
 ## Ativos a proteger
 
@@ -22,7 +22,7 @@ Atualizado em: 08/10/2026 · Base do código: `feat/operational-flow-v2` até `2
 | Vazamento do backup | AES-GCM 256 + PBKDF2 600k iterações (Web Crypto), senha mínima 12, ação restrita a OWNER, confirmação literal "RESTAURAR", validação de integridade antes de tocar nos dados, rollback transacional | Coberto |
 | Escopo de loja/registro contornado | `access-context` (SELF/STORE/ORG/NETWORK) + `assertStoreAccess`/`assertRecordAccess` nos repositories; matriz rota×perfil automatizada (F8-06) | Coberto |
 | Erro inesperado derruba a UI (tela branca) | Sem ErrorBoundary/global handler | **P0 aberto (F1-12/#20)** |
-| Alteração sem rastro (auditoria) | Log de auditoria global AUSENTE (F1-10/#18); cancelamento de venda já auditado localmente (F4-18) | **P1 aberto (F1-10)** |
+| Alteração sem rastro (auditoria) | Log de auditoria global ENTREGUE (F1-10/#18, `2a58572`): cancelamento de venda, ajuste de estoque e cadastros administrativos; evolução para nuvem = F5-18 | **P1 fechado (F1-10)** |
 | Backend ausente (autorização só no frontend) | Arquitetura local-first single-user; aceito como risco do modelo | **P3 aceito (S-03)** |
 | Sessão roubada via filesystem | Sessão é marcador local `current` no IndexedDB, sem token de rede | **P3 aceito (S-04)** |
 | Dispositivo perdido com dados clínicos | IndexedDB sem criptografia própria (depende do SO/usuário do device); mitigado por TTL e backup criptografado | **P2 aberto (S-02)** |
@@ -70,7 +70,7 @@ Nenhum P0 de exposição direta de dados (segredos, backup, escopo) — os contr
 | Integridade transacional (venda/estoque/caixa/OS) | OK + testes | `sale-stock.test.ts`, `cash*.test.ts`, `work-orders.test.ts` |
 | Idempotência de recebimento | OK | `cash-service.test.ts` |
 | Backup/restauração local | OK + testes — anexos incluídos no schema 12 (F3-09) | `backup.test.ts` |
-| Log de auditoria (autor/data/ação/motivo) | PARCIAL — cancelamento de venda auditado (F4-18); log global ausente | F1-10 (#18) |
+| Log de auditoria (autor/data/ação/motivo) | ENTREGUE (F1-10, `2a58572`) — `AuditEntry` imutável (ação, registro, autor, loja, data, motivo/resumo) para cancelamentos, ajustes de estoque e cadastros administrativos; página `/admin/auditoria` com filtros (guard `settings.manage`); validado no backup (schema 14); nuvem = F5-18 | F1-10 (#18) |
 | Tratamento global de erros | AUSENTE (risco de tela branca/dado silencioso) | F1-12 (#20) |
 | Segredos/credenciais | OK + varredura automatizada — 0 achados | F8-07 (`277fdde`; `security-scan.test.ts`) |
 | Isolamento multiempresa | N/A (single-tenant local) | `MULTITENANCY.md` |
@@ -80,7 +80,7 @@ Nenhum P0 de exposição direta de dados (segredos, backup, escopo) — os contr
 
 1. **P0:** F1-12 erros globais (última lacuna P0; desbloqueia F7-11).
 2. **P0:** preservar atomicidade já construída (nenhuma alteração em `confirm`/`applyStockMovement` sem teste de concorrência).
-3. **P1:** F1-10 auditoria de alterações → F8-08 LGPD (jurídico) → F6-18 cofre de segredos.
+3. **P1:** F8-08 LGPD (jurídico) → F6-18 cofre de segredos. (F1-10 concluída em `2a58572`.)
 4. **P1/Fase 5:** autenticação real, policies server-side, storage de anexos, logs por tenant.
 
 ## Escopo por registro — F1-11 entregue (08/10/2026)
