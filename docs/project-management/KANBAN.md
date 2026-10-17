@@ -56,7 +56,7 @@ Classificação de inventário (Etapa 4) no corpo de cada card:
 
 - Issues totais: **155** (8 épicas + 147 tarefas).
 - Tarefas por fase: F1=14 · F2=18 · F3=20 · F4=20 · F5=19 · F6=19 · F7=19 · F8=18.
-- Tarefas por status (revisado em 08/10/2026; F1-09, F2-04, F7-02, F1-11, F3-09, F3-14, F1-02, F1-06, F4-16, F2-05, F4-10, F4-18, F4-12, F2-06, F3-01, F8-06, F8-07, F1-07, F3-17, F2-11, F2-02, F3-02, F3-03, F2-07, F3-10, F4-11, F2-14, F3-07, F8-10, F8-02, F7-01, F1-05, F1-03, F7-03, F2-08, F7-05, F1-12, F3-06, F3-05, F7-11, F7-13, F3-08, F3-11, F3-16, F3-19, F2-01, F1-10 e F8-17 concluídas no mesmo dia): DONE=66 · IN PROGRESS=0 · READY=0 · TESTING=0 · CODE REVIEW=0 · BACKLOG=30 · BLOCKED=50.
+- Tarefas por status (revisado em 08/10/2026; F1-09, F2-04, F7-02, F1-11, F3-09, F3-14, F1-02, F1-06, F4-16, F2-05, F4-10, F4-18, F4-12, F2-06, F3-01, F8-06, F8-07, F1-07, F3-17, F2-11, F2-02, F3-02, F3-03, F2-07, F3-10, F4-11, F2-14, F3-07, F8-10, F8-02, F7-01, F1-05, F1-03, F7-03, F2-08, F7-05, F1-12, F3-06, F3-05, F7-11, F7-13, F3-08, F3-11, F3-16, F3-19, F2-01, F1-10, F8-17 e F2-09 concluídas no mesmo dia): DONE=67 · IN PROGRESS=0 · READY=0 · TESTING=0 · CODE REVIEW=0 · BACKLOG=29 · BLOCKED=50.
 - Bloqueios: **50 tarefas** bloqueadas — 47 por dependência de fase futura/externa + **3 reclassificadas em 08/10** (F4-13 #70, F8-03 #137, F3-20 #57: status desatualizado, decisão externa já registrada).
 - **Revisão de dependências 08/10/2026:** 7 ciclos detectados (SCC/Tarjan sobre este arquivo) e corrigidos em KANBAN + corpos das issues; **0 ciclos remanescentes**. Detalhe antes/depois em `DEPENDENCIES.md`.
 
@@ -103,7 +103,7 @@ Regra de ouro: **nunca mover para DONE sem evidência verificável** (comando de
 | F2-06 | [Clientes e contatos](https://github.com/everton191/optiflex-v1/issues/28) | Customers | DONE | p1 | F1-03 (extração possível; entregue em `00d0d9e` — rota editar, `updateCustomer`, complementação e-mail/nascimento, perfil reflete). |
 | F2-07 | [Validação de CPF/CNPJ](https://github.com/everton191/optiflex-v1/issues/29) | Customers | DONE | p2 | F2-06. |
 | F2-08 | [Prevenção de duplicidades](https://github.com/everton191/optiflex-v1/issues/30) | Customers | DONE | p2 | F2-07. |
-| F2-09 | [Histórico de clientes](https://github.com/everton191/optiflex-v1/issues/153) | Customers | BACKLOG | p1 | eventos de venda/OS (F3/F4), F1-11 (autorização). |
+| F2-09 | [Histórico de clientes](https://github.com/everton191/optiflex-v1/issues/153) | Customers | DONE | p1 | F3/F4 (feito), F1-11 (feito; entregue em `4ed148a` — `customer-history.ts` com `buildCustomerHistory` puro e `historyKindsFor(role)`, `CustomerHistoryService` agregando atendimentos/vendas/OS/pagamentos da loja, timeline unificada no perfil com filtros por tipo, links por permissão (consulta clínica só na própria loja) e vendedor sem acesso a anamnese; 350/350). |
 | F2-10 | [Fornecedores e laboratórios](https://github.com/everton191/optiflex-v1/issues/31) | Administration | BACKLOG | p2 | F2-03 (CNPJ), F2-07 (validação). |
 | F2-11 | [Produtos: armações, lentes e acessórios](https://github.com/everton191/optiflex-v1/issues/32) | Inventory | DONE | p1 | F1-06 (feito; entregue em `e3bd607` — catálogo com categoria obrigatória, ficha de produto, filtro por categoria e venda consumindo o item do catálogo). |
 | F2-12 | [Serviços](https://github.com/everton191/optiflex-v1/issues/33) | Inventory | BACKLOG | p2 | F2-11. |
@@ -271,7 +271,18 @@ Ordem recomendada para a próxima sessão de desenvolvimento (status READY/IN PR
 
 | # | ID | Issue | Tarefa | Prioridade | Dependências | Justificativa |
 |---|---|---|---|---|---|---|
-| — | (fila esvaziada) | — | — | — | — | Todas as tarefas sem bloqueio externo foram concluídas (última: F8-17 `#151`, tag `v0.1.0`); o restante do BACKLOG depende de decisões do usuário (F5 backend, F6 especificação fiscal, F4-13 juros/prazo, F1-04 permissão/policy server-side). |
+| 1 | F3-04 | #43 | [Customers] Histórico clínico do cliente | P1 | F2-09 (feito), F3-06 (feito), F1-11 (feito) | Dependências todas concluídas; estende a timeline do perfil com a parte clínica. |
+| 2 | F3-12 | #51 | [Sales] Descontos e aprovação | P1 | F1-10 (feito), F3-10 (feito) | Requer definir limites de desconto por perfil (decisão leve; defaults podem ser propostos). |
+| 3 | F8-04 | #138 | [Infraestrutura] Testes offline | P1 | F3-09 (feito), F8-01 (feito) | Cobre o app instalado sem rede (PWA já gerada). |
+| 4 | F2-03 | #25 | [Administration] Dados jurídicos e tributários | P2 | F2-01 (feito) | Alimenta F6 quando a especificação fiscal existir. |
+| 5 | F4-05 | #62 | [Inventory] Reserva de itens por venda | P2 | F3-10 (feito), F4-07 (feito) | Base para produtos prontos (F3-18). |
+| 6 | F4-06 | #63 | [Inventory] Transferência entre filiais | P2 | F4-02 (feito), F2-02 (feito) | Multi-loja já existe. |
+| 7 | F2-12 | #33 | [Inventory] Serviços | P2 | F2-11 (feito) | Catálogo completa o inventário não físico. |
+| 8 | F7-08 | #123 | [Ux] Tabelas e filtros | P2 | F7-01 (feito) | Consolida primitivas; libera F7-18. |
+| 9 | F7-09 | #124 | [Ux] Modais e diálogos | P2 | F7-01 (feito) | Primitivas já em uso disperso. |
+| 10 | F2-18 | #39 | [Administration] Cadastro inicial assistido | P3 | F2-01/F2-02/F2-04 (feitos) | Onboarding; libera F7-15. |
+
+Reservas (mesma ordem): F2-13, F2-15, F2-16, F7-06, F7-07, F7-10, F7-14, F7-16, F7-17 — todas com dependências concluídas. **Correção (08/10/2026):** a fila anterior foi declarada esvaziada por "decisões externas", mas a auditoria das deps mostrou dezenas de cards de BACKLOG plenamente executáveis; a fila acima reabre o trabalho.
 
 Os `#?` devem ser resolvidos pela tabela acima (coluna ID → link da issue). Os números já estão fixados nas tabelas das fases; para referência rápida: consulte `DEPENDENCIES.md`.
 

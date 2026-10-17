@@ -6,6 +6,14 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `4ed148a` + docs — Histórico de clientes (F2-09)
+
+- `src/domain/customer-history.ts` (novo): tipos `CustomerHistoryEvent`/`CustomerHistoryKind` (ATTENDANCE/SALE/WORK_ORDER/PAYMENT), `historyKindsFor(role)` (attendance.read → atendimentos; sales.read → vendas+OS; cash.read → pagamentos) e `buildCustomerHistory` puro — ordena por data desc com tiebreak, links por permissão (`/clinico/atendimento/:id` só para `clinical.workspace.access` na própria loja, senão `/atendimentos/:id`; venda/OS/pagamento → `/vendas/:id` ou `/ordens-servico/:id`), flag `otherStore` para eventos de outra loja.
+- `src/domain/customer-history-service.ts` (novo): `CustomerHistoryService` agrega `listByCustomer` de atendimentos + vendas/OS da loja por `customerId` + recebimentos do caixa via `saleId` e delega ao seletor.
+- `CustomerProfilePage` (CustomersWorkspace) com seção "Histórico": chips de filtro por tipo com contagem, badges de detalhe, link "Ver registro" e aviso de outra loja.
+- `attendanceTypeLabels`/`attendanceStatusLabels` movidos de `ReceptionWorkspace` para `domain/customer.ts` (o domínio não importa app).
+- Testes `customer-history.test.ts` (+4: agregação, permissões por role, link clínico por loja, filtro explícito). **350/350**, tsc 0, build 0.
+
 ### `v0.1.0` + docs — Preparação de versões (F8-17)
 
 - Nenhum código alterado; entrega de processo.

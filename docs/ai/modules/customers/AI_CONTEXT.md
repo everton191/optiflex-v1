@@ -6,7 +6,7 @@
 - Cadastro de nome, telefone e CPF/CNPJ.
 - CPF/CNPJ validado no domínio (dígitos verificadores, com ou sem máscara) em create/update.
 - Edição com complementação (nome, telefone, CPF, e-mail, nascimento) em `/clientes/:customerId/editar` (F2-06, `00d0d9e`); botão "Editar cadastro" no perfil (`customers.manage`).
-- Perfil com histórico de atendimentos e resumo de contatos (telefone, CPF, e-mail, nascimento).
+- Perfil com **linha do tempo unificada** (F2-09/#153, `4ed148a`): atendimentos, vendas, OS e pagamentos do caixa em "Histórico" com filtros por tipo; `CustomerHistoryService` agrega as coleções por loja/`customerId`/`saleId`; `historyKindsFor(role)` esconde tipos sem permissão (vendedor não vê atendimentos/anamnese); links por permissão (consulta clínica só na própria loja). Antes: apenas atendimentos.
 - Prevenção de duplicidade no cadastro novo (F2-08/#30, 08/10/2026): `findDuplicateCustomer`/`normalizeSearchText` em `customer.ts`; aviso com o cadastro encontrado e "Cadastrar mesmo assim" com motivo obrigatório.
 - Dados persistidos no IndexedDB; edição preserva `id`/`createdAt` e dura após reload.
 
@@ -39,6 +39,7 @@
 
 ## Recent Structural Changes
 
+- F2-09 (08/10/2026, `4ed148a`): `src/domain/customer-history.ts` (seletor puro `buildCustomerHistory`, `historyKindsFor`, kinds ATTENDANCE/SALE/WORK_ORDER/PAYMENT) + `customer-history-service.ts` (agrega atendimentos globais do cliente, vendas/OS da loja e recebimentos do caixa por `saleId`); `CustomerProfilePage` com timeline + filtros por tipo; `attendanceTypeLabels`/`attendanceStatusLabels` movidos de `ReceptionWorkspace` para `domain/customer.ts`; testes `customer-history.test.ts` (4); 350/350.
 - F2-06 (`00d0d9e`): `updateCustomer` (validação/normalização, preserva `id`/`createdAt`), `CustomerEditPage` + rota `clientes/:customerId/editar` (`customers.manage`), botão "Editar cadastro" no perfil, CSS `.page-title-actions`/`.button.secondary`.
 - Nome vazio após trim é rejeitado; contatos são normalizados.
 - Cadastro impede envio repetido durante gravação e exibe erro sem limpar campos.
@@ -53,4 +54,4 @@
 
 ## Next Likely Task
 
-Agenda e recepção (F3-01) ou testes de permissões (F8-06).
+F3-04 (#43) histórico clínico do cliente — estende a timeline com eventos clínicos (anamnese, prescrição) respeitando `clinical.workspace.access`.
