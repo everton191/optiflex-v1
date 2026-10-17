@@ -13,6 +13,9 @@ export type AttendanceStatus = "DRAFT" | "WAITING" | "IN_PROGRESS" | "FINISHED" 
 export type AttendanceType = "CONSULTATION" | "RETURN" | "ADJUSTMENT" | "ASSESSMENT";
 export type AttendancePriority = "NORMAL" | "URGENT";
 
+export const attendanceTypeLabels: Record<AttendanceType, string> = { CONSULTATION: "Consulta", RETURN: "Retorno", ADJUSTMENT: "Ajuste", ASSESSMENT: "Avaliação" };
+export const attendanceStatusLabels: Record<AttendanceStatus, string> = { DRAFT: "Em preparação", WAITING: "Aguardando", IN_PROGRESS: "Em atendimento", FINISHED: "Finalizado", CANCELLED: "Cancelado", NO_SHOW: "Faltou" };
+
 export const attendancePriorities: readonly AttendancePriority[] = ["NORMAL", "URGENT"];
 export function isAttendancePriority(value: unknown): value is AttendancePriority {
   return attendancePriorities.includes(value as AttendancePriority);

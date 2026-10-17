@@ -4,13 +4,15 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAppContext, useSession } from "./providers";
 import { Button, EmptyState, Input, PageHeader, Search, Skeleton } from "../design-system/components";
 import { hasPermission } from "../domain/access";
-import type { Attendance, Customer } from "../domain/customer";
+import type { Customer } from "../domain/customer";
 import { findDuplicateCustomer } from "../domain/customer";
+import { CustomerHistoryService } from "../domain/customer-history-service";
+import { customerHistoryKinds, customerHistoryKindLabels, historyKindsFor, type CustomerHistoryEvent, type CustomerHistoryKind } from "../domain/customer-history";
 import { ReceptionService } from "../domain/reception-service";
-import { LocalAttendanceRepository, LocalCustomerRepository } from "../infrastructure/storage/local-repositories";
-import { attendanceStatusLabels, attendanceTypeLabels } from "./ReceptionWorkspace";
+import { LocalAttendanceRepository, LocalCashRepository, LocalCustomerRepository, LocalSaleRepository, LocalWorkOrderRepository } from "../infrastructure/storage/local-repositories";
 
 const receptionService = new ReceptionService(new LocalCustomerRepository(), new LocalAttendanceRepository());
+const historyService = new CustomerHistoryService(new LocalAttendanceRepository(), new LocalSaleRepository(), new LocalWorkOrderRepository(), new LocalCashRepository());
 
 export function CustomersPage() {
   const session = useSession();
@@ -30,21 +32,29 @@ export function CustomersPage() {
 export function CustomerProfilePage() {
   const { currentStoreId } = useAppContext();
   const session = useSession();
-  const { customerId = "" } = useParams(); const [customer, setCustomer] = useState<Customer>(); const [history, setHistory] = useState<Attendance[]>([]);
+  const { customerId = "" } = useParams(); const [customer, setCustomer] = useState<Customer>(); const [events, setEvents] = useState<CustomerHistoryEvent[]>([]);
+  const [kindFilter, setKindFilter] = useState<"" | CustomerHistoryKind>("");
   const [loading, setLoading] = useState(true); const [error, setError] = useState(""); const [attempt, setAttempt] = useState(0);
+  const visibleKinds = historyKindsFor(session.role);
   useEffect(() => {
     let active = true;
     setLoading(true); setError("");
-    void Promise.all([receptionService.getCustomer(customerId), receptionService.listCustomerAttendances(customerId)])
-      .then(([loadedCustomer, loadedHistory]) => { if (active) { setCustomer(loadedCustomer); setHistory(loadedHistory); } })
+    void Promise.all([receptionService.getCustomer(customerId), historyService.list(customerId, { storeId: currentStoreId, role: session.role })])
+      .then(([loadedCustomer, loadedHistory]) => { if (active) { setCustomer(loadedCustomer); setEvents(loadedHistory); } })
       .catch((reason) => { if (active) setError(errorMessage(reason, "Não foi possível abrir este cliente.")); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [customerId, attempt]);
+  }, [customerId, currentStoreId, session.role, attempt]);
+  const timeline = events.filter((event) => !kindFilter || event.kind === kindFilter);
   if (loading) return <div className="page" role="status">Carregando cliente…</div>;
   if (error) return <div className="page"><p role="alert">{error}</p><Button type="button" onClick={() => setAttempt((value) => value + 1)}>Tentar novamente</Button></div>;
   if (!customer) return <div className="page"><h1>Cliente não encontrado</h1></div>;
-  return <div className="page"><p className="eyebrow">Cliente</p><div className="page-title"><div><h1>{customer.name}</h1><p className="page-intro">{customer.phone || "Sem telefone"} · {customer.cpf || "Sem CPF"}{customer.email ? ` · ${customer.email}` : ""}{customer.birthDate ? ` · ${new Date(customer.birthDate).toLocaleDateString("pt-BR")}` : ""}</p></div><div className="page-title-actions">{hasPermission(session.role, "customers.manage") && <Link className="button secondary" to={`/clientes/${customer.id}/editar`}>Editar cadastro</Link>}{hasPermission(session.role, "attendance.create") && <Link className="button" to={`/atendimentos?customer=${customer.id}`}>Novo atendimento</Link>}</div></div><h2 className="section-title">Histórico de atendimentos</h2><div className="list-card">{history.length ? history.map((item) => <article className="list-row" key={item.id}><div><strong>{attendanceTypeLabels[item.type]}</strong><span>{new Date(item.createdAt).toLocaleString("pt-BR")}</span>{hasPermission(session.role, "clinical.workspace.access") && item.status !== "CANCELLED" && (item.storeId === currentStoreId ? <Link to={`/clinico/atendimento/${item.id}`}>Ver consulta e versões</Link> : <small>Consulta de outra loja — selecione a loja correspondente para acessar.</small>)}{hasPermission(session.role, "attendance.read") && (!hasPermission(session.role, "clinical.workspace.access") || item.status === "CANCELLED") && <Link to={`/atendimentos/${item.id}`}>Ver detalhe</Link>}</div><span className="badge">{attendanceStatusLabels[item.status]}</span></article>) : <p className="empty-state">Nenhum atendimento registrado.</p>}</div></div>;
+  return <div className="page"><p className="eyebrow">Cliente</p><div className="page-title"><div><h1>{customer.name}</h1><p className="page-intro">{customer.phone || "Sem telefone"} · {customer.cpf || "Sem CPF"}{customer.email ? ` · ${customer.email}` : ""}{customer.birthDate ? ` · ${new Date(customer.birthDate).toLocaleDateString("pt-BR")}` : ""}</p></div><div className="page-title-actions">{hasPermission(session.role, "customers.manage") && <Link className="button secondary" to={`/clientes/${customer.id}/editar`}>Editar cadastro</Link>}{hasPermission(session.role, "attendance.create") && <Link className="button" to={`/atendimentos?customer=${customer.id}`}>Novo atendimento</Link>}</div></div><h2 className="section-title">Histórico</h2>
+    <div className="status-filters" role="tablist" aria-label="Filtrar histórico por tipo">
+      <button type="button" role="tab" aria-selected={kindFilter === ""} className={kindFilter === "" ? "active" : ""} onClick={() => setKindFilter("")}>Todos <span>{events.length}</span></button>
+      {customerHistoryKinds.filter((kind) => visibleKinds.includes(kind)).map((kind) => <button key={kind} type="button" role="tab" aria-selected={kindFilter === kind} className={kindFilter === kind ? "active" : ""} onClick={() => setKindFilter(kind)}>{customerHistoryKindLabels[kind]} <span>{events.filter((event) => event.kind === kind).length}</span></button>)}
+    </div>
+    <div className="list-card">{timeline.length ? timeline.map((event) => <article className="list-row" key={event.id}><div><strong>{event.title}</strong><span>{new Date(event.at).toLocaleString("pt-BR")} · {customerHistoryKindLabels[event.kind]}</span>{event.otherStore && <small>Outra loja — troque de loja no topo para abrir o registro.</small>}</div><div>{event.detail && <span className="badge">{event.detail}</span>}{event.href && <Link to={event.href}>Ver registro</Link>}</div></article>) : <p className="empty-state">Nenhum registro no histórico para esta loja.</p>}</div></div>;
 }
 
 export function CustomerNewPage() {

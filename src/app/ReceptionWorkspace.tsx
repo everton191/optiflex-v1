@@ -5,7 +5,7 @@ import { useAppContext, useSession } from "./providers";
 import { Button, EmptyState, Skeleton } from "../design-system/components";
 import { hasPermission } from "../domain/access";
 import type { Attendance, AttendancePriority, AttendanceStatus, AttendanceType, Customer } from "../domain/customer";
-import { isActiveQueueStatus, waitingMinutes } from "../domain/customer";
+import { attendanceStatusLabels, attendanceTypeLabels, isActiveQueueStatus, waitingMinutes } from "../domain/customer";
 import type { AgendaEvent } from "../domain/agenda";
 import { agendaEventStatusLabels, agendaEventTypeLabels } from "../domain/agenda";
 import { ReceptionService } from "../domain/reception-service";
@@ -14,8 +14,7 @@ import { LocalAgendaRepository, LocalAttendanceRepository, LocalCustomerReposito
 
 const receptionService = new ReceptionService(new LocalCustomerRepository(), new LocalAttendanceRepository());
 const agendaService = new AgendaService(new LocalAgendaRepository(), new LocalCustomerRepository(), receptionService);
-export const attendanceTypeLabels = { CONSULTATION: "Consulta", RETURN: "Retorno", ADJUSTMENT: "Ajuste", ASSESSMENT: "Avaliação" } as const;
-export const attendanceStatusLabels = { DRAFT: "Em preparação", WAITING: "Aguardando", IN_PROGRESS: "Em atendimento", FINISHED: "Finalizado", CANCELLED: "Cancelado", NO_SHOW: "Faltou" } as const;
+
 export const attendancePriorityLabels = { NORMAL: "Normal", URGENT: "Urgente" } as const;
 
 export function AttendancePage() {
