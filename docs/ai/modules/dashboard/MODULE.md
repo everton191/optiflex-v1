@@ -28,12 +28,12 @@ Sem service próprio: consulta `SalesService`, `LocalCashRepository`, `Reception
 ## Models
 
 - `LocalSession`, `OrganizationSettings` (contexto).
-- Selectores: `salesTodayCents`, `receiptsTodayCents`, `salesByDay`, `chartHeights`, `waitingQueue`, `stockAlerts`, `openOrders`, `overdueOrders`, `pendingQuotes`.
+- Selectores: `salesTodayCents`, `receiptsTodayCents`, `salesByDay`, `chartHeights`, `waitingQueue`, `returnsToday`, `stockAlerts`, `openOrders`, `overdueOrders`, `pendingQuotes`; por perfil: `dashboardProfile` e `dashboardMetricKeys` (até 4 métricas, filtradas por permissão).
 
 ## Permissions
 
 - Rota guardada por `dashboard.view`.
-- Cards e pendências aparecem conforme `sales.read`, `cash.read`/`cash.manage`, `attendance.queue.read` e `inventory.read`.
+- Métricas escolhidas por perfil (clínico sem valores comerciais) e depois filtradas por `sales.read`, `cash.read`, `attendance.queue.read`, `clinical.workspace.access` e `inventory.read`; gráfico de vendas exibido só com `sales.read`; sem métricas disponíveis, a página mostra `EmptyState` (estado denied).
 
 ## Dependencies
 

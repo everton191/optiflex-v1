@@ -21,6 +21,25 @@
 - Responsabilidade: container visual `section.card`.
 - Impacto: métricas, painéis e estado da sessão de caixa.
 
+## Componentes entregues em F7-01 (#116)
+
+Todos em `src/design-system/components.tsx`, com estilos globais em `src/styles.css`:
+
+- **Select** — label + `select.select`; estoque (categoria, movimentação) e usuários (função).
+- **Badge** — `span.badge` com tons `neutral|success|warning|danger`; usuários e lojas.
+- **Tabs** — tablist acessível (`items/value/onChange/label`); áreas do caixa com `className="cash-tabs"`.
+- **Table** — wrapper `.table-wrap > table.data-table`; lista de usuários.
+- **Dialog** — modal `aria-modal` (Escape/clique fora/×); confirmação de cancelamento de venda.
+- **Drawer** — painel lateral direito; formulário de movimentação de estoque.
+- **Toast** — aviso flutuante dispensável (`role=status|alert`); confirmações do caixa.
+- **Tooltip** — hover + foco de teclado com `aria-describedby`; "Saldo esperado" do caixa.
+- **Search** — `input type="search"`; busca de clientes.
+- **EmptyState** — estado vazio padronizado; lista de clientes.
+- **Skeleton** — linhas animadas com `aria-busy`; carregamentos de clientes e dashboard.
+- **PageHeader** — `eyebrow/title/intro/actions`; cabeçalhos de Clientes e Usuários.
+
+Estados de foco/erro/desabilitado documentados em `05_DESIGN_SYSTEM_MAP.md` → "Estados documentados".
+
 ## AppProviders / useAppContext
 
 - Local: `src/app/providers.tsx`.
@@ -51,14 +70,13 @@
 
 ## Classes compartilhadas sem componente
 
-- `.page`, `.page-title`, `.page-intro`: containers/cabeçalhos.
+- `.page`, `.page-intro`: containers/cabeçalhos (o `.page-title` é encapsulado por `PageHeader`).
 - `.list-card`, `.list-row`, `.list-link`: listas de vários módulos.
-- `.badge`: status em listas.
 - `.settings-form`, `.form-actions`: formulários.
-- `.success`, `.error-text`, `.notice`, `.empty-state`: feedback.
+- `.success`, `.error-text`, `.notice`: feedback persistente (confirmações flutuantes usam `Toast`).
 
 Local: `src/styles.css`. Alterações nessas classes podem afetar vários módulos mesmo sem componente React dedicado.
 
 ## Não existentes
 
-Não documentar como implementados: CustomerHeader, Select, Table, Modal, Drawer, Tabs global, Toast, Search global ou PageHeader. Caixa possui tabs próprias (`.cash-tabs`), não um componente compartilhado.
+Não documentar como implementados: CustomerHeader. Caixa ainda usa `<select>` nativo em alguns formulários (substituição gradual pendente); as tabs do caixa passaram a usar o componente `Tabs`.

@@ -14,7 +14,7 @@ Local Repository
 Dexie / IndexedDB (`opticore-v1`)
 ```
 
-As páginas nunca chamam métodos Dexie diretamente. Porém, `pages.tsx` instancia implementações locais, portanto conhece a infraestrutura concreta.
+As páginas nunca chamam métodos Dexie diretamente. Porém, os `src/app/*Workspace.tsx` instanciam implementações locais, portanto conhecem a infraestrutura concreta.
 
 ## Inicialização
 
@@ -66,7 +66,7 @@ Fila clínica
 → database.clinicalRecords
 ```
 
-Finalização exige prescrição não vazia. Anamnese, exame, solicitações e prescrição são campos de um único `ClinicalRecord`. Não há autosave; salvar depende do botão. Anexos armazenam somente metadados.
+Finalização exige prescrição não vazia. Anamnese, exame, solicitações e prescrição são campos de um único `ClinicalRecord`, salvos automaticamente (`ClinicalDraft`). Anexos guardam metadados e o conteúdo real em base64 na tabela `attachments` (F3-09).
 
 ## Venda e ordem de serviço
 
@@ -112,6 +112,22 @@ InventoryService.adjust
 ```
 
 A UI atual lista itens, mas não expõe `adjust`.
+
+## Tratamento de erros
+
+```text
+catch (reason)
+→ errorMessage(reason, fallback)   (src/domain/errors.ts)
+→ Error com message não-vazia → message; caso contrário → fallback
+→ setError / estado visível na página
+```
+
+- `errorMessage` é a fonte única para traduzir um erro desconhecido em mensagem exibível: nunca retorna string vazia e nunca lança. 4 testes em `errors.test.ts` fixam o contrato.
+- Padrão das workspaces: todo `catch` captura o motivo (`catch (reason)`/`catch (failure)`) e usa `errorMessage(reason, "…")` — 24 ternários `X instanceof Error ? X.message : …` unificados e os `catch` de carregamento (caixa, dashboard, estoque, OS, recepção, clientes) agora expõem o motivo real em vez de uma frase fixa.
+- `RouteErrorBoundary` (`src/app/RouteErrorBoundary.tsx`) envolve `AppShell`, `/login` e `/bloqueado` no `router.tsx`: erro de renderização mostra "Não foi possível exibir esta tela" com "Tentar novamente" e "Recarregar página", registrando o erro no console.
+- Falha de armazenamento na inicialização segue fluxo próprio: `AppProviders` bloqueia a montagem e oferece nova tentativa (seção "Inicialização").
+- Serviços e infraestrutura não têm `catch` vazio (critério de aceite do card): `backup.ts`/`backup-codec.ts` rejeitam com mensagem própria e `local-repositories.ts` preserva o `reason`.
+- Catches deliberados, todos com estado visível ou finalidade registrada: `clinical-draft.ts` (falha fica em `draft.error`, rascunho nunca descartado), `ClinicalWorkspace` (bloqueio de saída com alerta na tela), `CustomersWorkspace` (lista de duplicados best-effort) e `providers.tsx` (fallback de loja reavaliado quando sessão/usuários mudam).
 
 ## Estado, cache, offline e sync
 

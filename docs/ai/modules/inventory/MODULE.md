@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Representar itens por loja, saldo mínimo e movimentos de entrada, saída ou ajuste com histórico auditável.
+Representar itens por loja, saldo mínimo e movimentos de entrada, saída ou ajuste com histórico auditável; catálogo por categoria (armação/lente/acesso) com ficha de produto ligada ao mesmo item que guarda o saldo.
 
 ## Directory
 
@@ -14,7 +14,7 @@ Página em `src/app/InventoryWorkspace.tsx` (re-exportada em `src/app/pages.tsx`
 
 ## Main Pages
 
-`InventoryPage`: cadastro/edição de produtos, form de movimentação (IN/OUT/ADJUSTMENT), alertas de mínimo e histórico de movimentações.
+`InventoryPage`: cadastro/edição de produtos com **código obrigatório** (barras/interno, único por loja), preço padrão/custo opcionais e ficha de catálogo (categoria obrigatória, marca, material, descrição), filtro por categoria em abas com contagem, form de movimentação (IN/OUT/ADJUSTMENT), alertas de mínimo e histórico de movimentações; custo e margem (`marginCents`) aparecem só com `inventory.manage`.
 
 ## Components
 
@@ -22,7 +22,7 @@ Classes de lista, Badge (`badge`, `is-low`, `is-out`) e formulário `inventory-f
 
 ## Services
 
-`InventoryService.list`, `history`, `create`, `update`, `adjust`.
+`InventoryService.list`, `history`, `create`, `update`, `adjust`. `create`/`update` **exigem** `category` válida (`ProductCategory`), **código obrigatório** único por loja (trim; comparação sem distinção de maiúsculas; na edição o próprio item é excluído da comparação — F2-14) e normalizam `brand`/`material`/`description` (trim; vazio vira `undefined`); saldo continua imutável na edição.
 
 ## Repositories
 
@@ -34,7 +34,7 @@ Sem store/hook; usa estado local e `currentStoreId`.
 
 ## Models
 
-`InventoryItem`, `InventoryMovement`, `InventoryMovementType`, `stockState`, `movementDelta`.
+`InventoryItem` (`code` obrigatório em produtos novos — F2-14; `defaultPrice?`, `cost?` em reais — F1-06; `category?`, `brand?`, `material?`, `description?` — F2-11), `InventoryMovement`, `InventoryMovementType`, `stockState`, `movementDelta`, `marginCents` (margem em centavos `preço - custo`, sem drift de arredondamento — F2-14), `productCategories`/`ProductCategory` (`FRAME`/`LENS`/`ACCESSORY`), `productCategoryLabels`, `isProductCategory`, `filterByCategory` (filtro `ALL` ou categoria; itens legados sem categoria só aparecem em `ALL`).
 
 ## Permissions
 
@@ -54,7 +54,7 @@ Contexto de loja, sessão (`session.userName` como autor) e Dexie.
 - Regras de saldo: `inventory-service.ts`.
 - Modelos: `inventory.ts`.
 - Persistência: `LocalInventoryRepository` e tabelas inventory.
-- Backup: campos `code`/`author` validados em `backup.ts`.
+- Backup: campos `code`/`author`/`defaultPrice`/`cost` validados em `backup.ts`; `category` por `isProductCategory` e `brand`/`material`/`description` como strings opcionais (item legado sem categoria continua importável).
 
 ## Avoid Modifying
 
@@ -64,7 +64,11 @@ Não ajustar quantidade diretamente pela página/repository sem criar movimento.
 
 ### Alterar listagem
 
-→ InventoryWorkspace + LocalInventoryRepository.listByStore.
+→ InventoryWorkspace + LocalInventoryRepository.listByStore (+ `filterByCategory` para filtro de catálogo).
+
+### Filtrar por categoria
+
+→ `filterByCategory`/`productCategoryLabels` em `inventory.ts` + abas no InventoryWorkspace; seletor de produto no caixa (`pages.tsx`) mostra a categoria do produto e pré-preenche o preço unitário com `defaultPrice` (F2-14).
 
 ### Alterar movimento
 
@@ -76,4 +80,4 @@ Não ajustar quantidade diretamente pela página/repository sem criar movimento.
 
 ## Related Modules
 
-Administration/stores; sales baixa o estoque na confirmação de vendas com itens, usando o helper `applyStockMovement` do mesmo arquivo de repositórios.
+Administration/stores; sales baixa o estoque na confirmação de vendas com itens, usando o helper `applyStockMovement` do mesmo arquivo de repositórios — o item vendido é o mesmo do catálogo (categoria e ficha permanecem após a baixa).

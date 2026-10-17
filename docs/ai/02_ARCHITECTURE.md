@@ -24,7 +24,7 @@ Dexie / IndexedDB
 
 ### Apresentação
 
-- `src/app/pages.tsx`: todas as páginas e parte do estado temporário de formulários.
+- `src/app/pages.tsx`: barrel de re-exports das páginas (F1-03); cada página vive em seu `src/app/*Workspace.tsx`, que detém o estado temporário de formulários.
 - `src/shell/AppShell.tsx`: layout persistente e navegação responsiva.
 - `src/design-system/`: primitives e tokens globais.
 - `src/styles.css`: estilos do shell, páginas e breakpoints.
@@ -37,9 +37,24 @@ Dexie / IndexedDB
 
 Os arquivos `*-service.ts` aplicam validações e orquestram repositories. `repositories.ts` reúne todos os contratos. Modelos ficam em arquivos por assunto (`customer.ts`, `clinical.ts`, `sales.ts`, etc.).
 
+**Regra F1-02 (auditoria de 08/10/2026):** toda entidade nova nasce com (1) tipo em `src/domain/<assunto>.ts`, (2) contrato em `repositories.ts` quando houver persistência e (3) teste de domínio/serviço **antes** da UI. A UI não acessa Dexie diretamente (verificado em `src/app`: 0 usos de `db.`/`indexedDB`). Mapeamento entidade → contrato → teste (estado em `8fc64b0`):
+
+| Modelos | Contratos | Testes |
+|---|---|---|
+| `access.ts` (User, Store, OrganizationSettings, LocalSession, CurrentStoreContext) | Settings, Session, Administration | `access.test.ts`, `access-scope.test.ts`, `administration-service.test.ts`, `authentication-service.test.ts`, `storage/settings.test.ts` |
+| `customer.ts` (Customer, Attendance) | Customer, Attendance | `reception-service.test.ts` |
+| `clinical.ts` (ClinicalRecord, ClinicalVersion, ClinicalAttachment/Content) | Clinical | `storage/clinical.test.ts`, `clinical-attachments.test.ts` |
+| `sales.ts` (Sale) | Sale | `sales-service.test.ts`, `storage/sale-stock.test.ts` |
+| `work-order.ts` (WorkOrder, WorkOrderEvent) | WorkOrder | `work-order-service.test.ts`, `storage/work-orders.test.ts` |
+| `inventory.ts` (InventoryItem, InventoryMovement) | Inventory | `inventory-service.test.ts`, `storage/inventory.test.ts` |
+| `cash.ts` (CashSession, CashEntry) | Cash | `cash-service.test.ts`, `storage/cash.test.ts` |
+| `money.ts`, `dashboard.ts`, `password.ts`, `access-context.ts` | — (helpers/guards/métricas) | `money.test.ts`, `dashboard.test.ts`, testes de acesso acima |
+
+Entidades ainda sem modelo (produtos/catálogo, agenda, garantias, fiscal, SaaS) entram com seus próprios cards, conforme as fases avançarem.
+
 ### Infraestrutura
 
-`database.ts` declara nove versões do schema Dexie. A versão 9 acrescenta índices de nome em lojas e usuários, preservando as tabelas anteriores. `local-repositories.ts` implementa todos os contratos locais e contém seeds de configurações, lojas e usuários. `database.test.ts` verifica inicialização, migração e persistência com IndexedDB em memória exclusivo para testes.
+`database.ts` declara onze versões do schema Dexie (verno atual 11: a v11 acrescenta a tabela `attachments` de anexos clínicos; a v9 adicionou índices de nome em lojas e usuários). `local-repositories.ts` implementa todos os contratos locais e contém seeds de configurações, lojas e usuários. `database.test.ts` verifica inicialização, migração e persistência com IndexedDB em memória exclusivo para testes.
 
 ## Direção das dependências
 
@@ -48,7 +63,7 @@ Os arquivos `*-service.ts` aplicam validações e orquestram repositories. `repo
 - Apresentação importa domínio e infraestrutura.
 - Shell importa provider da aplicação e acesso do domínio.
 
-Desvio conhecido: `pages.tsx` instancia repositories locais diretamente. A página não chama Dexie, mas conhece a implementação concreta. Documentar/refatorar injeção futura é válido; não mover agora sem tarefa específica.
+Desvio conhecido: os `*Workspace.tsx` instanciam repositories locais diretamente. A página não chama Dexie, mas conhece a implementação concreta (padrão repetido em cada workspace). Documentar/refatorar injeção futura é válido; não mover agora sem tarefa específica.
 
 ## Rotas e autorização
 
@@ -70,7 +85,7 @@ Existe acoplamento entre `router.tsx → AppShell.tsx → providers.tsx`, mas n�
 
 ## Pontos de melhoria documentados
 
-- Separar `pages.tsx` por módulo quando o volume justificar.
+- ~~Separar `pages.tsx` por módulo quando o volume justificar.~~ Concluído em F1-03 (08/10/2026): extraído para `Admin/Customers/Reception/Cash/AuthWorkspace.tsx`; restam no barrel apenas re-exports e `ForbiddenPage`.
 - Criar composition root para instanciar repositories/services fora das páginas.
 - Criar entrypoints somente após módulos físicos existirem.
 - Adicionar tratamento uniforme de erros assíncronos e mais testes por service.

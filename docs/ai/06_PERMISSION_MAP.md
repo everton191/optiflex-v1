@@ -1,6 +1,6 @@
 # Permission Map
 
-Fonte canônica: `src/domain/access.ts`. Guards: `src/app/permissions.tsx`. Rotas: `src/app/router.tsx`. Menu por função: `src/shell/AppShell.tsx`.
+Fonte canônica: `src/domain/access.ts`. Escopo por registro: `src/domain/access-context.ts`. Guards: `src/app/permissions.tsx`. Rotas: `src/app/router.tsx` (gerado a partir de `src/app/route-guards.ts`, mapa rota→permissão único, F8-06). Menu por função: `src/shell/AppShell.tsx`.
 
 ## Permissões
 
@@ -28,7 +28,22 @@ Fonte canônica: `src/domain/access.ts`. Guards: `src/app/permissions.tsx`. Rota
 | `inventory.read` | inventory | consultar estoque | role | `/estoque` |
 | `inventory.manage` | inventory | movimentar estoque | role | ações no `/estoque` |
 
-O escopo (`SELF`, `STORE`, `ORGANIZATION`, `NETWORK`) pertence à definição da role/usuário. Os repositories filtram principalmente por `storeId`; não existe enforcement completo de escopo dentro de cada repository.
+## Permissões por loja e administração (F2-05)
+
+- Matriz exibida em `/admin/perfis` (`PermissionsMatrix`): permissão × perfil com escopo, fonte `allPermissions` + `rolePermissions` em `access.ts`.
+- Sessão acompanha mudanças de função sem reload: `syncSessionRole` (em `access.ts`) reconcilia `LocalSession.role` com a role mais recente da lista de usuários; `AppProviders.refreshUsers` persiste a sessão sincronizada (`sessionRepository.save`), então menu, `RequirePermission` e `Can` reagem na hora.
+- Loja atual inacessível (storeIds removidos ou troca por admin): efeito em `AppProviders` cai para a primeira loja ativa acessível e persiste via `administrationService.selectStore`; sem loja acessível, os repositories negam (`assertStoreAccess`).
+- Testes negativos por perfil: `access.test.ts` (matriz FINANCE/AUDITOR read-only, integridade OWNER e toda role ⊆ `allPermissions`, `syncSessionRole`) e `storage/access-scope.test.ts` (caixa/estoque negados fora das lojas do perfil).
+
+## Escopo por registro (F1-11)
+
+O escopo (`SELF`, `STORE`, `ORGANIZATION`, `NETWORK`) pertence à definição da role/usuário (`roleDefinitions`) e vira `AccessContext` da sessão ativa (`buildAccessContext` em `src/domain/access-context.ts`; contexto global montado/desmontado por `AppProviders` junto com sessão/usuários/loja atual).
+
+- `NETWORK`/`ORGANIZATION` (OWNER, NETWORK_ADMINISTRATOR, AUDITOR, FINANCE): qualquer loja.
+- `STORE` (gerente, recepção, clínico, vendedor, caixa, estoque): apenas as lojas em `user.storeIds`. O seletor de loja do topo lista só essas lojas, `selectStore` valida antes de trocar e o carregamento cai para a primeira loja acessível quando a atual não é permitida.
+- `SELF`: somente registros com `userId` do próprio usuário (nenhuma role usa hoje; função pronta e testada).
+- Registros sem `storeId` (clientes, configurações) permanecem compartilhados.
+- Enforcement nos repositories (`local-repositories.ts`): `assertStoreAccess` nas listagens por loja, `assertRecordAccess` nas escritas (atendimento, venda/confirm, OS, estoque/movimentos, caixa, prontuário) e filtro por loja em `listByCustomer`. Sem contexto ativo (testes, backup) não há restrição.
 
 ## Roles
 
@@ -45,16 +60,24 @@ O escopo (`SELF`, `STORE`, `ORGANIZATION`, `NETWORK`) pertence à definição da
 
 ## Guards
 
-- `RequirePermission`: guard de rota; aguarda `isReady` e redireciona para `/sem-acesso`.
-- `Can`: componente condicional disponível, atualmente sem uso fora da própria definição.
+- `RequireSession`: exige sessão ativa (e não inativa) em todo o app; sem sessão → `/login`, inativa → `/bloqueado`.
+- `RequirePermission`: guard de rota; aguarda `isReady` e redireciona para `/sem-acesso`; reage a mudança de role sem reload (sessão sincronizada por `syncSessionRole`).
+- `Can`: componente condicional null-safe sem sessão.
 - `hasPermission`: usado pelo shell, dashboard e `CashDeskPage`.
+- Escopo de registro: `assertStoreAccess`/`assertRecordAccess` (repositories) + validação de troca de loja em `selectStore` + fallback automático para loja acessível no provider.
 
 ## Lógica por role direta
 
 Não foi encontrado `user.role === "admin"`. `CashDeskPage` usa combinações de permissions, não comparações de role. Labels e descrições usam chaves de role somente para lookup.
 
+## Testes de permissão (F8-06, `94b9d50`)
+
+- `src/domain/permission-routes.test.ts`: matriz rota×perfil para os dez perfis contra `routeGuards` (16 rotas, incluindo `/agenda`); negativos de ação para vendedor/clínico/caixa; escopo de loja/registro para os dez perfis via `buildAccessContext`.
+- `src/domain/access.test.ts`: matriz de permissões por role, integridade (OWNER completo, FINANCE/AUDITOR read-only), sync de sessão e expiração.
+- `src/domain/access-scope.test.ts` + `src/infrastructure/storage/access-scope.test.ts`: escopo SELF/STORE/ORG/NETWORK e enforcement nos repositories (escrita, listagem e histórico do cliente).
+
 ## Riscos
 
-- Algumas permissões de ação não têm guard interno dedicado (`attendance.create`, `stores.select`).
+- `attendance.create` não tem guard interno de permissão (o escopo de loja sim, via repository).
 - O form de venda carrega a lista de produtos para quem tem `sales.manage`, mesmo sem `inventory.read`; a tela `/estoque` continua protegida.
 - O frontend é a única barreira; não há backend para revalidar autorização.

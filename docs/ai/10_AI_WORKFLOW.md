@@ -66,7 +66,7 @@ Se a tarefa citar tela, rota ou função, localize primeiro nos mapas.
 
 ## Limites do mapa atual
 
-- `pages.tsx` é um arquivo concentrado: use busca por nome da Page, não leia tudo por padrão.
+- `pages.tsx` é só barrel (F1-03): localize a Page no workspace da tabela de `09_CHANGE_IMPACT_MAP.md` (Admin/Customers/Reception/Cash/Auth/…) em vez de buscar no barrel.
 - `local-repositories.ts` reúne implementações: busque pela classe concreta.
 - `repositories.ts` reúne contratos: busque pela interface.
 - Não há entrypoints de módulos porque não há pastas físicas de módulos.
@@ -86,6 +86,13 @@ Atualize mapas globais somente quando a visão transversal mudar.
 3. confirmar rotas/guards se alterados;
 4. validar fluxo no navegador se UI/comportamento mudou;
 5. revisar `git diff --check` e `git status`.
+
+## Estratégia de testes (F8-02)
+
+- Unitários por domínio: `src/domain/*.test.ts` com repositórios falsos (`vi.fn()`).
+- Storage/repositórios reais: `src/infrastructure/storage/*.test.ts` sobre IndexedDB em memória (`fake-indexeddb/auto` + `afterEach` → `database.delete()`).
+- **Fluxos integrados multi-entidade:** `src/infrastructure/storage/integration-flows.test.ts` cobre ponta a ponta: venda confirmada → pagamento no caixa → fechamento → OS → entrega; cancelamento de venda paga → estoque + estorno conciliado; insumos de OS consumindo estoque até a entrega; pagamento fracionado (PARTIAL→PAID) com rejeição de excesso. Ao adicionar cadeias novas (service + storage + entidades distintas), acrescente um cenário nesse arquivo mantendo a suíte < 10 s.
+- Backup/criptografia: `backup.test.ts`; segurança: `security-scan.test.ts`.
 
 ## Simulações de localização
 
