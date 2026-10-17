@@ -1,7 +1,7 @@
 import type { InventoryMovement, ProductCategory } from "./inventory";
 import { isProductCategory } from "./inventory";
 import { fromCents, toCents } from "./money";
-import { defaultOrganization } from "./access";
+import { defaultOrganization, type RoleKey } from "./access";
 import { assertValidPrescriptionEye, assertValidPrescriptionMeasures, assertValidPrescriptionUsage, type Prescription, type PrescriptionEye, type PrescriptionMeasures, type PrescriptionUsage } from "./clinical";
 
 export type SaleStatus = "QUOTE" | "CONFIRMED" | "CANCELLED";
@@ -96,10 +96,93 @@ export interface Sale {
   items?: SaleItem[];
   treatments?: SaleTreatment[];
   prescription?: SalePrescription;
+  discount?: SaleDiscount;
   cancelReason?: string;
   cancelledAt?: string;
   cancelledBy?: string;
   createdAt: string;
+}
+
+export type SaleDiscountType = "PERCENT" | "AMOUNT";
+
+export const saleDiscountTypeLabels: Record<SaleDiscountType, string> = { PERCENT: "Percentual", AMOUNT: "Valor" };
+export const saleDiscountTypeKeys = Object.keys(saleDiscountTypeLabels) as SaleDiscountType[];
+
+export interface SaleDiscountInput { type: SaleDiscountType; value: number; reason?: string }
+
+// Immutable record of who applied the discount and (when above the applier's limit) who approved it.
+export interface SaleDiscount extends SaleDiscountInput {
+  grossTotal: number;
+  appliedBy: string;
+  appliedByRole: RoleKey;
+  appliedAt: string;
+  approvedBy?: string;
+  approvedAt?: string;
+}
+
+export interface DiscountAuthority { maxPercent: number; maxAmount: number }
+
+// Defaults p/ v0.x (F3-12): vendedor/caixa 5% ou R$ 50; gerente 15% ou R$ 300; dono/rede 30% ou R$ 1000. Acima do topo, ninguém aprova.
+export const discountAuthorityByRole: Partial<Record<RoleKey, DiscountAuthority>> = {
+  SELLER: { maxPercent: 5, maxAmount: 50 },
+  CASHIER: { maxPercent: 5, maxAmount: 50 },
+  STORE_MANAGER: { maxPercent: 15, maxAmount: 300 },
+  NETWORK_ADMINISTRATOR: { maxPercent: 30, maxAmount: 1000 },
+  OWNER: { maxPercent: 30, maxAmount: 1000 }
+};
+
+export function isSaleDiscountType(value: string): value is SaleDiscountType {
+  return value === "PERCENT" || value === "AMOUNT";
+}
+
+export function assertValidSaleDiscount(input: SaleDiscountInput): void {
+  if (!isSaleDiscountType(input.type)) throw new Error("Tipo de desconto inválido.");
+  if (!Number.isFinite(input.value) || input.value <= 0) throw new Error("Informe um desconto maior que zero.");
+  if (input.type === "PERCENT" && input.value > 100) throw new Error("Desconto percentual não pode passar de 100%.");
+  if (input.reason !== undefined && typeof input.reason !== "string") throw new Error("Motivo do desconto inválido.");
+}
+
+export function saleDiscountAmountCents(grossTotal: number, discount: Pick<SaleDiscount, "type" | "value">): number {
+  const grossCents = toCents(grossTotal);
+  const amount = discount.type === "PERCENT" ? Math.round(grossCents * discount.value / 100) : toCents(discount.value);
+  return Math.max(0, Math.min(amount, grossCents));
+}
+
+export function saleTotalWithDiscount(grossTotal: number, discount?: Pick<SaleDiscount, "type" | "value">): number {
+  if (!discount) return grossTotal;
+  return fromCents(toCents(grossTotal) - saleDiscountAmountCents(grossTotal, discount));
+}
+
+export function discountWithinAuthority(grossTotal: number, discount: Pick<SaleDiscount, "type" | "value">, role: RoleKey): boolean {
+  const authority = discountAuthorityByRole[role];
+  if (!authority) return false;
+  const grossCents = toCents(grossTotal);
+  if (grossCents <= 0) return false;
+  const amount = saleDiscountAmountCents(grossTotal, discount);
+  const percent = amount * 100 / grossCents;
+  return percent <= authority.maxPercent + 0.0001 && amount <= toCents(authority.maxAmount);
+}
+
+export function discountRequiresApproval(grossTotal: number, discount: Pick<SaleDiscount, "type" | "value">, applierRole: RoleKey): boolean {
+  return !discountWithinAuthority(grossTotal, discount, applierRole);
+}
+
+export function canApproveDiscount(grossTotal: number, discount: Pick<SaleDiscount, "type" | "value">, approverRole: RoleKey): boolean {
+  return discountWithinAuthority(grossTotal, discount, approverRole);
+}
+
+export function assertDiscountNotZeroing(grossTotal: number, discount: Pick<SaleDiscount, "type" | "value">): void {
+  if (saleDiscountAmountCents(grossTotal, discount) >= toCents(grossTotal)) throw new Error("O desconto não pode zerar o total da venda.");
+}
+
+// Sale.total is the net amount (after discount); the pre-discount base lives on the discount record.
+export function saleGrossTotal(sale: Pick<Sale, "total" | "discount">): number {
+  return sale.discount ? sale.discount.grossTotal : sale.total;
+}
+
+export function saleDiscountAmount(sale: Pick<Sale, "total" | "discount">): number {
+  if (!sale.discount) return 0;
+  return fromCents(saleDiscountAmountCents(sale.discount.grossTotal, sale.discount));
 }
 
 export function itemsTotalCents(items: readonly SaleItem[]): number {
