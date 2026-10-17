@@ -11,6 +11,7 @@ import { quoteStatusLabels, quoteStatusOf, salePrescriptionSnapshot } from "../d
 import type { Prescription } from "../domain/clinical";
 import { activePrescription, formatPrescriptionMeasures, prescriptionUsageLabels } from "../domain/clinical";
 import { SalesService } from "../domain/sales-service";
+import { AuditService } from "../domain/audit-service";
 import { WorkOrderService } from "../domain/work-order-service";
 import { InventoryService } from "../domain/inventory-service";
 import type { InventoryItem, ProductCategoryFilter } from "../domain/inventory";
@@ -19,11 +20,11 @@ import { CashService } from "../domain/cash-service";
 import type { WorkOrder } from "../domain/work-order";
 import type { CashEntry, CashMovementType, CashSession, PaymentMethod } from "../domain/cash";
 import { cashTotals, paymentMethodLabels, paymentMethodOptions, receiptPlan } from "../domain/cash";
-import { LocalAttendanceRepository, LocalCashRepository, LocalCustomerRepository, LocalInventoryRepository, LocalPrescriptionRepository, LocalSaleRepository, LocalWorkOrderRepository } from "../infrastructure/storage/local-repositories";
+import { LocalAttendanceRepository, LocalAuditRepository, LocalCashRepository, LocalCustomerRepository, LocalInventoryRepository, LocalPrescriptionRepository, LocalSaleRepository, LocalWorkOrderRepository } from "../infrastructure/storage/local-repositories";
 
 const receptionService = new ReceptionService(new LocalCustomerRepository(), new LocalAttendanceRepository());
 const saleRepository = new LocalSaleRepository();
-const salesService = new SalesService(saleRepository, new LocalPrescriptionRepository());
+const salesService = new SalesService(saleRepository, new LocalPrescriptionRepository(), new AuditService(new LocalAuditRepository()));
 const workOrderService = new WorkOrderService(new LocalWorkOrderRepository());
 const inventoryService = new InventoryService(new LocalInventoryRepository());
 const cashRepository = new LocalCashRepository();

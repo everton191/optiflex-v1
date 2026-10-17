@@ -5,13 +5,14 @@ import { isProductCategory } from "./inventory";
 import { prescriptionUsageLabels } from "./clinical";
 import { quoteStatusLabels } from "./sales";
 import { isValidCnpj } from "./organization";
+import { isAuditAction, isAuditEntity } from "./audit";
 import { workOrderEventLabels, workOrderStatusLabels } from "./work-order";
 
 // Session is intentionally excluded: restoring business data must not import a login.
-export const backupTables = ["settings", "stores", "users", "currentStore", "customers", "attendances", "agendaEvents", "clinicalRecords", "clinicalVersions", "prescriptions", "attachments", "sales", "workOrders", "inventoryItems", "inventoryMovements", "cashSessions", "cashEntries"] as const;
+export const backupTables = ["settings", "stores", "users", "currentStore", "customers", "attendances", "agendaEvents", "clinicalRecords", "clinicalVersions", "prescriptions", "attachments", "sales", "workOrders", "inventoryItems", "inventoryMovements", "cashSessions", "cashEntries", "auditEntries"] as const;
 export type BackupTable = typeof backupTables[number];
-// Schema 10 predates attachments content; 11 predates agenda events; 12 predates structured prescriptions. All remain importable.
-export interface BackupSnapshot { format: "opticore"; version: 1; schema: 10 | 11 | 12 | 13; createdAt: string; tables: Record<BackupTable, Record<string, unknown>[]>; }
+// Schema 10 predates attachments content; 11 predates agenda events; 12 predates structured prescriptions; 13 predates the audit log. All remain importable.
+export interface BackupSnapshot { format: "opticore"; version: 1; schema: 10 | 11 | 12 | 13 | 14; createdAt: string; tables: Record<BackupTable, Record<string, unknown>[]>; }
 export interface BackupRepository { snapshot(): Promise<BackupSnapshot>; restore(snapshot: BackupSnapshot): Promise<void>; }
 export interface BackupCodec { encrypt(value: string, password: string): Promise<string>; decrypt(value: string, password: string): Promise<string>; }
 
@@ -23,6 +24,7 @@ const requiredStrings: Record<BackupTable, string[]> = {
   attachments: ["id", "content"],
   sales: ["id", "customerId", "storeId", "status", "description", "createdAt"], workOrders: ["id", "saleId", "storeId", "customerId", "status", "createdAt"],
   inventoryItems: ["id", "storeId", "name"], inventoryMovements: ["id", "itemId", "storeId", "type", "reason", "createdAt"], cashSessions: ["id", "storeId", "openedAt"], cashEntries: ["id", "sessionId", "storeId", "type", "createdAt"],
+  auditEntries: ["id", "storeId", "action", "entity", "entityId", "author", "at"],
 };
 const object = (value: unknown): value is Record<string, unknown> => Boolean(value && typeof value === "object" && !Array.isArray(value));
 const invalid = () => new Error("Backup inválido ou incompatível. Nenhum dado foi substituído.");
@@ -31,23 +33,29 @@ export function validateBackup(value: unknown): BackupSnapshot {
   if (!object(value)) throw invalid();
   if (value.format !== "opticore") throw invalidReason("o arquivo não é um backup do Opticore.");
   if (value.version !== 1) throw invalidReason("versão de arquivo desconhecida.");
-  if (![10, 11, 12, 13].includes(value.schema as number)) throw invalidReason("schema não suportado (arquivo de outra versão ou corrompido).");
+  if (![10, 11, 12, 13, 14].includes(value.schema as number)) throw invalidReason("schema não suportado (arquivo de outra versão ou corrompido).");
   if (typeof value.createdAt !== "string" || !Number.isFinite(Date.parse(value.createdAt))) throw invalidReason("data de criação ausente ou corrompida.");
   if (!object(value.tables)) throw invalidReason("estrutura de tabelas ausente.");
   const importedTables = { ...value.tables };
   if (value.schema === 10) {
-    if (Object.keys(importedTables).length !== backupTables.length - 3 || "attachments" in importedTables || "agendaEvents" in importedTables || "prescriptions" in importedTables) throw invalidReason("o conteúdo das tabelas não corresponde ao schema 10.");
+    if (Object.keys(importedTables).length !== backupTables.length - 4 || "attachments" in importedTables || "agendaEvents" in importedTables || "prescriptions" in importedTables || "auditEntries" in importedTables) throw invalidReason("o conteúdo das tabelas não corresponde ao schema 10.");
     importedTables.attachments = [];
     importedTables.agendaEvents = [];
     importedTables.prescriptions = [];
+    importedTables.auditEntries = [];
   } else if (value.schema === 11) {
-    if (Object.keys(importedTables).length !== backupTables.length - 2 || "agendaEvents" in importedTables || "prescriptions" in importedTables || !("attachments" in importedTables)) throw invalidReason("o conteúdo das tabelas não corresponde ao schema 11.");
+    if (Object.keys(importedTables).length !== backupTables.length - 3 || "agendaEvents" in importedTables || "prescriptions" in importedTables || "auditEntries" in importedTables || !("attachments" in importedTables)) throw invalidReason("o conteúdo das tabelas não corresponde ao schema 11.");
     importedTables.agendaEvents = [];
     importedTables.prescriptions = [];
+    importedTables.auditEntries = [];
   } else if (value.schema === 12) {
-    if (Object.keys(importedTables).length !== backupTables.length - 1 || "prescriptions" in importedTables || !("attachments" in importedTables) || !("agendaEvents" in importedTables)) throw invalidReason("o conteúdo das tabelas não corresponde ao schema 12.");
+    if (Object.keys(importedTables).length !== backupTables.length - 2 || "prescriptions" in importedTables || "auditEntries" in importedTables || !("attachments" in importedTables) || !("agendaEvents" in importedTables)) throw invalidReason("o conteúdo das tabelas não corresponde ao schema 12.");
     importedTables.prescriptions = [];
-  } else if (Object.keys(importedTables).length !== backupTables.length || !("attachments" in importedTables) || !("agendaEvents" in importedTables) || !("prescriptions" in importedTables)) throw invalidReason("faltam tabelas esperadas no arquivo (arquivo truncado ou corrompido).");
+    importedTables.auditEntries = [];
+  } else if (value.schema === 13) {
+    if (Object.keys(importedTables).length !== backupTables.length - 1 || "auditEntries" in importedTables || !("prescriptions" in importedTables)) throw invalidReason("o conteúdo das tabelas não corresponde ao schema 13.");
+    importedTables.auditEntries = [];
+  } else if (Object.keys(importedTables).length !== backupTables.length || !("attachments" in importedTables) || !("agendaEvents" in importedTables) || !("prescriptions" in importedTables) || !("auditEntries" in importedTables)) throw invalidReason("faltam tabelas esperadas no arquivo (arquivo truncado ou corrompido).");
   for (const name of backupTables) {
     const rows = importedTables[name];
     if (!Array.isArray(rows)) throw invalid();
@@ -129,6 +137,11 @@ export function validateBackup(value: unknown): BackupSnapshot {
             if (event.note !== undefined && typeof event.note !== "string") throw invalid();
           }
         }
+      }
+      if (name === "auditEntries") {
+        if (!isAuditAction(row.action) || !isAuditEntity(row.entity)) throw invalid();
+        if (typeof row.at !== "string" || !Number.isFinite(Date.parse(row.at))) throw invalid();
+        for (const field of ["reason", "summary"]) if (row[field] !== undefined && typeof row[field] !== "string") throw invalid();
       }
     }
   }

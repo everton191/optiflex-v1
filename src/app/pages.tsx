@@ -1,6 +1,6 @@
 export { ClinicalWorkspacePage, PrescriptionDocumentPage } from "./ClinicalWorkspace";
 export { DashboardPage } from "./DashboardWorkspace";
-export { SettingsPage, UsersPage, StoresPage, ProfilesPage } from "./AdminWorkspace";
+export { SettingsPage, UsersPage, StoresPage, ProfilesPage, AuditPage } from "./AdminWorkspace";
 export { AttendancePage, AgendaPage, AttendanceNewPage, AttendanceDetailPage, ClinicalQueuePage } from "./ReceptionWorkspace";
 export { CustomersPage, CustomerProfilePage, CustomerNewPage, CustomerEditPage } from "./CustomersWorkspace";
 export { InventoryPage } from "./InventoryWorkspace";

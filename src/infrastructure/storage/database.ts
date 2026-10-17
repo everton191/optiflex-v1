@@ -7,6 +7,7 @@ import type { Sale } from "../../domain/sales";
 import type { WorkOrder } from "../../domain/work-order";
 import type { InventoryItem, InventoryMovement } from "../../domain/inventory";
 import type { CashEntry, CashSession } from "../../domain/cash";
+import type { AuditEntry } from "../../domain/audit";
 
 export class OpticoreDatabase extends Dexie {
   settings!: EntityTable<OrganizationSettings, "id">;
@@ -27,6 +28,7 @@ export class OpticoreDatabase extends Dexie {
   inventoryMovements!: EntityTable<InventoryMovement, "id">;
   cashSessions!: EntityTable<CashSession, "id">;
   cashEntries!: EntityTable<CashEntry, "id">;
+  auditEntries!: EntityTable<AuditEntry, "id">;
 
   constructor() {
     super("opticore-v1");
@@ -57,6 +59,7 @@ export class OpticoreDatabase extends Dexie {
         await transaction.table(name).toCollection().modify((record: { organizationId?: string }) => { record.organizationId ??= defaultOrganization.id; });
       }
     });
+    this.version(15).stores({ auditEntries: "id, storeId, action, entity, entityId, at" });
   }
 }
 

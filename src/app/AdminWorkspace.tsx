@@ -1,11 +1,16 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { errorMessage } from "../domain/errors";
-import { Badge, Button, Input, PageHeader, Select, Table } from "../design-system/components";
+import { Badge, Button, EmptyState, Input, PageHeader, Select, Skeleton, Table } from "../design-system/components";
 import { allPermissions, hasPermission, roleDefinitions } from "../domain/access";
 import type { RoleKey, Store, User } from "../domain/access";
 import { formatCnpj } from "../domain/organization";
+import { AuditService } from "../domain/audit-service";
+import { auditActions, auditActionLabels, auditEntities, auditEntityLabels, type AuditAction, type AuditEntity, type AuditEntry } from "../domain/audit";
 import { useAppContext, useSession } from "./providers";
 import { BackupPanel } from "./BackupPanel";
+import { LocalAuditRepository } from "../infrastructure/storage/local-repositories";
+
+const auditService = new AuditService(new LocalAuditRepository());
 
 const scopeLabels = { SELF: "Próprio usuário", STORE: "Loja", ORGANIZATION: "Empresa", NETWORK: "Todas as lojas" } as const;
 const roleDescriptions = { OWNER: "Acesso completo a todas as lojas.", NETWORK_ADMINISTRATOR: "Administra lojas, usuários e configurações.", STORE_MANAGER: "Acompanha a operação da própria loja.", RECEPTIONIST: "Atende clientes e organiza a fila.", CLINICAL_PROFESSIONAL: "Preenche prontuários, exames e prescrições.", SELLER: "Cria orçamentos e registra vendas.", CASHIER: "Registra recebimentos e movimentações do caixa.", STOCK_MANAGER: "Controla produtos e quantidades.", FINANCE: "Acompanha cobranças e resultados financeiros.", AUDITOR: "Consulta informações e relatórios sem alterar dados." } as const;
@@ -187,4 +192,47 @@ function PermissionsMatrix() {
 
 export function ProfilesPage() {
   return <div className="page"><p className="eyebrow">Administração</p><h1>Perfis de acesso</h1><p className="page-intro">Cada perfil libera somente as áreas necessárias para o trabalho da pessoa. A troca de função/lojas de um usuário em Usuários reflete no menu e nas rotas sem recarregar.</p><div className="list-card">{roleDefinitions.map((role) => <article className="list-row role-row" key={role.key}><div><strong>{role.label}</strong><span>{roleDescriptions[role.key]}</span></div><small>{scopeLabels[role.scope]}</small></article>)}</div><h2 className="section-title">Matriz de permissões</h2><PermissionsMatrix /></div>;
+}
+
+export function AuditPage() {
+  const { stores } = useAppContext();
+  const [entries, setEntries] = useState<AuditEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [attempt, setAttempt] = useState(0);
+  const [action, setAction] = useState("");
+  const [entity, setEntity] = useState("");
+  const [author, setAuthor] = useState("");
+  const authorFilter = author.trim();
+  const storeName = (storeId: string) => stores.find((store) => store.id === storeId)?.name ?? "Empresa (sem loja)";
+
+  async function refresh() {
+    try {
+      const rows = await auditService.list({ action: (action || undefined) as AuditAction | undefined, entity: (entity || undefined) as AuditEntity | undefined, author: authorFilter || undefined, limit: 200 });
+      setEntries(rows); setError("");
+    } catch (reason) { setError(errorMessage(reason, "Não foi possível carregar a auditoria.")); }
+    finally { setLoading(false); }
+  }
+  useEffect(() => { setLoading(true); void refresh(); }, [attempt, action, entity, authorFilter]);
+
+  return <div className="page"><p className="eyebrow">Administração</p><h1>Auditoria de alterações</h1>
+    <p className="page-intro">Trilha imutável de cancelamentos, ajustes de estoque e alterações de cadastro administrativo. Consulta restrita a quem gerencia a organização.</p>
+    <form className="orders-form" onSubmit={(event) => event.preventDefault()}>
+      <label>Ação<select value={action} onChange={(event) => setAction(event.target.value)}><option value="">Todas</option>{auditActions.map((key) => <option key={key} value={key}>{auditActionLabels[key]}</option>)}</select></label>
+      <label>Registro<select value={entity} onChange={(event) => setEntity(event.target.value)}><option value="">Todos</option>{auditEntities.map((key) => <option key={key} value={key}>{auditEntityLabels[key]}</option>)}</select></label>
+      <label>Autor<Input value={author} onChange={(event) => setAuthor(event.target.value)} placeholder="Nome exato" /></label>
+    </form>
+    {error && <p className="notice error-text" role="alert">{error} <Button type="button" onClick={() => { setAttempt((value) => value + 1); }}>Tentar novamente</Button></p>}
+    {loading ? <Skeleton lines={4} label="Carregando auditoria…" /> : entries.length === 0 ? <EmptyState>Nenhum registro para os filtros atuais.</EmptyState> : <Table label="Registros de auditoria">
+      <thead><tr><th scope="col">Quando</th><th scope="col">Ação</th><th scope="col">Registro</th><th scope="col">Autor</th><th scope="col">Loja</th><th scope="col">Motivo/resumo</th></tr></thead>
+      <tbody>{entries.map((entry) => <tr key={entry.id}>
+        <td>{new Date(entry.at).toLocaleString("pt-BR")}</td>
+        <td><Badge>{auditActionLabels[entry.action]}</Badge></td>
+        <td><div className="cell-stack"><strong>{auditEntityLabels[entry.entity]}</strong><span className="help-text">{entry.entityId}</span></div></td>
+        <td>{entry.author}</td>
+        <td>{storeName(entry.storeId)}</td>
+        <td><div className="cell-stack">{entry.reason && <span>{entry.reason}</span>}{entry.summary && <span className="help-text">{entry.summary}</span>}</div></td>
+      </tr>)}</tbody>
+    </Table>}
+  </div>;
 }

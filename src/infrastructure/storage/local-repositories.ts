@@ -9,6 +9,7 @@ import type { InventoryItem, InventoryMovement } from "../../domain/inventory";
 import type { CashEntry, CashSession } from "../../domain/cash";
 import { cashTotals } from "../../domain/cash";
 import type { AdministrationRepository, AgendaRepository, AttendanceRepository, CashCloseInput, CashRepository, ClinicalRepository, CustomerRepository, InventoryRepository, PrescriptionRepository, SaleRepository, SessionRepository, SettingsRepository, WorkOrderRepository } from "../../domain/repositories";
+import type { AuditEntry, AuditListFilter, AuditRepository } from "../../domain/audit";
 import { database } from "./database";
 
 const defaultSettings: OrganizationSettings = {
@@ -378,5 +379,19 @@ export class LocalCashRepository implements CashRepository {
       await database.cashSessions.put(closed);
       return closed;
     });
+  }
+}
+
+export class LocalAuditRepository implements AuditRepository {
+  async create(entry: AuditEntry): Promise<void> {
+    await database.auditEntries.add(entry);
+  }
+  async list(filter: AuditListFilter = {}): Promise<AuditEntry[]> {
+    let rows = await database.auditEntries.orderBy("at").reverse().toArray();
+    if (filter.storeId) rows = rows.filter((row) => row.storeId === filter.storeId);
+    if (filter.action) rows = rows.filter((row) => row.action === filter.action);
+    if (filter.entity) rows = rows.filter((row) => row.entity === filter.entity);
+    if (filter.author) rows = rows.filter((row) => row.author === filter.author!.trim());
+    return filter.limit && filter.limit > 0 ? rows.slice(0, filter.limit) : rows;
   }
 }

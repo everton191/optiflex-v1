@@ -4,8 +4,9 @@ import { isSessionExpired, syncSessionRole } from "../domain/access";
 import { assertValidOrganizationSettings, normalizeOrganizationSettings } from "../domain/organization";
 import { buildAccessContext, canAccessStore, setAccessContext } from "../domain/access-context";
 import { AdministrationService, type StoreInput, type UserInput } from "../domain/administration-service";
+import { AuditService } from "../domain/audit-service";
 import { AuthenticationService } from "../domain/authentication-service";
-import { LocalAdministrationRepository, LocalSessionRepository, LocalSettingsRepository } from "../infrastructure/storage/local-repositories";
+import { LocalAdministrationRepository, LocalAuditRepository, LocalSessionRepository, LocalSettingsRepository } from "../infrastructure/storage/local-repositories";
 import { Button } from "../design-system/components";
 
 interface AppContextValue {
@@ -35,7 +36,7 @@ const AppContext = createContext<AppContextValue | null>(null);
 const settingsRepository = new LocalSettingsRepository();
 const sessionRepository = new LocalSessionRepository();
 const administrationRepository = new LocalAdministrationRepository();
-const administrationService = new AdministrationService(administrationRepository);
+const administrationService = new AdministrationService(administrationRepository, new AuditService(new LocalAuditRepository()));
 const authenticationService = new AuthenticationService(sessionRepository, administrationRepository);
 
 export function AppProviders({ children }: { children: ReactNode }) {
@@ -123,12 +124,12 @@ export function AppProviders({ children }: { children: ReactNode }) {
     });
   }
   async function refreshStores() { setStores(await administrationService.listStores()); }
-  async function createStore(input: StoreInput) { const store = await administrationService.createStore(input); await refreshStores(); return store; }
-  async function updateStore(id: string, input: StoreInput) { const store = await administrationService.updateStore(id, input); await refreshStores(); return store; }
-  async function setStoreActive(id: string, active: boolean) { const store = await administrationService.setStoreActive(id, active); await refreshStores(); return store; }
-  async function createUser(input: UserInput) { const user = await administrationService.createUser(input); await refreshUsers(); return user; }
-  async function updateUser(id: string, input: UserInput) { const user = await administrationService.updateUser(id, input); await refreshUsers(); return user; }
-  async function setUserActive(id: string, active: boolean) { const user = await administrationService.setUserActive(id, active, session?.userName); await refreshUsers(); return user; }
+  async function createStore(input: StoreInput) { const store = await administrationService.createStore(input, session?.userName); await refreshStores(); return store; }
+  async function updateStore(id: string, input: StoreInput) { const store = await administrationService.updateStore(id, input, session?.userName); await refreshStores(); return store; }
+  async function setStoreActive(id: string, active: boolean) { const store = await administrationService.setStoreActive(id, active, session?.userName); await refreshStores(); return store; }
+  async function createUser(input: UserInput) { const user = await administrationService.createUser(input, session?.userName); await refreshUsers(); return user; }
+  async function updateUser(id: string, input: UserInput) { const user = await administrationService.updateUser(id, input, session?.userName); await refreshUsers(); return user; }
+  async function setUserActive(id: string, active: boolean) { const user = await administrationService.setUserActive(id, active, session?.userName, session?.userName); await refreshUsers(); return user; }
   async function login(email: string, password: string) { const next = await authenticationService.login(email, password); await refreshUsers(); setSession(next); }
   async function loginDemo(userId: string) { const next = await authenticationService.loginDemo(userId); await refreshUsers(); setSession(next); }
   async function logout() { await authenticationService.logout(); setSession(null); }

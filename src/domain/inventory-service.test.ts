@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+﻿import { beforeEach, describe, expect, it, vi } from "vitest";
 import { InventoryService } from "./inventory-service";
+import { AuditService } from "./audit-service";
 import type { InventoryItem } from "./inventory";
 import { filterByCategory, marginCents, movementDelta, stockState } from "./inventory";
 
@@ -205,5 +206,17 @@ describe("stock alerts", () => {
     expect(marginCents(0.1 + 0.2, 0.1)).toBe(20);
     expect(marginCents(Number.NaN, 10)).toBeUndefined();
     expect(marginCents(10, Number.POSITIVE_INFINITY)).toBeUndefined();
+  });
+});
+
+describe("adjustment audit", () => {
+  const audit = { create: vi.fn(), list: vi.fn() };
+  const audited = new InventoryService(repository, new AuditService(audit));
+
+  it("writes an audit entry after applying a movement", async () => {
+    repository.applyMovement.mockResolvedValue({ ...item, quantity: 14 });
+    await audited.adjust(item, "IN", 4, "Recebimento de nota", "Operador");
+    expect(audit.create).toHaveBeenCalledOnce();
+    expect(audit.create.mock.calls[0][0]).toMatchObject({ action: "ADJUSTMENT", entity: "inventoryItem", entityId: "item-1", author: "Operador", reason: "Recebimento de nota", summary: "IN 4 un. — Armação", storeId: "store-centro" });
   });
 });

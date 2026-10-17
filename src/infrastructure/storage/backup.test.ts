@@ -52,31 +52,43 @@ describe("encrypted backup and transactional restore", () => {
   });
   it("keeps legacy backups readable and rejects corrupted attachment content", async () => {
     const snapshot = await repository.snapshot();
-    expect(snapshot.schema).toBe(13);
+    expect(snapshot.schema).toBe(14);
     const legacyTen = structuredClone(snapshot);
     legacyTen.schema = 10;
     const legacyTenTables = legacyTen as unknown as { tables: Record<string, unknown> };
     delete legacyTenTables.tables.attachments;
     delete legacyTenTables.tables.agendaEvents;
     delete legacyTenTables.tables.prescriptions;
+    delete legacyTenTables.tables.auditEntries;
     expect(() => validateBackup(legacyTen)).not.toThrow();
     expect(validateBackup(legacyTen).tables.attachments).toEqual([]);
     expect(validateBackup(legacyTen).tables.agendaEvents).toEqual([]);
     expect(validateBackup(legacyTen).tables.prescriptions).toEqual([]);
+    expect(validateBackup(legacyTen).tables.auditEntries).toEqual([]);
     const legacyEleven = structuredClone(snapshot);
     legacyEleven.schema = 11;
     const legacyElevenTables = legacyEleven as unknown as { tables: Record<string, unknown> };
     delete legacyElevenTables.tables.agendaEvents;
     delete legacyElevenTables.tables.prescriptions;
+    delete legacyElevenTables.tables.auditEntries;
     expect(() => validateBackup(legacyEleven)).not.toThrow();
     expect(validateBackup(legacyEleven).tables.agendaEvents).toEqual([]);
     expect(validateBackup(legacyEleven).tables.prescriptions).toEqual([]);
+    expect(validateBackup(legacyEleven).tables.auditEntries).toEqual([]);
     const legacyTwelve = structuredClone(snapshot);
     legacyTwelve.schema = 12;
     const legacyTwelveTables = legacyTwelve as unknown as { tables: Record<string, unknown> };
     delete legacyTwelveTables.tables.prescriptions;
+    delete legacyTwelveTables.tables.auditEntries;
     expect(() => validateBackup(legacyTwelve)).not.toThrow();
     expect(validateBackup(legacyTwelve).tables.prescriptions).toEqual([]);
+    expect(validateBackup(legacyTwelve).tables.auditEntries).toEqual([]);
+    const legacyThirteen = structuredClone(snapshot);
+    legacyThirteen.schema = 13;
+    const legacyThirteenTables = legacyThirteen as unknown as { tables: Record<string, unknown> };
+    delete legacyThirteenTables.tables.auditEntries;
+    expect(() => validateBackup(legacyThirteen)).not.toThrow();
+    expect(validateBackup(legacyThirteen).tables.auditEntries).toEqual([]);
     const schemaTenWithTable = structuredClone(snapshot);
     schemaTenWithTable.schema = 10;
     expect(() => validateBackup(schemaTenWithTable)).toThrow("inválido");
@@ -339,5 +351,21 @@ describe("organization settings in backups", () => {
     expect(() => validateBackup(badEmail)).toThrow("inválido");
     const blankCnpj = structuredClone(snapshot); blankCnpj.tables.settings[0].cnpj = "   ";
     expect(() => validateBackup(blankCnpj)).not.toThrow();
+  });
+});
+
+describe("audit entries in backups", () => {
+  it("validates required strings, known actions/entities and date stamps", async () => {
+    const snapshot = await repository.snapshot();
+    snapshot.tables.auditEntries.push({ id: "audit-1", storeId: "store-centro", action: "CANCEL", entity: "sale", entityId: "sale-1", author: "Ana", at: "2026-10-08T12:00:00.000Z", reason: "Desistiu", summary: "Armação" });
+    expect(() => validateBackup(snapshot)).not.toThrow();
+    const missingAuthor = structuredClone(snapshot); (missingAuthor.tables.auditEntries[0] as { author: unknown }).author = 42;
+    expect(() => validateBackup(missingAuthor)).toThrow("inválido");
+    const badAction = structuredClone(snapshot); (badAction.tables.auditEntries[0] as { action: unknown }).action = "DROP";
+    expect(() => validateBackup(badAction)).toThrow("inválido");
+    const badEntity = structuredClone(snapshot); (badEntity.tables.auditEntries[0] as { entity: unknown }).entity = "planet";
+    expect(() => validateBackup(badEntity)).toThrow("inválido");
+    const badDate = structuredClone(snapshot); (badDate.tables.auditEntries[0] as { at: unknown }).at = "hoje";
+    expect(() => validateBackup(badDate)).toThrow("inválido");
   });
 });

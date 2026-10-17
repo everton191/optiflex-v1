@@ -2,6 +2,7 @@ import type { QuoteStatus, Sale, SaleItem, SalePrescription, SaleTreatment } fro
 import { assertValidSaleItems, assertValidSalePrescription, assertValidSaleTreatments, itemsTotalCents, quoteStatusOf, quoteTransitions, refundStockMovementsFor, stockMovementsFor, treatmentsTotalCents } from "./sales";
 import { defaultOrganization } from "./access";
 import type { PrescriptionRepository, SaleRepository } from "./repositories";
+import type { AuditService } from "./audit-service";
 import { fromCents, requireMoney, toCents } from "./money";
 import type { Prescription } from "./clinical";
 
@@ -24,7 +25,7 @@ function buildQuote(input: QuoteInput): { customerId: string; description: strin
 }
 
 export class SalesService {
-  constructor(private readonly repository: SaleRepository, private readonly prescriptionRepository?: PrescriptionRepository) {}
+  constructor(private readonly repository: SaleRepository, private readonly prescriptionRepository?: PrescriptionRepository, private readonly audit?: AuditService) {}
   list(storeId: string): Promise<Sale[]> { return this.repository.listByStore(storeId); }
 
   async listCustomerPrescriptions(customerId: string, storeId: string): Promise<Prescription[]> {
@@ -84,10 +85,12 @@ export class SalesService {
     if (sale.status === "QUOTE") {
       const cancelled: Sale = { ...sale, status: "CANCELLED", cancelReason: motive, cancelledAt, cancelledBy };
       await this.repository.save(cancelled);
+      await this.audit?.log({ storeId: sale.storeId, action: "CANCEL", entity: "sale", entityId: sale.id, author: cancelledBy ?? "", reason: motive, summary: sale.description });
       return cancelled;
     }
     const movements = refundStockMovementsFor(sale);
     await this.repository.cancel({ ...sale, status: "CANCELLED", cancelReason: motive, cancelledAt, cancelledBy }, movements);
+    await this.audit?.log({ storeId: sale.storeId, action: "CANCEL", entity: "sale", entityId: sale.id, author: cancelledBy ?? "", reason: motive, summary: sale.description });
     return { ...sale, status: "CANCELLED", cancelReason: motive, cancelledAt, cancelledBy };
   }
 }

@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+﻿import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SalesService } from "./sales-service";
+import { AuditService } from "./audit-service";
 import type { Sale, SaleItem, SalePrescription } from "./sales";
 
 const repository = { listByStore: vi.fn(), get: vi.fn(), save: vi.fn(), confirm: vi.fn(), cancel: vi.fn() };
@@ -277,5 +278,23 @@ describe("guided sale: categories and treatments", () => {
     expect(cleared.treatments).toBeUndefined();
     const replaced = await service.updateQuote(quote(), { customerId: "customer-1", description: "", total: 0, items: [], treatments: [treatment("Polarizado", 120)] });
     expect(replaced.treatments).toMatchObject([{ name: "Polarizado", price: 120 }]);
+  });
+});
+
+describe("sale cancellation audit", () => {
+  const audit = { create: vi.fn(), list: vi.fn() };
+  const audited = new SalesService(repository, undefined, new AuditService(audit));
+
+  it("writes an audit entry when a sale is cancelled", async () => {
+    repository.cancel.mockResolvedValue(undefined);
+    await audited.cancel(quote({ status: "CONFIRMED" }), "Cliente desistiu", "Ana");
+    expect(audit.create).toHaveBeenCalledOnce();
+    expect(audit.create.mock.calls[0][0]).toMatchObject({ action: "CANCEL", entity: "sale", entityId: "sale-1", author: "Ana", reason: "Cliente desistiu", summary: "Armação", storeId: "store-centro" });
+  });
+
+  it("stays silent when no audit repository is wired", async () => {
+    repository.save.mockResolvedValue(undefined);
+    await service.cancel(quote(), "Desistiu", "Ana");
+    expect(audit.create).not.toHaveBeenCalled();
   });
 });

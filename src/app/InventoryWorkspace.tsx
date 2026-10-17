@@ -3,12 +3,13 @@ import { errorMessage } from "../domain/errors";
 import { Button, Drawer, ErrorState, Input, Select, Skeleton } from "../design-system/components";
 import { hasPermission } from "../domain/access";
 import { InventoryService } from "../domain/inventory-service";
+import { AuditService } from "../domain/audit-service";
 import type { InventoryItem, InventoryMovement, InventoryMovementType, ProductCategory, ProductCategoryFilter } from "../domain/inventory";
 import { filterByCategory, marginCents, productCategories, productCategoryLabels, stockState } from "../domain/inventory";
-import { LocalInventoryRepository } from "../infrastructure/storage/local-repositories";
+import { LocalAuditRepository, LocalInventoryRepository } from "../infrastructure/storage/local-repositories";
 import { useAppContext, useSession } from "./providers";
 
-const service = new InventoryService(new LocalInventoryRepository());
+const service = new InventoryService(new LocalInventoryRepository(), new AuditService(new LocalAuditRepository()));
 const stateLabels = { OK: "Disponível", LOW: "Abaixo do mínimo", OUT: "Esgotado" } as const;
 const stateClasses = { OK: "", LOW: "is-low", OUT: "is-out" } as const;
 const movementLabels = { IN: "Entrada", OUT: "Saída", ADJUSTMENT: "Ajuste" } as const;

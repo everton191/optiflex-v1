@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+﻿import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AdministrationService, type UserInput } from "./administration-service";
+import { AuditService } from "./audit-service";
 import type { Store, User } from "./access";
 
 const repository = { initialize: vi.fn(), listStores: vi.fn(), saveStore: vi.fn(), listUsers: vi.fn(), saveUser: vi.fn(), getCurrentStore: vi.fn(), saveCurrentStore: vi.fn() };
@@ -161,5 +162,32 @@ describe("credentials", () => {
   it("rejects weak passwords", async () => {
     await expect(service.createUser({ ...input, email: "fraca@opticore.local", password: "123" })).rejects.toThrow("ao menos 8");
     expect(repository.saveUser).not.toHaveBeenCalled();
+  });
+});
+
+describe("administrative audit", () => {
+  const audit = { create: vi.fn(), list: vi.fn() };
+  const audited = new AdministrationService(repository, new AuditService(audit));
+
+  it("logs user updates with the changed fields", async () => {
+    repository.listUsers.mockResolvedValue([owner]);
+    await audited.updateUser(owner.id, { name: owner.name, email: owner.email, role: "SELLER", storeIds: ["store-centro"] }, "admin");
+    expect(audit.create).toHaveBeenCalledOnce();
+    expect(audit.create.mock.calls[0][0]).toMatchObject({ action: "UPDATE", entity: "user", entityId: owner.id, author: "admin", storeId: "store-centro" });
+    expect(audit.create.mock.calls[0][0].summary).toContain("role");
+  });
+
+  it("logs store creation and deactivation", async () => {
+    await audited.createStore({ name: "Loja Norte" }, "admin");
+    expect(audit.create).toHaveBeenLastCalledWith(expect.objectContaining({ action: "CREATE", entity: "store", author: "admin", storeId: expect.stringMatching(/^store-/) }));
+    repository.getCurrentStore.mockResolvedValue({ id: "current", storeId: "store-shopping" });
+    await audited.setStoreActive("store-centro", false, "admin");
+    expect(audit.create).toHaveBeenLastCalledWith(expect.objectContaining({ action: "UPDATE", entity: "store", entityId: "store-centro", summary: "inativada", author: "admin" }));
+  });
+
+  it("logs user activation changes", async () => {
+    repository.listUsers.mockResolvedValue([owner]);
+    await audited.setUserActive(owner.id, false, "admin", "admin");
+    expect(audit.create).toHaveBeenLastCalledWith(expect.objectContaining({ action: "UPDATE", entity: "user", entityId: owner.id, summary: "inativado", author: "admin" }));
   });
 });

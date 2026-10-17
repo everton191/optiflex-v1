@@ -2,6 +2,7 @@ import type { InventoryItem, InventoryMovement, InventoryMovementType, ProductCa
 import { isProductCategory, movementDelta } from "./inventory";
 import { defaultOrganization } from "./access";
 import type { InventoryRepository } from "./repositories";
+import type { AuditService } from "./audit-service";
 import { isMoney } from "./money";
 
 export interface InventoryItemInput {
@@ -47,7 +48,7 @@ function assertCodeIsUnique(existing: readonly InventoryItem[], code: string, ex
 }
 
 export class InventoryService {
-  constructor(private readonly repository: InventoryRepository) {}
+  constructor(private readonly repository: InventoryRepository, private readonly audit?: AuditService) {}
   list(storeId: string): Promise<InventoryItem[]> { return this.repository.listByStore(storeId); }
   history(storeId: string): Promise<InventoryMovement[]> { return this.repository.listMovements(storeId); }
 
@@ -84,6 +85,8 @@ export class InventoryService {
     if (type !== "ADJUSTMENT" && quantity < 0) throw new Error("Informe uma quantidade maior que zero.");
     if (item.quantity + movementDelta({ type, quantity }) < 0) throw new Error("Saldo insuficiente para esta movimentação.");
     const movement: InventoryMovement = { id: `movement-${crypto.randomUUID()}`, itemId: item.id, storeId: item.storeId, type, quantity, reason: motive, createdAt: new Date().toISOString(), author, organizationId: defaultOrganization.id };
-    return this.repository.applyMovement(movement);
+    const updated = await this.repository.applyMovement(movement);
+    await this.audit?.log({ storeId: item.storeId, action: "ADJUSTMENT", entity: "inventoryItem", entityId: item.id, author: author ?? "", reason: motive, summary: `${type} ${quantity} un. — ${item.name}` });
+    return updated;
   }
 }
