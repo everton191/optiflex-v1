@@ -2,6 +2,7 @@
 
 **Status: NÃO INICIADO — bloqueado pela decisão P2 (especificação tributária + provedor fiscal) em `docs/project-management/DECISIONS.md`.**
 Épica #6 · cards F6-01..F6-19 + F2-15/F2-17. **Proibido implementar cálculo tributário presumido sem especificação validada** (auditoria).
+**F2-03 concluída em 08/10/2026 (`75df1c0`):** identificação fiscal da empresa persistida e validada em `OrganizationSettings` (CNPJ, regime tributário, IE, IM, CNAE e endereço fiscal) com formulário nas configurações e suporte a backup — base exigida por F6-01..03.
 
 Atualizado em: 07/10/2026 · grep em `src/` não encontrou nenhum código fiscal (NF-e/NFC-e/NCM/CFOP/certificado).
 

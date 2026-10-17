@@ -6,6 +6,13 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `75df1c0` + docs — Identificação fiscal da empresa (F2-03)
+
+- `TaxRegime` (SIMPLES_NACIONAL, SIMPLES_EXCESSO_SUBRECEITA, REGIME_NORMAL, MEI) com `taxRegimeLabels`/`isTaxRegime`; IE (`stateRegistration`), IM (`municipalRegistration`) e CNAE (`formatCnae`/`isValidCnae`, 7 dígitos formatados `4773-5/02` enquanto digita) em `OrganizationSettings` — campos opcionais, sem bump de schema.
+- Normalização (trim/maiúsculas/formato) e validação (regime por enum, IE/IM `^[A-Z0-9.-]{2,20}$` — aceita ISENTO —, CNAE com 7 dígitos) no `saveSettings`, com erro na UI do `SettingsPage` (campos "Regime tributário", "Inscrição estadual (IE)", "Inscrição municipal (IM)" e "CNAE principal"; endereço confirmado como endereço fiscal).
+- `validateBackup` valida o bloco fiscal do `settings` (regime desconhecido, IE não-string e CNAE curto rejeitados; campos em branco aceitos); snapshot importa/exporta os campos.
+- +5 testes (`organization.test.ts` +4, backup +1); **368/368**, tsc 0, build 0. Cálculo fiscal continua fora de escopo (F6 bloqueado pela decisão P2).
+
 ### `f5b8e0b` + docs — Testes offline, parte automatizada (F8-04, em andamento)
 
 - `src/infrastructure/storage/offline-persistence.test.ts` (novo): evidência automatizada do Fluxo 5 — sessão completa criada sem rede (cliente, atendimento, prescrição, orçamento com desconto de 5%, confirmação com baixa de estoque, recebimento de R$ 285 no caixa e OS) sobrevive a `database.close()` + `database.open()`; integridade conferida por reabertura (venda líquida + desconto com bruto, saldo do estoque, recebimento, OS, prescrição) e por `validateBackup` do snapshot completo. **363/363**, tsc 0, build 0.
