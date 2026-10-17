@@ -47,12 +47,18 @@ export const defaultOrganization: Organization = {
   createdAt: "2026-10-08T00:00:00.000Z"
 };
 
+export type TaxRegime = "SIMPLES_NACIONAL" | "SIMPLES_EXCESSO_SUBRECEITA" | "REGIME_NORMAL" | "MEI";
+
 export interface OrganizationSettings {
   id: "current";
   organizationName: string;
   clinicalProfessionalLabel: string;
   legalName?: string;
   cnpj?: string;
+  taxRegime?: TaxRegime;
+  stateRegistration?: string;
+  municipalRegistration?: string;
+  cnae?: string;
   phone?: string;
   email?: string;
   addressStreet?: string;

@@ -4,7 +4,7 @@ import { isAttendancePriority } from "./customer";
 import { isProductCategory } from "./inventory";
 import { prescriptionUsageLabels } from "./clinical";
 import { quoteStatusLabels } from "./sales";
-import { isValidCnpj } from "./organization";
+import { isTaxRegime, isValidCnae, isValidCnpj, isValidRegistrationCode } from "./organization";
 import { isAuditAction, isAuditEntity } from "./audit";
 import { workOrderEventLabels, workOrderStatusLabels } from "./work-order";
 
@@ -83,6 +83,9 @@ export function validateBackup(value: unknown): BackupSnapshot {
       if (name === "settings") {
         for (const field of ["legalName", "phone", "email", "addressStreet", "addressNumber", "addressDistrict", "addressCity", "addressState", "addressZip"]) if (row[field] !== undefined && typeof row[field] !== "string") throw invalid();
         if (row.cnpj !== undefined && (typeof row.cnpj !== "string" || (row.cnpj.trim() && !isValidCnpj(row.cnpj)))) throw invalid();
+        if (row.taxRegime !== undefined && !isTaxRegime(row.taxRegime)) throw invalid();
+        for (const field of ["stateRegistration", "municipalRegistration"]) if (row[field] !== undefined && (typeof row[field] !== "string" || ((row[field] as string).trim() && !isValidRegistrationCode(row[field] as string)))) throw invalid();
+        if (row.cnae !== undefined && (typeof row.cnae !== "string" || ((row.cnae as string).trim() && !isValidCnae(row.cnae as string)))) throw invalid();
       }
       if (name === "sales" && row.paymentStatus !== undefined && !["PENDING", "PARTIAL", "PAID"].includes(row.paymentStatus as string)) throw invalid();
       if (name === "sales" && row.quoteStatus !== undefined && !Object.hasOwn(quoteStatusLabels, row.quoteStatus as string)) throw invalid();

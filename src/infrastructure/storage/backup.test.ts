@@ -341,9 +341,9 @@ describe("encrypted backup and transactional restore", () => {
 });
 
 describe("organization settings in backups", () => {
-  it("accepts legal identification fields and rejects invalid cnpj or non-string optionals", async () => {
+  it("accepts legal and fiscal identification fields and rejects invalid values", async () => {
     const snapshot = await repository.snapshot();
-    snapshot.tables.settings.push({ id: "current", organizationName: "Ótica Central", clinicalProfessionalLabel: "Optometrista", legalName: "Central Serviços Ópticos Ltda", cnpj: "11.222.333/0001-81", email: "contato@central.com", addressCity: "São Paulo", addressState: "SP", addressZip: "01310-100" });
+    snapshot.tables.settings.push({ id: "current", organizationName: "Ótica Central", clinicalProfessionalLabel: "Optometrista", legalName: "Central Serviços Ópticos Ltda", cnpj: "11.222.333/0001-81", taxRegime: "SIMPLES_NACIONAL", stateRegistration: "ISENTO", municipalRegistration: "123456", cnae: "4773-5/02", email: "contato@central.com", addressCity: "São Paulo", addressState: "SP", addressZip: "01310-100" });
     expect(() => validateBackup(snapshot)).not.toThrow();
     const badCnpj = structuredClone(snapshot); badCnpj.tables.settings[0].cnpj = "11.222.333/0001-82";
     expect(() => validateBackup(badCnpj)).toThrow("inválido");
@@ -351,6 +351,14 @@ describe("organization settings in backups", () => {
     expect(() => validateBackup(badEmail)).toThrow("inválido");
     const blankCnpj = structuredClone(snapshot); blankCnpj.tables.settings[0].cnpj = "   ";
     expect(() => validateBackup(blankCnpj)).not.toThrow();
+    const badRegime = structuredClone(snapshot); (badRegime.tables.settings[0] as { taxRegime: unknown }).taxRegime = "LUCRO_SOLUCAO";
+    expect(() => validateBackup(badRegime)).toThrow("inválido");
+    const badIe = structuredClone(snapshot); (badIe.tables.settings[0] as { stateRegistration: unknown }).stateRegistration = 42;
+    expect(() => validateBackup(badIe)).toThrow("inválido");
+    const badCnae = structuredClone(snapshot); badCnae.tables.settings[0].cnae = "47-5";
+    expect(() => validateBackup(badCnae)).toThrow("inválido");
+    const blankFiscal = structuredClone(snapshot); blankFiscal.tables.settings[0].taxRegime = undefined; blankFiscal.tables.settings[0].stateRegistration = "   "; blankFiscal.tables.settings[0].cnae = "";
+    expect(() => validateBackup(blankFiscal)).not.toThrow();
   });
 });
 

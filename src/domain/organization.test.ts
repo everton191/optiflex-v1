@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { OrganizationSettings } from "./access";
-import { assertValidOrganizationSettings, formatCnpj, isValidCnpj, normalizeOrganizationSettings, onlyDigits } from "./organization";
+import { assertValidOrganizationSettings, formatCnae, formatCnpj, isTaxRegime, isValidCnae, isValidCnpj, normalizeOrganizationSettings, onlyDigits } from "./organization";
 
 const base: OrganizationSettings = { id: "current", organizationName: "Ótica Central", clinicalProfessionalLabel: "Optometrista" };
 
@@ -52,5 +52,42 @@ describe("organization settings", () => {
     expect(() => assertValidOrganizationSettings({ ...base, email: "sem-arroba" })).toThrow("E-mail inválido");
     expect(() => assertValidOrganizationSettings({ ...base, addressState: "São Paulo" })).toThrow("UF inválida");
     expect(() => assertValidOrganizationSettings({ ...base, addressZip: "0131-100" })).toThrow("CEP inválido");
+  });
+});
+
+describe("fiscal identification fields", () => {
+  it("formats cnae while typing and validates the 7 digits", () => {
+    expect(formatCnae("4773502")).toBe("4773-5/02");
+    expect(formatCnae("4773")).toBe("4773");
+    expect(formatCnae("4773-5/02")).toBe("4773-5/02");
+    expect(isValidCnae("4773-5/02")).toBe(true);
+    expect(isValidCnae("4773-5/0")).toBe(false);
+    expect(isValidCnae("")).toBe(false);
+  });
+
+  it("recognizes only known tax regimes", () => {
+    expect(isTaxRegime("SIMPLES_NACIONAL")).toBe(true);
+    expect(isTaxRegime("MEI")).toBe(true);
+    expect(isTaxRegime("PURPURA")).toBe(false);
+    expect(isTaxRegime(42)).toBe(false);
+  });
+
+  it("normalizes regime, registrations and cnae", () => {
+    const normalized = normalizeOrganizationSettings({ ...base, taxRegime: "SIMPLES_NACIONAL", stateRegistration: " isento ", municipalRegistration: "123456", cnae: "4773502" });
+    expect(normalized.taxRegime).toBe("SIMPLES_NACIONAL");
+    expect(normalized.stateRegistration).toBe("ISENTO");
+    expect(normalized.municipalRegistration).toBe("123456");
+    expect(normalized.cnae).toBe("4773-5/02");
+  });
+
+  it("accepts a complete fiscal payload", () => {
+    expect(() => assertValidOrganizationSettings({ ...base, taxRegime: "REGIME_NORMAL", stateRegistration: "ISENTO", municipalRegistration: "123456", cnae: "4773-5/02" })).not.toThrow();
+  });
+
+  it("rejects invalid regime, registrations and cnae when present", () => {
+    expect(() => assertValidOrganizationSettings({ ...base, taxRegime: "LUCRO_SOLUCAO" as never })).toThrow("Regime tributário inválido");
+    expect(() => assertValidOrganizationSettings({ ...base, stateRegistration: "a b c" })).toThrow("Inscrição estadual inválida");
+    expect(() => assertValidOrganizationSettings({ ...base, municipalRegistration: "!!" })).toThrow("Inscrição municipal inválida");
+    expect(() => assertValidOrganizationSettings({ ...base, cnae: "47-5" })).toThrow("CNAE inválido");
   });
 });

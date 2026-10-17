@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { errorMessage } from "../domain/errors";
 import { Badge, Button, EmptyState, Input, PageHeader, Select, Skeleton, Table } from "../design-system/components";
 import { allPermissions, hasPermission, roleDefinitions } from "../domain/access";
-import type { RoleKey, Store, User } from "../domain/access";
-import { formatCnpj } from "../domain/organization";
+import type { RoleKey, Store, TaxRegime, User } from "../domain/access";
+import { formatCnae, formatCnpj, taxRegimeLabels } from "../domain/organization";
 import { AuditService } from "../domain/audit-service";
 import { auditActions, auditActionLabels, auditEntities, auditEntityLabels, type AuditAction, type AuditEntity, type AuditEntry } from "../domain/audit";
 import { useAppContext, useSession } from "./providers";
@@ -33,6 +33,10 @@ export function SettingsPage() {
     <h2>Dados da empresa</h2>
     <label>Razão social<Input {...field("legalName")} placeholder="Opcional" /></label>
     <label>CNPJ<Input {...field("cnpj")} inputMode="numeric" placeholder="00.000.000/0000-00" onChange={(event) => { setSaved(false); setDraft({ ...draft, cnpj: formatCnpj(event.target.value) }); }} /></label>
+    <label>Regime tributário<select aria-label="Regime tributário" value={draft.taxRegime ?? ""} onChange={(event) => { setSaved(false); setDraft({ ...draft, taxRegime: (event.target.value || undefined) as TaxRegime | undefined }); }}><option value="">Opcional</option>{(Object.keys(taxRegimeLabels) as TaxRegime[]).map((regime) => <option key={regime} value={regime}>{taxRegimeLabels[regime]}</option>)}</select></label>
+    <label>Inscrição estadual (IE)<Input {...field("stateRegistration")} placeholder="Opcional ou ISENTO" onChange={(event) => { setSaved(false); setDraft({ ...draft, stateRegistration: event.target.value.toUpperCase() }); }} /></label>
+    <label>Inscrição municipal (IM)<Input {...field("municipalRegistration")} placeholder="Opcional" onChange={(event) => { setSaved(false); setDraft({ ...draft, municipalRegistration: event.target.value.toUpperCase() }); }} /></label>
+    <label>CNAE principal<Input {...field("cnae")} inputMode="numeric" placeholder="4773-5/02" onChange={(event) => { setSaved(false); setDraft({ ...draft, cnae: formatCnae(event.target.value) }); }} /></label>
     <label>Telefone<Input {...field("phone")} placeholder="Opcional" /></label>
     <label>E-mail<Input {...field("email")} type="email" placeholder="Opcional" /></label>
     <h2>Endereço</h2>
@@ -42,7 +46,7 @@ export function SettingsPage() {
     <label>Cidade<Input {...field("addressCity")} placeholder="Opcional" /></label>
     <label>UF<Input {...field("addressState")} maxLength={2} placeholder="Opcional" onChange={(event) => { setSaved(false); setDraft({ ...draft, addressState: event.target.value.toUpperCase() }); }} /></label>
     <label>CEP<Input {...field("addressZip")} inputMode="numeric" placeholder="00000-000" /></label>
-    <p className="help-text">Campos opcionais: o CNPJ, e-mail e CEP são validados quando preenchidos; tudo aparece na identificação da empresa no painel.</p>
+    <p className="help-text">Campos opcionais: o CNPJ, e-mail e CEP são validados quando preenchidos; regime, IE, IM e CNAE alimentam documentos fiscais (Fase 6) e o endereço acima é o endereço fiscal da empresa.</p>
     <div className="form-actions"><Button type="submit">Salvar alterações</Button>{saved && <span className="success">Configuração salva.</span>}{error && <span className="error-text" role="alert">{error}</span>}</div>
   </form><BackupPanel /></div>;
 }
