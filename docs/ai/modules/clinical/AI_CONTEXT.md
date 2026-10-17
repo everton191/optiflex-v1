@@ -8,6 +8,7 @@
 - Anexos mostram contagem de metadados.
 - Refração estruturada por olho (F3-07, `c2f0c27`): seção "Refração (OD/OE)" na workspace, prescrições append-only na tabela `prescriptions` (Dexie v13), autora = `session.userName`, listagem com marcação da ativa (`activePrescription`); backup `schema: 13`.
 - Uso, retificação e handoff de venda (F3-06, `6f2fe74`): `Prescription.usage` opcional (DISTANCE/NEAR/CONTINUOUS/MULTIFOCAL), "Retificar" na prescrição ativa (pré-preenche graus, exige motivo, versão original preservada com autor/data/motivo), snapshot imutável em `Sale.prescription` na criação do orçamento no caixa, `SalesService.listCustomerPrescriptions` com `LocalPrescriptionRepository`, backup valida FK de `sales.prescription`.
+- Guia clínico no perfil do cliente (F3-04/#43, `f43627c`): `customer-clinical-history.ts` — prescrições, prontuários e anexos listados por permissão (`clinical.workspace.access`), sem vazar texto de anamnese/exame; consumido por `CustomerHistoryService.listClinicalDocuments` e pela seção "Guia clínica" do perfil (`CustomersWorkspace`).
 - Receita óptica imprimível por versão (F3-05, `0e8675a`): `prescriptionDocument` (documento puro, não muta a prescrição) + `formatPrescriptionEye`, `PrescriptionRepository.get`/`ClinicalService.getPrescription`, rota `/prescricoes/:prescriptionId` com `PrescriptionDocumentPage`, botão "Imprimir" na workspace e na página (`window.print()` + `@media print`), versão sempre visível nas reimpressões.
 
 ## Current Decisions

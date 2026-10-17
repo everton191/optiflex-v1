@@ -42,7 +42,7 @@ Sem store/hook. O rascunho fica em `useState` até salvar.
 
 ## Permissions
 
-`clinical.workspace.access` em lista, workspace, menu e rota do documento imprimível.
+`clinical.workspace.access` em lista, workspace, menu e rota do documento imprimível. O guia clínico do perfil do cliente (`customer-clinical-history.ts`, F3-04) usa o mesmo gate: `canViewClinicalHistory(role)` e `buildCustomerClinicalDocuments` devolvem `[]` sem a permissão, e o resumo (`CustomerClinicalRecordSummary`) só carrega flags `hasAnamnesis`/`hasExamination` — o texto do prontuário nunca sai do repositório para o perfil (vendedor não vê anamnese).
 
 ## Dependencies
 
@@ -50,7 +50,7 @@ Attendance fornece `attendanceId`; storage usa `clinicalRecords`, `clinicalVersi
 
 ## Public API
 
-`ClinicalService` e `ClinicalRepository`; funções puras de prescrição (`issuePrescription`/`retifyPrescription`/`activePrescription`/`prescriptionUsageLabels`/`prescriptionDocument`/`formatPrescriptionEye`) em `clinical.ts` + `PrescriptionRepository`; para o caixa, `salePrescriptionSnapshot` em `sales.ts` e `SalesService.listCustomerPrescriptions`.
+`ClinicalService` e `ClinicalRepository`; funções puras de prescrição (`issuePrescription`/`retifyPrescription`/`activePrescription`/`prescriptionUsageLabels`/`prescriptionDocument`/`formatPrescriptionEye`) em `clinical.ts` + `PrescriptionRepository`; para o caixa, `salePrescriptionSnapshot` em `sales.ts` e `SalesService.listCustomerPrescriptions`; para o perfil do cliente, `canViewClinicalHistory`/`buildCustomerClinicalDocuments` em `customer-clinical-history.ts` (consumido por `CustomerHistoryService.listClinicalDocuments`, F3-04).
 
 ## Shared Components
 

@@ -56,7 +56,7 @@ Classificação de inventário (Etapa 4) no corpo de cada card:
 
 - Issues totais: **155** (8 épicas + 147 tarefas).
 - Tarefas por fase: F1=14 · F2=18 · F3=20 · F4=20 · F5=19 · F6=19 · F7=19 · F8=18.
-- Tarefas por status (revisado em 08/10/2026; F1-09, F2-04, F7-02, F1-11, F3-09, F3-14, F1-02, F1-06, F4-16, F2-05, F4-10, F4-18, F4-12, F2-06, F3-01, F8-06, F8-07, F1-07, F3-17, F2-11, F2-02, F3-02, F3-03, F2-07, F3-10, F4-11, F2-14, F3-07, F8-10, F8-02, F7-01, F1-05, F1-03, F7-03, F2-08, F7-05, F1-12, F3-06, F3-05, F7-11, F7-13, F3-08, F3-11, F3-16, F3-19, F2-01, F1-10, F8-17 e F2-09 concluídas no mesmo dia): DONE=67 · IN PROGRESS=0 · READY=0 · TESTING=0 · CODE REVIEW=0 · BACKLOG=29 · BLOCKED=50.
+- Tarefas por status (revisado em 08/10/2026; F1-09, F2-04, F7-02, F1-11, F3-09, F3-14, F1-02, F1-06, F4-16, F2-05, F4-10, F4-18, F4-12, F2-06, F3-01, F8-06, F8-07, F1-07, F3-17, F2-11, F2-02, F3-02, F3-03, F2-07, F3-10, F4-11, F2-14, F3-07, F8-10, F8-02, F7-01, F1-05, F1-03, F7-03, F2-08, F7-05, F1-12, F3-06, F3-05, F7-11, F7-13, F3-08, F3-11, F3-16, F3-19, F2-01, F1-10, F8-17, F2-09 e F3-04 concluídas no mesmo dia): DONE=68 · IN PROGRESS=0 · READY=0 · TESTING=0 · CODE REVIEW=0 · BACKLOG=28 · BLOCKED=50.
 - Bloqueios: **50 tarefas** bloqueadas — 47 por dependência de fase futura/externa + **3 reclassificadas em 08/10** (F4-13 #70, F8-03 #137, F3-20 #57: status desatualizado, decisão externa já registrada).
 - **Revisão de dependências 08/10/2026:** 7 ciclos detectados (SCC/Tarjan sobre este arquivo) e corrigidos em KANBAN + corpos das issues; **0 ciclos remanescentes**. Detalhe antes/depois em `DEPENDENCIES.md`.
 
@@ -122,7 +122,7 @@ Regra de ouro: **nunca mover para DONE sem evidência verificável** (comando de
 | F3-01 | [Agenda e recepção](https://github.com/everton191/optiflex-v1/issues/40) | Attendance | DONE | p1 | F2-04 (usuários/profissionais; entregue em `679951f` — agenda dia/semana, conversão em atendimento sem redigitar cliente, Dexie v12). |
 | F3-02 | [Cadastro de atendimento](https://github.com/everton191/optiflex-v1/issues/41) | Attendance | DONE | p1 | F2-04 (profissionais; entregue em `8daab89` — `/atendimentos/novo` com tipo/profissional/prioridade/notas, detalhe `/atendimentos/:attendanceId` por URL direta e transições básicas). |
 | F3-03 | [Fila de atendimento](https://github.com/everton191/optiflex-v1/issues/42) | Attendance | DONE | p1 | F3-02 (feito em `8daab89`; fila entregue em `c45a6bf` — status `NO_SHOW`, filtros Todos/Aguardando/Em atendimento, tempo de espera por registro e ações Iniciar/Finalizar/Faltou/Cancelar por permissão; estados finais saem da fila). |
-| F3-04 | [Histórico clínico do cliente](https://github.com/everton191/optiflex-v1/issues/43) | Customers | BACKLOG | p1 | F2-09, F3-06, F1-11. |
+| F3-04 | [Histórico clínico do cliente](https://github.com/everton191/optiflex-v1/issues/43) | Customers | DONE | p1 | F2-09, F3-06, F1-11 (feitos; entregue em `f43627c` — `customer-clinical-history.ts` com `canViewClinicalHistory` (gate `clinical.workspace.access`) e `buildCustomerClinicalDocuments` puro (prescrições com uso/versão/retificação, prontuários com conteúdo, anexos com categoria; texto de anamnese/exame nunca sai do resumo), `CustomerHistoryService.listClinicalDocuments` com gate duplo UI+serviço, seção "Guia clínica" no perfil com filtros por tipo, visível só para acesso clínico; 354/354). |
 | F3-05 | [Receitas ópticas (documento e impressão)](https://github.com/everton191/optiflex-v1/issues/44) | Clinical | DONE | p1 | F3-06 (feito). Entregue em `0e8675a` — `prescriptionDocument`/`formatPrescriptionEye` (documento puro por versão, não muta a prescrição), `PrescriptionRepository.get` + `ClinicalService.getPrescription`, rota `/prescricoes/:prescriptionId` com `PrescriptionDocumentPage`, botão "Imprimir" na lista e na página (`window.print()` + `@media print`), versão sempre visível nas reimpressões; 308/308. Impressão manual pendente (CA do card). |
 | F3-06 | [Prescrição estruturada](https://github.com/everton191/optiflex-v1/issues/45) | Clinical | DONE | p1 | nenhuma. Entregue em `6f2fe74` — `Prescription.usage` (DISTANCE/NEAR/CONTINUOUS/MULTIFOCAL), retificação na workspace clínica com motivo obrigatório e histórico (CA1), snapshot `SalePrescription` na criação do orçamento sem redigitação (CA2), `listCustomerPrescriptions`, backup com FK de `sales.prescription`; 305/305. |
 | F3-07 | [Campos de grau OD/OE, cilindro, eixo e adição](https://github.com/everton191/optiflex-v1/issues/46) | Clinical | DONE | p1 | F1-07. |
@@ -271,18 +271,17 @@ Ordem recomendada para a próxima sessão de desenvolvimento (status READY/IN PR
 
 | # | ID | Issue | Tarefa | Prioridade | Dependências | Justificativa |
 |---|---|---|---|---|---|---|
-| 1 | F3-04 | #43 | [Customers] Histórico clínico do cliente | P1 | F2-09 (feito), F3-06 (feito), F1-11 (feito) | Dependências todas concluídas; estende a timeline do perfil com a parte clínica. |
-| 2 | F3-12 | #51 | [Sales] Descontos e aprovação | P1 | F1-10 (feito), F3-10 (feito) | Requer definir limites de desconto por perfil (decisão leve; defaults podem ser propostos). |
-| 3 | F8-04 | #138 | [Infraestrutura] Testes offline | P1 | F3-09 (feito), F8-01 (feito) | Cobre o app instalado sem rede (PWA já gerada). |
-| 4 | F2-03 | #25 | [Administration] Dados jurídicos e tributários | P2 | F2-01 (feito) | Alimenta F6 quando a especificação fiscal existir. |
-| 5 | F4-05 | #62 | [Inventory] Reserva de itens por venda | P2 | F3-10 (feito), F4-07 (feito) | Base para produtos prontos (F3-18). |
-| 6 | F4-06 | #63 | [Inventory] Transferência entre filiais | P2 | F4-02 (feito), F2-02 (feito) | Multi-loja já existe. |
-| 7 | F2-12 | #33 | [Inventory] Serviços | P2 | F2-11 (feito) | Catálogo completa o inventário não físico. |
-| 8 | F7-08 | #123 | [Ux] Tabelas e filtros | P2 | F7-01 (feito) | Consolida primitivas; libera F7-18. |
-| 9 | F7-09 | #124 | [Ux] Modais e diálogos | P2 | F7-01 (feito) | Primitivas já em uso disperso. |
-| 10 | F2-18 | #39 | [Administration] Cadastro inicial assistido | P3 | F2-01/F2-02/F2-04 (feitos) | Onboarding; libera F7-15. |
+| 1 | F3-12 | #51 | [Sales] Descontos e aprovação | P1 | F1-10 (feito), F3-10 (feito) | Requer definir limites de desconto por perfil (decisão leve; defaults podem ser propostos). |
+| 2 | F8-04 | #138 | [Infraestrutura] Testes offline | P1 | F3-09 (feito), F8-01 (feito) | Cobre o app instalado sem rede (PWA já gerada); imediato, sem decisão pendente. |
+| 3 | F2-03 | #25 | [Administration] Dados jurídicos e tributários | P2 | F2-01 (feito) | Alimenta F6 quando a especificação fiscal existir. |
+| 4 | F4-05 | #62 | [Inventory] Reserva de itens por venda | P2 | F3-10 (feito), F4-07 (feito) | Base para produtos prontos (F3-18). |
+| 5 | F4-06 | #63 | [Inventory] Transferência entre filiais | P2 | F4-02 (feito), F2-02 (feito) | Multi-loja já existe. |
+| 6 | F2-12 | #33 | [Inventory] Serviços | P2 | F2-11 (feito) | Catálogo completa o inventário não físico. |
+| 7 | F7-08 | #123 | [Ux] Tabelas e filtros | P2 | F7-01 (feito) | Consolida primitivas; libera F7-18. |
+| 8 | F7-09 | #124 | [Ux] Modais e diálogos | P2 | F7-01 (feito) | Primitivas já em uso disperso. |
+| 9 | F2-18 | #39 | [Administration] Cadastro inicial assistido | P3 | F2-01/F2-02/F2-04 (feitos) | Onboarding; libera F7-15. |
 
-Reservas (mesma ordem): F2-13, F2-15, F2-16, F7-06, F7-07, F7-10, F7-14, F7-16, F7-17 — todas com dependências concluídas. **Correção (08/10/2026):** a fila anterior foi declarada esvaziada por "decisões externas", mas a auditoria das deps mostrou dezenas de cards de BACKLOG plenamente executáveis; a fila acima reabre o trabalho.
+Reservas (mesma ordem): F2-13, F2-15, F2-16, F7-06, F7-07, F7-10, F7-14, F7-16, F7-17 — todas com dependências concluídas. F3-04 foi consumido em 08/10/2026 (`f43627c`).
 
 Os `#?` devem ser resolvidos pela tabela acima (coluna ID → link da issue). Os números já estão fixados nas tabelas das fases; para referência rápida: consulte `DEPENDENCIES.md`.
 

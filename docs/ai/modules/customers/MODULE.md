@@ -27,7 +27,7 @@ Páginas em `src/app/CustomersWorkspace.tsx` (re-exportadas por `pages.tsx`); do
 
 `ReceptionService`: list/get/create/update customer e operações de attendance; valida CPF/CNPJ (`isValidDocument`) antes de gravar.
 
-`CustomerHistoryService` (`customer-history-service.ts`, F2-09): `list(customerId, { storeId, role })` agrega atendimentos do cliente (global), vendas e OS da loja por `customerId` e recebimentos do caixa via `saleId`; devolve `CustomerHistoryEvent[]` prontos para a timeline.
+`CustomerHistoryService` (`customer-history-service.ts`, F2-09): `list(customerId, { storeId, role })` agrega atendimentos do cliente (global), vendas e OS da loja por `customerId` e recebimentos do caixa via `saleId`; devolve `CustomerHistoryEvent[]` prontos para a timeline. `listClinicalDocuments` (F3-04): prescrições da loja + prontuários/anexos dos atendimentos do cliente, com gate duplo — a UI só chama com `canViewClinicalHistory(role)` e o serviço devolve `[]` sem a permissão; devolve `CustomerClinicalDocument[]` (nunca com texto de anamnese).
 
 ## Repositories
 
@@ -43,7 +43,7 @@ Sem store ou hook dedicado; páginas usam `useState`/`useEffect`.
 
 ## Permissions
 
-`customers.read`, `customers.manage`; a timeline respeita `attendance.read`, `sales.read`, `cash.read` e `clinical.workspace.access` (vendedor não vê atendimentos/anamnese).
+`customers.read`, `customers.manage`; a timeline respeita `attendance.read`, `sales.read`, `cash.read` e `clinical.workspace.access` (vendedor não vê atendimentos/anamnese). A seção "Guia clínica" do perfil só renderiza com `clinical.workspace.access` (F3-04).
 
 ## Dependencies
 

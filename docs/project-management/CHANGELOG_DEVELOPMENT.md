@@ -6,6 +6,13 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `f43627c` + docs — Guia clínico do perfil (F3-04)
+
+- `src/domain/customer-clinical-history.ts` (novo): `CustomerClinicalDocumentKind` (PRESCRIPTION/CLINICAL_RECORD/ATTACHMENT), `canViewClinicalHistory(role)` (gate `clinical.workspace.access`) e `buildCustomerClinicalDocuments` puro — prescrições com uso/versão/retificação, prontuários (finalizado/em edição) apenas quando há conteúdo, anexos com categoria; resumo `CustomerClinicalRecordSummary` só com flags booleanas (texto de anamnese/exame nunca sai do repositório — P0 de segurança).
+- `CustomerHistoryService.listClinicalDocuments(customerId, { storeId, role })`: gate duplo UI+serviço, `PrescriptionRepository.listByCustomer` (loja) + `ClinicalRepository.load` por atendimento não cancelado com try/catch.
+- `CustomerProfilePage`: seção "Guia clínica" com chips por tipo, badges e "Abrir consulta" (`/clinico/atendimento/:id`), visível/executada só para quem tem acesso clínico.
+- Testes `customer-clinical-history.test.ts` (+4: ocultação para vendedor, prescrições com retificação, prontuários/anexos com skip de vazio, outra loja + não-vazamento de texto). **354/354**, tsc 0, build 0.
+
 ### `4ed148a` + docs — Histórico de clientes (F2-09)
 
 - `src/domain/customer-history.ts` (novo): tipos `CustomerHistoryEvent`/`CustomerHistoryKind` (ATTENDANCE/SALE/WORK_ORDER/PAYMENT), `historyKindsFor(role)` (attendance.read → atendimentos; sales.read → vendas+OS; cash.read → pagamentos) e `buildCustomerHistory` puro — ordena por data desc com tiebreak, links por permissão (`/clinico/atendimento/:id` só para `clinical.workspace.access` na própria loja, senão `/atendimentos/:id`; venda/OS/pagamento → `/vendas/:id` ou `/ordens-servico/:id`), flag `otherStore` para eventos de outra loja.

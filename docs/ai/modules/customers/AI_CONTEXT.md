@@ -54,4 +54,4 @@
 
 ## Next Likely Task
 
-F3-04 (#43) histórico clínico do cliente — estende a timeline com eventos clínicos (anamnese, prescrição) respeitando `clinical.workspace.access`.
+F3-12 (#51) descontos e aprovação (requer limites por perfil) ou F8-04 (#138) testes offline.
