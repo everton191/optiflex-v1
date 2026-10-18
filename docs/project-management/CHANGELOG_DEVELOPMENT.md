@@ -6,6 +6,13 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `1c8c9a6` + docs — Transferência entre filiais (F4-06)
+
+- Modelo `Transfer` com ciclo REQUESTED→SEPARATED→IN_TRANSIT→RECEIVED (+CANCELLED), `transferTransitions`/`transferStatusLabels` e `assertValidTransferItems`; `TransferService` valida lojas diferentes, autor e itens, e audita com a nova entity `transfer`.
+- `LocalTransferRepository` transacional: separar baixa o saldo da origem checando `availableQuantity` (reservas F4-05 respeitadas), receber credita no destino (match por `code`, senão por nome sem code, senão cria item copiando atributos da origem) e cancelar SEPARATED devolve IN à origem (IN_TRANSIT não cancela); histórico IN/OUT nos dois lados com reason do transfer-id.
+- UI em `InventoryWorkspace`: seção "Transferências entre filiais" com solicitação multi-produto (checagem de saldo em tempo real), ações por status (Separar/Em trânsito/Receber) e cancelamento com motivo, permissão `inventory.manage` e `assertStoreAccess` nas duas lojas.
+- Dexie **v16** com tabela `transfers`; backup **schema 16** (snapshots 14/15 padronizam `transfers=[]`, validação de status/itens/lojas); +11 testes de transferência +1 de backup; **391/391**, tsc 0, build 0.
+
 ### `d807590` + docs — Reserva de itens por venda (F4-05)
 
 - `InventoryItem.reservedQuantity?` + `availableQuantity` (saldo − reservado; sem bump de schema); `quoteReservationDeltas` puro (líquido por produto entre rascunho anterior e novo).
