@@ -14,7 +14,7 @@ Página em `src/app/InventoryWorkspace.tsx` (re-exportada em `src/app/pages.tsx`
 
 ## Main Pages
 
-`InventoryPage`: cadastro/edição de produtos com **código obrigatório** (barras/interno, único por loja), preço padrão/custo opcionais e ficha de catálogo (categoria obrigatória, marca, material, descrição), filtro por categoria em abas com contagem, form de movimentação (IN/OUT/ADJUSTMENT), alertas de mínimo e histórico de movimentações; custo e margem (`marginCents`) aparecem só com `inventory.manage`. Seção "Transferências entre filiais" (F4-06): solicitação multi-produto com saldo disponível em tempo real, ações por status (Separar → Em trânsito → Receber) e cancelamento com motivo (devolve saldo à origem quando já separado); tudo exige `inventory.manage` e `assertStoreAccess` nas duas lojas.
+`InventoryPage`: cadastro/edição de produtos com **código obrigatório** (barras/interno, único por loja), preço padrão/custo opcionais e ficha de catálogo (categoria obrigatória, marca, material, descrição), filtro por categoria em abas com contagem, form de movimentação (IN/OUT/ADJUSTMENT), alertas de mínimo e histórico de movimentações; custo e margem (`marginCents`) aparecem só com `inventory.manage`. Seção "Transferências entre filiais" (F4-06): solicitação multi-produto com saldo disponível em tempo real, ações por status (Separar → Em trânsito → Receber) e cancelamento com motivo (devolve saldo à origem quando já separado); tudo exige `inventory.manage` e `assertStoreAccess` nas duas lojas. Seção "Serviços" (F2-12): catálogo por loja (`ServiceCatalogItem` — nome único case-insensitive, preço padrão, descrição opcional) com CRUD em `inventory.manage`; selecionável no Caixa como tratamento sem estoque.
 
 ## Components
 
@@ -26,7 +26,7 @@ Classes de lista, Badge (`badge`, `is-low`, `is-out`) e formulário `inventory-f
 
 ## Repositories
 
-`InventoryRepository` / `LocalInventoryRepository` (`listByStore`, `listMovements`, `createItem`, `updateItem`, `applyMovement`, `applyReservation`), todos transacionais. `TransferRepository` / `LocalTransferRepository` (`listByStore`, `create`, `separate`, `markInTransit`, `receive`, `cancel`) — `separate`/`receive`/`cancel` transacionais sobre `transfers` + `inventoryItems` + `inventoryMovements` (Dexie v16).
+`InventoryRepository` / `LocalInventoryRepository` (`listByStore`, `listMovements`, `createItem`, `updateItem`, `applyMovement`, `applyReservation`), todos transacionais. `TransferRepository` / `LocalTransferRepository` (`listByStore`, `create`, `separate`, `markInTransit`, `receive`, `cancel`) — `separate`/`receive`/`cancel` transacionais sobre `transfers` + `inventoryItems` + `inventoryMovements` (Dexie v16). `ServiceCatalogRepository` / `LocalServiceCatalogRepository` (`listByStore`, `create`, `update`, `remove`; Dexie v17 `services`).
 
 ## Stores / Hooks
 
@@ -46,15 +46,15 @@ Contexto de loja, sessão (`session.userName` como autor) e Dexie.
 
 ## Public API
 
-`InventoryService`, `InventoryRepository`, `TransferService`, `TransferRepository`.
+`InventoryService`, `InventoryRepository`, `TransferService`, `TransferRepository`, `ServiceCatalogService`, `ServiceCatalogRepository`.
 
 ## Files Normally Modified
 
 - Página: `src/app/InventoryWorkspace.tsx` + estilos `inventory-form`/`.badge.is-*`.
 - Regras de saldo: `inventory-service.ts`; transferências: `transfer-service.ts`.
 - Modelos: `inventory.ts`, `transfer.ts`.
-- Persistência: `LocalInventoryRepository`, `LocalTransferRepository` e tabelas inventory/transfers (Dexie v16).
-- Backup: campos `code`/`author`/`defaultPrice`/`cost` validados em `backup.ts`; `category` por `isProductCategory` e `brand`/`material`/`description` como strings opcionais (item legado sem categoria continua importável); schema 16 valida `transfers` (status enum, itens e FKs das duas lojas).
+- Persistência: `LocalInventoryRepository`, `LocalTransferRepository`, `LocalServiceCatalogRepository` e tabelas inventory/transfers/services (Dexie v16/v17).
+- Backup: campos `code`/`author`/`defaultPrice`/`cost` validados em `backup.ts`; `category` por `isProductCategory` e `brand`/`material`/`description` como strings opcionais (item legado sem categoria continua importável); schema 16 valida `transfers` (status enum, itens e FKs das duas lojas); schema 17 valida `services` (nome/preço/FK de loja).
 
 ## Avoid Modifying
 

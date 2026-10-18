@@ -6,6 +6,13 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `8be2750` + docs — Catálogo de serviços (F2-12)
+
+- `ServiceCatalogItem` (nome, preço padrão, descrição opcional, por loja) + `assertValidServiceInput` (nome obrigatório ≤ 120, preço ≥ 0) e `ServiceCatalogService` (nome único case-insensitive por loja; criar/editar/remover com `assertStoreAccess`).
+- `LocalServiceCatalogRepository` (Dexie **v17** tabela `services`); seção "Serviços" no `InventoryWorkspace` (CRUD com `inventory.manage`).
+- No Caixa, seletor "Serviço do catálogo" no form de tratamentos preenche nome e preço padrão; o serviço entra como `SaleTreatment` (linha já existente — total e OS sem baixa de estoque; caminho de confirmação intacto).
+- Backup **schema 17** (snapshots 16 padronizam `services=[]`, FK de loja, validação de nome/preço); +4 testes de catálogo (CRUD por loja, validação/duplicidade, reabertura, venda só de serviço sem movimento de estoque) +1 de backup; **396/396**, tsc 0, build 0.
+
 ### `1c8c9a6` + docs — Transferência entre filiais (F4-06)
 
 - Modelo `Transfer` com ciclo REQUESTED→SEPARATED→IN_TRANSIT→RECEIVED (+CANCELLED), `transferTransitions`/`transferStatusLabels` e `assertValidTransferItems`; `TransferService` valida lojas diferentes, autor e itens, e audita com a nova entity `transfer`.
