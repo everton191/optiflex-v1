@@ -1,7 +1,7 @@
 import type { QuoteStatus, Sale, SaleDiscount, SaleDiscountInput, SaleItem, SalePrescription, SaleTreatment } from "./sales";
-import { assertDiscountNotZeroing, assertValidSaleDiscount, assertValidSaleItems, assertValidSalePrescription, assertValidSaleTreatments, canApproveDiscount, discountRequiresApproval, itemsTotalCents, quoteStatusOf, quoteTransitions, refundStockMovementsFor, saleDiscountAmountCents, stockMovementsFor, treatmentsTotalCents } from "./sales";
+import { assertDiscountNotZeroing, assertValidSaleDiscount, assertValidSaleItems, assertValidSalePrescription, assertValidSaleTreatments, canApproveDiscount, discountRequiresApproval, itemsTotalCents, quoteReservationDeltas, quoteStatusOf, quoteTransitions, refundStockMovementsFor, saleDiscountAmountCents, stockMovementsFor, treatmentsTotalCents } from "./sales";
 import { defaultOrganization, type RoleKey } from "./access";
-import type { PrescriptionRepository, SaleRepository } from "./repositories";
+import type { InventoryRepository, PrescriptionRepository, SaleRepository } from "./repositories";
 import type { AuditService } from "./audit-service";
 import { fromCents, requireMoney, toCents } from "./money";
 import type { Prescription } from "./clinical";
@@ -36,7 +36,16 @@ function buildQuote(input: QuoteInput, context?: DiscountContext): { customerId:
 }
 
 export class SalesService {
-  constructor(private readonly repository: SaleRepository, private readonly prescriptionRepository?: PrescriptionRepository, private readonly audit?: AuditService) {}
+  constructor(private readonly repository: SaleRepository, private readonly prescriptionRepository?: PrescriptionRepository, private readonly audit?: AuditService, private readonly inventoryRepository?: InventoryRepository) {}
+
+  private async applyReservationDeltas(storeId: string, deltas: ReadonlyMap<string, number>): Promise<void> {
+    if (deltas.size === 0) return;
+    if (!this.inventoryRepository) throw new Error("Reserva de estoque indisponível.");
+    for (const [itemId, delta] of deltas) {
+      await this.inventoryRepository.applyReservation(itemId, storeId, delta);
+    }
+  }
+
   list(storeId: string): Promise<Sale[]> { return this.repository.listByStore(storeId); }
 
   async listCustomerPrescriptions(customerId: string, storeId: string): Promise<Prescription[]> {
@@ -47,6 +56,7 @@ export class SalesService {
   async createQuote(customerId: string, storeId: string, description: string, total: number, items: readonly SaleItem[] = [], prescription?: SalePrescription, treatments: readonly SaleTreatment[] = [], discount?: SaleDiscountInput, context?: DiscountContext): Promise<Sale> {
     const built = buildQuote({ customerId, description, total, items, prescription, treatments, discount }, context);
     const sale: Sale = { id: `sale-${crypto.randomUUID()}`, customerId: built.customerId, storeId, status: "QUOTE", paymentStatus: "PENDING", description: built.description, total: built.total, items: built.items, treatments: built.treatments, prescription: built.prescription, discount: built.discount, createdAt: new Date().toISOString(), organizationId: defaultOrganization.id };
+    await this.applyReservationDeltas(storeId, quoteReservationDeltas(undefined, built.items));
     await this.repository.save(sale); return sale;
   }
 
@@ -56,6 +66,7 @@ export class SalesService {
     const built = buildQuote(input, context);
     const keptPrescription = sale.prescription?.customerId === built.customerId ? sale.prescription : undefined;
     const updated: Sale = { ...sale, customerId: built.customerId, description: built.description, total: built.total, items: built.items, treatments: built.treatments, prescription: built.prescription ?? keptPrescription, discount: built.discount };
+    await this.applyReservationDeltas(sale.storeId, quoteReservationDeltas(sale.items, built.items));
     await this.repository.save(updated); return updated;
   }
 
@@ -79,6 +90,7 @@ export class SalesService {
     const from = quoteStatusOf(sale);
     if (!quoteTransitions[from].includes(to)) throw new Error("Este estado do orçamento não permite essa mudança.");
     const updated: Sale = { ...sale, quoteStatus: to };
+    if (to === "EXPIRED" || to === "REJECTED") await this.applyReservationDeltas(sale.storeId, quoteReservationDeltas(sale.items, undefined));
     await this.repository.save(updated); return updated;
   }
 
@@ -113,6 +125,7 @@ export class SalesService {
     const cancelledBy = author?.trim() || undefined;
     if (sale.status === "QUOTE") {
       const cancelled: Sale = { ...sale, status: "CANCELLED", cancelReason: motive, cancelledAt, cancelledBy };
+      await this.applyReservationDeltas(sale.storeId, quoteReservationDeltas(sale.items, undefined));
       await this.repository.save(cancelled);
       await this.audit?.log({ storeId: sale.storeId, action: "CANCEL", entity: "sale", entityId: sale.id, author: cancelledBy ?? "", reason: motive, summary: sale.description });
       return cancelled;

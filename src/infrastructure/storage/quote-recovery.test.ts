@@ -1,10 +1,19 @@
 import "fake-indexeddb/auto";
 import { afterEach, describe, expect, it } from "vitest";
 import { SalesService } from "../../domain/sales-service";
+import type { InventoryRepository } from "../../domain/repositories";
 import { database } from "./database";
 import { LocalSaleRepository } from "./local-repositories";
 
-const salesService = new SalesService(new LocalSaleRepository());
+const inventoryStub: InventoryRepository = {
+  listByStore: async () => [],
+  listMovements: async () => [],
+  createItem: async () => {},
+  updateItem: async () => {},
+  applyMovement: async () => { throw new Error("unused"); },
+  applyReservation: async (itemId, storeId) => ({ id: itemId, storeId, name: "Produto", quantity: 99, minimumQuantity: 0 })
+};
+const salesService = new SalesService(new LocalSaleRepository(), undefined, undefined, inventoryStub);
 afterEach(async () => { await database.delete(); });
 
 describe("quote recovery after days", () => {

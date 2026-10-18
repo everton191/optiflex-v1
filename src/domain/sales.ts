@@ -218,3 +218,11 @@ export function refundStockMovementsFor(sale: Sale): InventoryMovement[] {
     organizationId: sale.organizationId ?? defaultOrganization.id,
   }));
 }
+
+export function quoteReservationDeltas(previous: readonly SaleItem[] | undefined, next: readonly SaleItem[] | undefined): Map<string, number> {
+  const deltas = new Map<string, number>();
+  for (const item of previous ?? []) deltas.set(item.inventoryItemId, (deltas.get(item.inventoryItemId) ?? 0) - item.quantity);
+  for (const item of next ?? []) deltas.set(item.inventoryItemId, (deltas.get(item.inventoryItemId) ?? 0) + item.quantity);
+  for (const [id, value] of [...deltas]) if (value === 0) deltas.delete(id);
+  return deltas;
+}

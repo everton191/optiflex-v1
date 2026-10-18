@@ -1,5 +1,5 @@
 import type { InventoryItem, InventoryMovement, InventoryMovementType, ProductCategory } from "./inventory";
-import { isProductCategory, movementDelta } from "./inventory";
+import { availableQuantity, isProductCategory, movementDelta } from "./inventory";
 import { defaultOrganization } from "./access";
 import type { InventoryRepository } from "./repositories";
 import type { AuditService } from "./audit-service";
@@ -84,6 +84,7 @@ export class InventoryService {
     if (!Number.isFinite(quantity) || quantity === 0) throw new Error("Informe uma quantidade válida.");
     if (type !== "ADJUSTMENT" && quantity < 0) throw new Error("Informe uma quantidade maior que zero.");
     if (item.quantity + movementDelta({ type, quantity }) < 0) throw new Error("Saldo insuficiente para esta movimentação.");
+    if (item.quantity + movementDelta({ type, quantity }) < (item.reservedQuantity ?? 0)) throw new Error(`Saldo disponível insuficiente de "${item.name}" (reservado em orçamentos: ${item.reservedQuantity ?? 0}).`);
     const movement: InventoryMovement = { id: `movement-${crypto.randomUUID()}`, itemId: item.id, storeId: item.storeId, type, quantity, reason: motive, createdAt: new Date().toISOString(), author, organizationId: defaultOrganization.id };
     const updated = await this.repository.applyMovement(movement);
     await this.audit?.log({ storeId: item.storeId, action: "ADJUSTMENT", entity: "inventoryItem", entityId: item.id, author: author ?? "", reason: motive, summary: `${type} ${quantity} un. — ${item.name}` });

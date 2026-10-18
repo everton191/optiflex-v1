@@ -4,7 +4,7 @@ import { AuditService } from "./audit-service";
 import type { InventoryItem } from "./inventory";
 import { filterByCategory, marginCents, movementDelta, stockState } from "./inventory";
 
-const repository = { listByStore: vi.fn(), listMovements: vi.fn(), createItem: vi.fn(), updateItem: vi.fn(), applyMovement: vi.fn() };
+const repository = { listByStore: vi.fn(), listMovements: vi.fn(), createItem: vi.fn(), updateItem: vi.fn(), applyMovement: vi.fn(), applyReservation: vi.fn() };
 const service = new InventoryService(repository);
 const item: InventoryItem = { id: "item-1", storeId: "store-centro", name: "Armação", quantity: 10, minimumQuantity: 3, category: "FRAME" };
 beforeEach(() => { vi.resetAllMocks(); repository.listByStore.mockResolvedValue([]); });
@@ -218,5 +218,16 @@ describe("adjustment audit", () => {
     await audited.adjust(item, "IN", 4, "Recebimento de nota", "Operador");
     expect(audit.create).toHaveBeenCalledOnce();
     expect(audit.create.mock.calls[0][0]).toMatchObject({ action: "ADJUSTMENT", entity: "inventoryItem", entityId: "item-1", author: "Operador", reason: "Recebimento de nota", summary: "IN 4 un. — Armação", storeId: "store-centro" });
+  });
+});
+
+describe("adjustments respect reserved stock", () => {
+  it("blocks a movement that would eat reserved quantity and allows one within the available balance", async () => {
+    const reserved = { ...item, quantity: 5, reservedQuantity: 4 };
+    await expect(service.adjust(reserved, "OUT", 2, "Ajuste manual", "Operador")).rejects.toThrow("Saldo disponível insuficiente");
+    expect(repository.applyMovement).not.toHaveBeenCalled();
+    repository.applyMovement.mockResolvedValue({ ...reserved, quantity: 4 });
+    const updated = await service.adjust(reserved, "OUT", 1, "Ajuste manual", "Operador");
+    expect(updated.quantity).toBe(4);
   });
 });

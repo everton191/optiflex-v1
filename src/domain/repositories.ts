@@ -86,6 +86,7 @@ export interface InventoryRepository {
   createItem(item: InventoryItem, initialMovement?: InventoryMovement): Promise<void>;
   updateItem(item: InventoryItem): Promise<void>;
   applyMovement(movement: InventoryMovement): Promise<InventoryItem>;
+  applyReservation(itemId: string, storeId: string, delta: number): Promise<InventoryItem>;
 }
 
 export interface CashCloseInput {

@@ -5,7 +5,7 @@ import type { Attendance, Customer } from "../../domain/customer";
 import type { ClinicalRecord, Prescription } from "../../domain/clinical";
 import type { Sale } from "../../domain/sales";
 import type { WorkOrder, WorkOrderStatus } from "../../domain/work-order";
-import type { InventoryItem, InventoryMovement } from "../../domain/inventory";
+import { availableQuantity, type InventoryItem, type InventoryMovement } from "../../domain/inventory";
 import type { CashEntry, CashSession } from "../../domain/cash";
 import { cashTotals } from "../../domain/cash";
 import type { AdministrationRepository, AgendaRepository, AttendanceRepository, CashCloseInput, CashRepository, ClinicalRepository, CustomerRepository, InventoryRepository, PrescriptionRepository, SaleRepository, SessionRepository, SettingsRepository, WorkOrderRepository } from "../../domain/repositories";
@@ -205,6 +205,7 @@ export class LocalSaleRepository implements SaleRepository {
       for (const movement of movements) {
         if (movement.storeId !== sale.storeId) throw new Error("Movimentação incompatível com a venda.");
         await applyStockMovement(movement);
+        await releaseReservation(movement.itemId, movement.storeId, movement.quantity);
       }
       await database.sales.put({ ...current, status: "CONFIRMED" });
     });
@@ -289,6 +290,16 @@ async function applyStockMovement(movement: InventoryMovement): Promise<Inventor
   return updated;
 }
 
+async function releaseReservation(itemId: string, storeId: string, quantity: number): Promise<void> {
+  const item = await database.inventoryItems.get(itemId);
+  if (!item || item.storeId !== storeId) return;
+  const reserved = item.reservedQuantity ?? 0;
+  if (reserved <= 0) return;
+  const next = Math.max(0, reserved - quantity);
+  const { reservedQuantity: _released, ...rest } = item;
+  await database.inventoryItems.put(next > 0 ? { ...rest, reservedQuantity: next } : rest);
+}
+
 export class LocalInventoryRepository implements InventoryRepository {
   async listByStore(storeId: string): Promise<InventoryItem[]> { assertStoreAccess(storeId); return database.inventoryItems.where("storeId").equals(storeId).sortBy("name"); }
   async listMovements(storeId: string): Promise<InventoryMovement[]> { assertStoreAccess(storeId); return database.inventoryMovements.where("storeId").equals(storeId).reverse().sortBy("createdAt"); }
@@ -310,12 +321,27 @@ export class LocalInventoryRepository implements InventoryRepository {
       const current = await database.inventoryItems.get(item.id);
       if (!current || current.storeId !== item.storeId) throw new Error("Produto não encontrado nesta loja.");
       assertRecordAccess(current);
-      await database.inventoryItems.put({ ...item, quantity: current.quantity });
+      await database.inventoryItems.put({ ...item, quantity: current.quantity, reservedQuantity: current.reservedQuantity });
     });
   }
   async applyMovement(movement: InventoryMovement): Promise<InventoryItem> {
     assertRecordAccess(movement);
     return database.transaction("rw", database.inventoryItems, database.inventoryMovements, async () => applyStockMovement(movement));
+  }
+  async applyReservation(itemId: string, storeId: string, delta: number): Promise<InventoryItem> {
+    assertStoreAccess(storeId);
+    if (!Number.isSafeInteger(delta) || delta === 0) throw new Error("Quantidade de reserva inválida.");
+    return database.transaction("rw", database.inventoryItems, async () => {
+      const item = await database.inventoryItems.get(itemId);
+      if (!item || item.storeId !== storeId) throw new Error("Produto não encontrado nesta loja.");
+      const reserved = item.reservedQuantity ?? 0;
+      const next = delta < 0 ? Math.max(0, reserved + delta) : reserved + delta;
+      if (delta > 0 && availableQuantity(item) < delta) throw new Error(`Saldo disponível insuficiente de "${item.name}" (disponível para reserva: ${availableQuantity(item)}).`);
+      const { reservedQuantity: _ignored, ...rest } = item;
+      const updated: InventoryItem = next > 0 ? { ...rest, reservedQuantity: next } : rest;
+      await database.inventoryItems.put(updated);
+      return updated;
+    });
   }
 }
 

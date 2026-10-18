@@ -10,7 +10,7 @@ import { database } from "./database";
 import { LocalCashRepository, LocalInventoryRepository, LocalSaleRepository, LocalWorkOrderRepository } from "./local-repositories";
 
 const inventory = new InventoryService(new LocalInventoryRepository());
-const sales = new SalesService(new LocalSaleRepository());
+const sales = new SalesService(new LocalSaleRepository(), undefined, undefined, new LocalInventoryRepository());
 const cash = new CashService(new LocalCashRepository(), new LocalSaleRepository());
 const workOrders = new WorkOrderService(new LocalWorkOrderRepository());
 const cashRepository = new LocalCashRepository();

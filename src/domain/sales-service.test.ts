@@ -1,10 +1,19 @@
 ﻿import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SalesService } from "./sales-service";
 import { AuditService } from "./audit-service";
+import type { InventoryRepository } from "./repositories";
 import type { Sale, SaleItem, SalePrescription } from "./sales";
 
 const repository = { listByStore: vi.fn(), get: vi.fn(), save: vi.fn(), confirm: vi.fn(), cancel: vi.fn() };
-const service = new SalesService(repository);
+const inventoryStub: InventoryRepository = {
+  listByStore: vi.fn(async () => []),
+  listMovements: vi.fn(async () => []),
+  createItem: vi.fn(async () => {}),
+  updateItem: vi.fn(async () => {}),
+  applyMovement: vi.fn(async () => { throw new Error("unused"); }),
+  applyReservation: vi.fn(async (itemId: string, storeId: string) => ({ id: itemId, storeId, name: "Produto", quantity: 99, minimumQuantity: 0 }))
+};
+const service = new SalesService(repository, undefined, undefined, inventoryStub);
 const item = (inventoryItemId: string, quantity: number, unitPrice: number): SaleItem => ({ inventoryItemId, name: `Produto ${inventoryItemId}`, quantity, unitPrice });
 const quote = (overrides: Partial<Sale> = {}): Sale => ({ id: "sale-1", customerId: "customer-1", storeId: "store-centro", status: "QUOTE", paymentStatus: "PENDING", description: "Armação", total: 300, createdAt: "2026-01-01T10:00:00.000Z", ...overrides });
 beforeEach(() => { vi.resetAllMocks(); });
@@ -220,7 +229,7 @@ describe("prescription handoff", () => {
 
   it("exposes the customer's prescriptions when the repository is available", async () => {
     prescriptions.listByCustomer.mockResolvedValue([{ id: "rx-1" }]);
-    const withRepo = new SalesService(repository, prescriptions);
+    const withRepo = new SalesService(repository, prescriptions, undefined, inventoryStub);
     await expect(withRepo.listCustomerPrescriptions("customer-1", "store-centro")).resolves.toHaveLength(1);
     expect(prescriptions.listByCustomer).toHaveBeenCalledWith("customer-1", "store-centro");
     await expect(service.listCustomerPrescriptions("customer-1", "store-centro")).rejects.toThrow("indisponível");
@@ -283,7 +292,7 @@ describe("guided sale: categories and treatments", () => {
 
 describe("sale cancellation audit", () => {
   const audit = { create: vi.fn(), list: vi.fn() };
-  const audited = new SalesService(repository, undefined, new AuditService(audit));
+  const audited = new SalesService(repository, undefined, new AuditService(audit), inventoryStub);
 
   it("writes an audit entry when a sale is cancelled", async () => {
     repository.cancel.mockResolvedValue(undefined);

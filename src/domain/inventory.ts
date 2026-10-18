@@ -16,6 +16,7 @@ export interface InventoryItem {
   name: string;
   code?: string;
   quantity: number;
+  reservedQuantity?: number;
   minimumQuantity: number;
   defaultPrice?: number;
   cost?: number;
@@ -45,6 +46,10 @@ export interface InventoryMovement {
 }
 
 export type StockState = "OUT" | "LOW" | "OK";
+
+export function availableQuantity(item: Pick<InventoryItem, "quantity" | "reservedQuantity">): number {
+  return item.quantity - (item.reservedQuantity ?? 0);
+}
 
 export function stockState(item: Pick<InventoryItem, "quantity" | "minimumQuantity">): StockState {
   if (!Number.isFinite(item.quantity) || item.quantity <= 0) return "OUT";

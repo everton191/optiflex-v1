@@ -13,7 +13,7 @@ import { LocalAdministrationRepository, LocalAttendanceRepository, LocalCashRepo
 import { LocalBackupRepository } from "./local-backup";
 
 const reception = new ReceptionService(new LocalCustomerRepository(), new LocalAttendanceRepository());
-const salesService = new SalesService(new LocalSaleRepository());
+const salesService = new SalesService(new LocalSaleRepository(), undefined, undefined, new LocalInventoryRepository());
 const cashService = new CashService(new LocalCashRepository(), new LocalSaleRepository());
 const workOrders = new WorkOrderService(new LocalWorkOrderRepository());
 const clinical = new ClinicalService(new LocalClinicalRepository(), new LocalPrescriptionRepository());
