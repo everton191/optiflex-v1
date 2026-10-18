@@ -63,11 +63,19 @@
 - Acessibilidade: headers `th scope="col" aria-sort` com botão ordenável (Tab+Enter nativo), filtro `Search` com `aria-label`, paginação com `aria-live="polite"` e botões desabilitados nas bordas, `emptyMessage` no tbody vazio.
 - API: `label`, `rows`, `columns` (`key/label/value/align?/sortable?`), `rowKey`, `renderRow?`, `pageSize?` (padrão 10), `searchPlaceholder?`/`searchLabel?`/`match?`, `emptyMessage?`.
 
-### Dialog (F7-01)
+### Dialog (F7-01; aprimorado em F7-09)
 
 - Caminho: `src/design-system/components.tsx`; estilos `.dialog-overlay`/`.dialog`.
-- Uso real: confirmação de cancelamento de venda no caixa.
+- Uso real: confirmação de cancelamento de venda no caixa (com motivo) e cancelamento de transferência no estoque.
 - Comportamento: `role="dialog" aria-modal`, fecha no Escape, no clique fora e no botão ×; `autoFocus` no campo do formulário.
+- Foco (F7-09): foco inicial no primeiro elemento focável, trap de Tab dentro do overlay, retorno do foco ao gatilho no fechamento (`useOverlayFocus`).
+
+### ConfirmDialog (F7-09)
+
+- Caminho: `src/design-system/components.tsx`; usa `Dialog` + `Button className="button-danger"`.
+- Uso real: exclusão de anexo clínico (substitui `window.confirm`).
+- API: `open`, `title`, `message`, `confirmLabel?`, `cancelLabel?`, `destructive?`, `onConfirm`, `onCancel`.
+- Ação destrutiva: classe `.button-danger` (fundo #a12525) em `styles.css`.
 
 ### Drawer (F7-01)
 

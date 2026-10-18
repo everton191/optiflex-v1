@@ -48,6 +48,14 @@ Estados de foco/erro/desabilitado documentados em `05_DESIGN_SYSTEM_MAP.md` → 
 - API: `label`, `rows`, `columns` (`key/label/value/align?/sortable?`), `rowKey`, `renderRow?` (células ricas), `pageSize?`, `searchPlaceholder?`/`searchLabel?`/`match?`, `emptyMessage?`.
 - Impacto: qualquer mudança afeta clientes e estoque; preferir `DataTable` para novas listas com ordenação/paginação em vez de `.list-card` manual.
 
+## Dialog / Drawer / ConfirmDialog (F7-01 + F7-09/#124)
+
+- Local: `src/design-system/components.tsx`; estilos `.dialog*`/`.drawer*`/`.button-danger` em `src/styles.css`.
+- Usado por: Dialog — cancelamento de venda (Caixa) e de transferência (Estoque) com motivo; Drawer — movimentação de produto; ConfirmDialog — exclusão de anexo clínico.
+- Responsabilidade: overlays modais acessíveis. Desde F7-09: foco inicial no primeiro elemento focável, trap de Tab (cicla no overlay, Shift+Tab volta), Escape fecha e o foco retorna ao gatilho ao fechar (`useOverlayFocus`).
+- `ConfirmDialog`: confirmação curta (`title`/`message`/`confirmLabel`/`cancelLabel`); `destructive` usa botão `button-danger` (vermelho #a12525). Preferir `ConfirmDialog` para ações destrutivas sem formulário; para confirmações com campo (motivo), usar `Dialog` + `button-danger` no submit.
+- Impacto: qualquer mudança afeta todos os overlays; o focus trap usa seletor único de focáveis — se um overlay ganhar conteúdo com foco gerenciado por lib externa, revisar.
+
 ## AppProviders / useAppContext
 
 - Local: `src/app/providers.tsx`.

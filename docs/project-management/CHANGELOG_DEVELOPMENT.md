@@ -6,6 +6,14 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `fbb2989` + docs — Modais e diálogos acessíveis (F7-09)
+
+- Hook `useOverlayFocus` em `components.tsx`: `Dialog`/`Drawer` com foco inicial no primeiro elemento focável, trap de Tab (cicla dentro do overlay; Shift+Tab volta; foco fora é puxado para dentro), Escape fecha e o foco retorna ao gatilho ao fechar.
+- Novo `ConfirmDialog` (título, mensagem, `confirmLabel`/`cancelLabel`, `destructive` → botão `button-danger`); `Button` passa a aceitar `className` sem perder a classe base.
+- CSS `.button-danger` (#a12525) em `styles.css`.
+- `window.confirm` do excluir anexo clínico migrado para `ConfirmDialog` destrutivo; botões "Confirmar cancelamento" do Caixa e das transferências marcados como destrutivos.
+- **405/405**, tsc 0, build 0. Teste manual de teclado (Tab/Shift+Tab/Escape/retorno do foco) pendente.
+
 ### `e44d5cb` + docs — Tabelas e filtros acessíveis (F7-08)
 
 - Helpers puros em `src/design-system/data-table.ts`: `toggleSort` (asc→desc→asc por coluna), `sortRows` (`localeCompare` pt-BR com `sensitivity: base` para texto, numérico direto), `filterRows` + `normalizeForSearch` (NFD sem diacríticos, caixa ignorada) e `paginateRows`/`pageCount`.
