@@ -9,11 +9,14 @@ import { availableQuantity, filterByCategory, marginCents, productCategories, pr
 import type { Transfer, TransferItem } from "../domain/transfer";
 import { transferStatusLabels } from "../domain/transfer";
 import { TransferService } from "../domain/transfer-service";
-import { LocalAuditRepository, LocalInventoryRepository, LocalTransferRepository } from "../infrastructure/storage/local-repositories";
+import { LocalAuditRepository, LocalInventoryRepository, LocalServiceCatalogRepository, LocalTransferRepository } from "../infrastructure/storage/local-repositories";
+import { ServiceCatalogService } from "../domain/service-catalog-service";
+import type { ServiceCatalogItem } from "../domain/service-catalog";
 import { useAppContext, useSession } from "./providers";
 
 const service = new InventoryService(new LocalInventoryRepository(), new AuditService(new LocalAuditRepository()));
 const transferService = new TransferService(new LocalTransferRepository(), new LocalInventoryRepository(), new AuditService(new LocalAuditRepository()));
+const serviceCatalog = new ServiceCatalogService(new LocalServiceCatalogRepository());
 const stateLabels = { OK: "Disponível", LOW: "Abaixo do mínimo", OUT: "Esgotado" } as const;
 const stateClasses = { OK: "", LOW: "is-low", OUT: "is-out" } as const;
 const movementLabels = { IN: "Entrada", OUT: "Saída", ADJUSTMENT: "Ajuste" } as const;
@@ -55,12 +58,17 @@ export function InventoryPage() {
   const [transferLines, setTransferLines] = useState<TransferItem[]>([]);
   const [cancelTransferId, setCancelTransferId] = useState("");
   const [cancelTransferReason, setCancelTransferReason] = useState("");
+  const [services, setServices] = useState<ServiceCatalogItem[]>([]);
+  const [serviceName, setServiceName] = useState("");
+  const [servicePrice, setServicePrice] = useState("");
+  const [serviceDescription, setServiceDescription] = useState("");
+  const [editingServiceId, setEditingServiceId] = useState("");
   const pending = useRef(false);
 
   async function refresh() {
     try {
-      const [loadedItems, loadedMovements, loadedTransfers] = await Promise.all([service.list(currentStoreId), service.history(currentStoreId), transferService.list(currentStoreId)]);
-      setItems(loadedItems); setMovements(loadedMovements); setTransfers(loadedTransfers); setError("");
+      const [loadedItems, loadedMovements, loadedTransfers, loadedServices] = await Promise.all([service.list(currentStoreId), service.history(currentStoreId), transferService.list(currentStoreId), canManage ? serviceCatalog.list(currentStoreId) : Promise.resolve([])]);
+      setItems(loadedItems); setMovements(loadedMovements); setTransfers(loadedTransfers); setServices(loadedServices); setError("");
     } catch (reason) { setError(errorMessage(reason, "Não foi possível carregar o estoque desta loja.")); }
     finally { setLoading(false); }
   }
@@ -139,6 +147,30 @@ export function InventoryPage() {
     }, "Não foi possível cancelar a transferência.");
   }
   const transferStoreName = (id: string) => stores.find((store) => store.id === id)?.name ?? id;
+
+  function resetServiceForm() { setServiceName(""); setServicePrice(""); setServiceDescription(""); setEditingServiceId(""); }
+  async function saveService(event: React.FormEvent) {
+    event.preventDefault();
+    await run(async () => {
+      const input = { name: serviceName, defaultPrice: Number(servicePrice), description: serviceDescription };
+      if (editingServiceId) {
+        const target = services.find((entry) => entry.id === editingServiceId);
+        if (!target) throw new Error("Serviço não encontrado.");
+        await serviceCatalog.update(target, input);
+        resetServiceForm();
+        return "Serviço atualizado.";
+      }
+      const created = await serviceCatalog.create(currentStoreId, input);
+      resetServiceForm();
+      return `Serviço "${created.name}" cadastrado.`;
+    }, "Não foi possível salvar o serviço.");
+  }
+  async function removeService(entry: ServiceCatalogItem) {
+    await run(async () => {
+      await serviceCatalog.remove(entry);
+      return `Serviço "${entry.name}" removido do catálogo.`;
+    }, "Não foi possível remover o serviço.");
+  }
 
   const alerts = items.filter((item) => stockState(item) !== "OK");
   const visibleItems = filterByCategory(items, catalogFilter);
@@ -235,6 +267,27 @@ export function InventoryPage() {
         </form>
       </Dialog>
     </article>) : <p className="empty-state">Nenhuma transferência nesta loja.</p>}</div>
+
+    <div className="page-title">
+      <div><h2 className="section-title">Serviços</h2><p className="page-intro">Catálogo de serviços (montagem, ajuste, exame particular) com preço padrão, selecionável no Caixa como tratamento — sem movimento de estoque.</p></div>
+      {canManage && <Button type="button" onClick={() => { resetServiceForm(); }}>{editingServiceId ? "Cancelar edição" : "Novo serviço"}</Button>}
+    </div>
+    {canManage && <form className="inventory-form" onSubmit={saveService}>
+      <label>Nome<Input value={serviceName} onChange={(event) => setServiceName(event.target.value)} placeholder="Ex.: Montagem padrão" required /></label>
+      <label>Preço padrão (R$)<Input type="number" min="0" step="0.01" value={servicePrice} onChange={(event) => setServicePrice(event.target.value)} required /></label>
+      <label>Descrição<Input value={serviceDescription} onChange={(event) => setServiceDescription(event.target.value)} placeholder="Opcional" /></label>
+      <div className="form-actions"><Button type="submit">{editingServiceId ? "Salvar serviço" : "Cadastrar serviço"}</Button></div>
+    </form>}
+    <div className="list-card compact-list">{services.length ? services.map((entry) => <article className="list-row" key={entry.id}>
+      <div>
+        <strong>{entry.name}</strong>
+        <span>R$ {entry.defaultPrice.toFixed(2)}{entry.description ? ` · ${entry.description}` : ""}</span>
+      </div>
+      <div>
+        {canManage && <Button type="button" onClick={() => { setEditingServiceId(entry.id); setServiceName(entry.name); setServicePrice(String(entry.defaultPrice)); setServiceDescription(entry.description ?? ""); }}>Editar</Button>}
+        {canManage && <Button type="button" onClick={() => void removeService(entry)}>Remover</Button>}
+      </div>
+    </article>) : <p className="empty-state">Nenhum serviço cadastrado nesta loja.</p>}</div>
 
     <h2 className="section-title">Histórico de movimentações</h2>
     <div className="list-card compact-list">{movements.length ? movements.map((movement) => <article className="list-row" key={movement.id}>

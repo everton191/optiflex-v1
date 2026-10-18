@@ -7,6 +7,7 @@ import type { Sale } from "./sales";
 import type { WorkOrder, WorkOrderStatus } from "./work-order";
 import type { InventoryItem, InventoryMovement } from "./inventory";
 import type { CashEntry, CashSession } from "./cash";
+import type { ServiceCatalogItem } from "./service-catalog";
 
 export interface SettingsRepository {
   get(): Promise<OrganizationSettings>;
@@ -97,6 +98,13 @@ export interface TransferRepository {
   markInTransit(id: string, actor: string, at: string): Promise<Transfer>;
   receive(id: string, actor: string, at: string): Promise<Transfer>;
   cancel(id: string, actor: string, at: string, reason: string): Promise<Transfer>;
+}
+
+export interface ServiceCatalogRepository {
+  listByStore(storeId: string): Promise<ServiceCatalogItem[]>;
+  create(item: ServiceCatalogItem): Promise<ServiceCatalogItem>;
+  update(item: ServiceCatalogItem): Promise<ServiceCatalogItem>;
+  remove(id: string): Promise<void>;
 }
 
 export interface CashCloseInput {

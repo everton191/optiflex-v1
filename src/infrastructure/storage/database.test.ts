@@ -32,8 +32,8 @@ describe("local storage", () => {
       }
     } finally { legacy.close(); }
     await database.open();
-    expect(database.verno).toBe(16);
-    for (const table of database.tables) expect(await table.count()).toBe(["clinicalVersions", "attachments", "agendaEvents", "prescriptions", "auditEntries", "transfers"].includes(table.name) ? 0 : 1);
+    expect(database.verno).toBe(17);
+    for (const table of database.tables) expect(await table.count()).toBe(["clinicalVersions", "attachments", "agendaEvents", "prescriptions", "auditEntries", "transfers", "services"].includes(table.name) ? 0 : 1);
     const repository = new LocalAdministrationRepository();
     expect((await repository.listStores())[0].name).toBe("Registro existente");
     expect((await repository.listUsers())[0].role).toBe("RECEPTIONIST");
@@ -49,7 +49,7 @@ describe("local storage", () => {
       await legacy.table("sales").put({ id: "sale-legacy", storeId: "store-centro", customerId: "customer-legacy", status: "CONFIRMED", total: 1000, createdAt: "2026-01-01T00:00:00.000Z" });
     } finally { legacy.close(); }
     await database.open();
-    expect(database.verno).toBe(16);
+    expect(database.verno).toBe(17);
     const customer = await database.customers.get("customer-legacy");
     expect(customer?.name).toBe("Cliente antigo");
     expect(customer?.organizationId).toBe(defaultOrganization.id);

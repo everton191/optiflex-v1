@@ -52,7 +52,7 @@ describe("encrypted backup and transactional restore", () => {
   });
   it("keeps legacy backups readable and rejects corrupted attachment content", async () => {
     const snapshot = await repository.snapshot();
-    expect(snapshot.schema).toBe(16);
+    expect(snapshot.schema).toBe(17);
     const legacyTen = structuredClone(snapshot);
     legacyTen.schema = 10;
     const legacyTenTables = legacyTen as unknown as { tables: Record<string, unknown> };
@@ -402,5 +402,29 @@ describe("store transfers in backups", () => {
     expect(() => validateBackup(badLine)).toThrow("inválido");
     const badActor = structuredClone(snapshot); (badActor.tables.transfers[0] as { createdBy: unknown }).createdBy = 7;
     expect(() => validateBackup(badActor)).toThrow("inválido");
+  });
+});
+
+describe("service catalog in backups", () => {
+  it("accepts valid services and rejects blank names, negative prices and unknown stores", async () => {
+    const snapshot = await repository.snapshot();
+    expect(snapshot.tables.services).toEqual([]);
+    snapshot.tables.services.push({ id: "service-1", storeId: "store-centro", name: "Montagem padrão", defaultPrice: 80, description: "Troca de lentes" });
+    expect(() => validateBackup(snapshot)).not.toThrow();
+    const blankName = structuredClone(snapshot); blankName.tables.services[0].name = "   ";
+    expect(() => validateBackup(blankName)).toThrow("inválido");
+    const negative = structuredClone(snapshot); (negative.tables.services[0] as { defaultPrice: unknown }).defaultPrice = -5;
+    expect(() => validateBackup(negative)).toThrow("inválido");
+    const badPrice = structuredClone(snapshot); (badPrice.tables.services[0] as { defaultPrice: unknown }).defaultPrice = "80";
+    expect(() => validateBackup(badPrice)).toThrow("inválido");
+    const unknownStore = structuredClone(snapshot); unknownStore.tables.services[0].storeId = "store-fantasma";
+    expect(() => validateBackup(unknownStore)).toThrow("inválido");
+    const badDescription = structuredClone(snapshot); (badDescription.tables.services[0] as { description: unknown }).description = 42;
+    expect(() => validateBackup(badDescription)).toThrow("inválido");
+    const legacySixteen = structuredClone(snapshot);
+    delete (legacySixteen.tables as unknown as Record<string, unknown>).services;
+    legacySixteen.schema = 16;
+    expect(() => validateBackup(legacySixteen)).not.toThrow();
+    expect(validateBackup(legacySixteen).tables.services).toEqual([]);
   });
 });

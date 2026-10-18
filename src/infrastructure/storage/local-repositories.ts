@@ -5,11 +5,12 @@ import type { Attendance, Customer } from "../../domain/customer";
 import type { ClinicalRecord, Prescription } from "../../domain/clinical";
 import type { Sale } from "../../domain/sales";
 import type { Transfer } from "../../domain/transfer";
+import type { ServiceCatalogItem } from "../../domain/service-catalog";
 import type { WorkOrder, WorkOrderStatus } from "../../domain/work-order";
 import { availableQuantity, type InventoryItem, type InventoryMovement } from "../../domain/inventory";
 import type { CashEntry, CashSession } from "../../domain/cash";
 import { cashTotals } from "../../domain/cash";
-import type { AdministrationRepository, AgendaRepository, AttendanceRepository, CashCloseInput, CashRepository, ClinicalRepository, CustomerRepository, InventoryRepository, PrescriptionRepository, SaleRepository, SessionRepository, SettingsRepository, TransferRepository, WorkOrderRepository } from "../../domain/repositories";
+import type { AdministrationRepository, AgendaRepository, AttendanceRepository, CashCloseInput, CashRepository, ClinicalRepository, CustomerRepository, InventoryRepository, PrescriptionRepository, SaleRepository, ServiceCatalogRepository, SessionRepository, SettingsRepository, TransferRepository, WorkOrderRepository } from "../../domain/repositories";
 import type { AuditEntry, AuditListFilter, AuditRepository } from "../../domain/audit";
 import { database } from "./database";
 
@@ -425,6 +426,35 @@ export class LocalTransferRepository implements TransferRepository {
       const updated: Transfer = { ...transfer, status: "CANCELLED", cancelledBy: actor, cancelledAt: at, cancelReason: reason };
       await database.transfers.put(updated);
       return updated;
+    });
+  }
+}
+
+export class LocalServiceCatalogRepository implements ServiceCatalogRepository {
+  async listByStore(storeId: string): Promise<ServiceCatalogItem[]> {
+    assertStoreAccess(storeId);
+    return database.services.where("storeId").equals(storeId).sortBy("name");
+  }
+  async create(item: ServiceCatalogItem): Promise<ServiceCatalogItem> {
+    assertStoreAccess(item.storeId);
+    await database.services.add(item);
+    return item;
+  }
+  async update(item: ServiceCatalogItem): Promise<ServiceCatalogItem> {
+    return database.transaction("rw", database.services, async () => {
+      assertStoreAccess(item.storeId);
+      const current = await database.services.get(item.id);
+      if (!current || current.storeId !== item.storeId) throw new Error("Serviço não encontrado nesta loja.");
+      await database.services.put({ ...item, id: current.id, storeId: current.storeId });
+      return { ...item, id: current.id, storeId: current.storeId };
+    });
+  }
+  async remove(id: string): Promise<void> {
+    return database.transaction("rw", database.services, async () => {
+      const current = await database.services.get(id);
+      if (!current) throw new Error("Serviço não encontrado.");
+      assertStoreAccess(current.storeId);
+      await database.services.delete(id);
     });
   }
 }

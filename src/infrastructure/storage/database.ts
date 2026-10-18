@@ -9,6 +9,7 @@ import type { InventoryItem, InventoryMovement } from "../../domain/inventory";
 import type { CashEntry, CashSession } from "../../domain/cash";
 import type { AuditEntry } from "../../domain/audit";
 import type { Transfer } from "../../domain/transfer";
+import type { ServiceCatalogItem } from "../../domain/service-catalog";
 
 export class OpticoreDatabase extends Dexie {
   settings!: EntityTable<OrganizationSettings, "id">;
@@ -31,6 +32,7 @@ export class OpticoreDatabase extends Dexie {
   cashEntries!: EntityTable<CashEntry, "id">;
   auditEntries!: EntityTable<AuditEntry, "id">;
   transfers!: EntityTable<Transfer, "id">;
+  services!: EntityTable<ServiceCatalogItem, "id">;
 
   constructor() {
     super("opticore-v1");
@@ -63,6 +65,7 @@ export class OpticoreDatabase extends Dexie {
     });
     this.version(15).stores({ auditEntries: "id, storeId, action, entity, entityId, at" });
     this.version(16).stores({ transfers: "id, fromStoreId, toStoreId, status, createdAt" });
+    this.version(17).stores({ services: "id, storeId, name" });
   }
 }
 
