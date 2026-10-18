@@ -52,7 +52,7 @@ describe("encrypted backup and transactional restore", () => {
   });
   it("keeps legacy backups readable and rejects corrupted attachment content", async () => {
     const snapshot = await repository.snapshot();
-    expect(snapshot.schema).toBe(14);
+    expect(snapshot.schema).toBe(16);
     const legacyTen = structuredClone(snapshot);
     legacyTen.schema = 10;
     const legacyTenTables = legacyTen as unknown as { tables: Record<string, unknown> };
@@ -381,5 +381,26 @@ describe("audit entries in backups", () => {
     expect(() => validateBackup(badEntity)).toThrow("inválido");
     const badDate = structuredClone(snapshot); (badDate.tables.auditEntries[0] as { at: unknown }).at = "hoje";
     expect(() => validateBackup(badDate)).toThrow("inválido");
+  });
+});
+
+describe("store transfers in backups", () => {
+  it("accepts valid transfers and rejects unknown statuses, broken store links and empty lines", async () => {
+    const snapshot = await repository.snapshot();
+    expect(snapshot.tables.transfers).toEqual([]);
+    snapshot.tables.transfers.push({ id: "transfer-1", fromStoreId: "store-centro", toStoreId: "store-shopping", status: "IN_TRANSIT", createdAt: "2026-10-08T12:00:00.000Z", items: [{ inventoryItemId: "item-1", name: "Lente", quantity: 2 }], createdBy: "Operador", note: "Reposição" });
+    expect(() => validateBackup(snapshot)).not.toThrow();
+    const badStatus = structuredClone(snapshot); (badStatus.tables.transfers[0] as { status: unknown }).status = "VOANDO";
+    expect(() => validateBackup(badStatus)).toThrow("inválido");
+    const sameStore = structuredClone(snapshot); sameStore.tables.transfers[0].toStoreId = "store-centro";
+    expect(() => validateBackup(sameStore)).toThrow("inválido");
+    const unknownStore = structuredClone(snapshot); unknownStore.tables.transfers[0].toStoreId = "store-fantasma";
+    expect(() => validateBackup(unknownStore)).toThrow("inválido");
+    const emptyLines = structuredClone(snapshot); (emptyLines.tables.transfers[0] as { items: unknown }).items = [];
+    expect(() => validateBackup(emptyLines)).toThrow("inválido");
+    const badLine = structuredClone(snapshot); ((badLine.tables.transfers[0].items as { quantity: unknown }[])[0]).quantity = 0;
+    expect(() => validateBackup(badLine)).toThrow("inválido");
+    const badActor = structuredClone(snapshot); (badActor.tables.transfers[0] as { createdBy: unknown }).createdBy = 7;
+    expect(() => validateBackup(badActor)).toThrow("inválido");
   });
 });

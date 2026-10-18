@@ -1,26 +1,31 @@
 import { useEffect, useRef, useState } from "react";
 import { errorMessage } from "../domain/errors";
-import { Button, Drawer, ErrorState, Input, Select, Skeleton } from "../design-system/components";
+import { Button, Dialog, Drawer, ErrorState, Input, Select, Skeleton } from "../design-system/components";
 import { hasPermission } from "../domain/access";
 import { InventoryService } from "../domain/inventory-service";
 import { AuditService } from "../domain/audit-service";
 import type { InventoryItem, InventoryMovement, InventoryMovementType, ProductCategory, ProductCategoryFilter } from "../domain/inventory";
-import { filterByCategory, marginCents, productCategories, productCategoryLabels, stockState } from "../domain/inventory";
-import { LocalAuditRepository, LocalInventoryRepository } from "../infrastructure/storage/local-repositories";
+import { availableQuantity, filterByCategory, marginCents, productCategories, productCategoryLabels, stockState } from "../domain/inventory";
+import type { Transfer, TransferItem } from "../domain/transfer";
+import { transferStatusLabels } from "../domain/transfer";
+import { TransferService } from "../domain/transfer-service";
+import { LocalAuditRepository, LocalInventoryRepository, LocalTransferRepository } from "../infrastructure/storage/local-repositories";
 import { useAppContext, useSession } from "./providers";
 
 const service = new InventoryService(new LocalInventoryRepository(), new AuditService(new LocalAuditRepository()));
+const transferService = new TransferService(new LocalTransferRepository(), new LocalInventoryRepository(), new AuditService(new LocalAuditRepository()));
 const stateLabels = { OK: "Disponível", LOW: "Abaixo do mínimo", OUT: "Esgotado" } as const;
 const stateClasses = { OK: "", LOW: "is-low", OUT: "is-out" } as const;
 const movementLabels = { IN: "Entrada", OUT: "Saída", ADJUSTMENT: "Ajuste" } as const;
 const movementSign = (movement: InventoryMovement) => movement.type === "OUT" ? "-" : "+";
 
 export function InventoryPage() {
-  const { currentStoreId } = useAppContext();
+  const { currentStoreId, stores } = useAppContext();
   const session = useSession();
   const canManage = hasPermission(session.role, "inventory.manage");
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [movements, setMovements] = useState<InventoryMovement[]>([]);
+  const [transfers, setTransfers] = useState<Transfer[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -42,12 +47,20 @@ export function InventoryPage() {
   const [moveType, setMoveType] = useState<InventoryMovementType>("IN");
   const [moveQuantity, setMoveQuantity] = useState("");
   const [moveReason, setMoveReason] = useState("");
+  const [transferOpen, setTransferOpen] = useState(false);
+  const [transferTo, setTransferTo] = useState("");
+  const [transferProductId, setTransferProductId] = useState("");
+  const [transferQty, setTransferQty] = useState("1");
+  const [transferNote, setTransferNote] = useState("");
+  const [transferLines, setTransferLines] = useState<TransferItem[]>([]);
+  const [cancelTransferId, setCancelTransferId] = useState("");
+  const [cancelTransferReason, setCancelTransferReason] = useState("");
   const pending = useRef(false);
 
   async function refresh() {
     try {
-      const [loadedItems, loadedMovements] = await Promise.all([service.list(currentStoreId), service.history(currentStoreId)]);
-      setItems(loadedItems); setMovements(loadedMovements); setError("");
+      const [loadedItems, loadedMovements, loadedTransfers] = await Promise.all([service.list(currentStoreId), service.history(currentStoreId), transferService.list(currentStoreId)]);
+      setItems(loadedItems); setMovements(loadedMovements); setTransfers(loadedTransfers); setError("");
     } catch (reason) { setError(errorMessage(reason, "Não foi possível carregar o estoque desta loja.")); }
     finally { setLoading(false); }
   }
@@ -89,6 +102,43 @@ export function InventoryPage() {
       return "Movimentação registrada.";
     }, "Não foi possível registrar a movimentação.");
   }
+
+  function resetTransferForm() { setTransferOpen(false); setTransferTo(""); setTransferProductId(""); setTransferQty("1"); setTransferNote(""); setTransferLines([]); }
+  function addTransferLine(event: React.FormEvent) {
+    event.preventDefault();
+    const product = items.find((entry) => entry.id === transferProductId);
+    if (!product) { setError("Selecione o produto."); return; }
+    const quantityValue = Number(transferQty);
+    if (!Number.isInteger(quantityValue) || quantityValue <= 0) { setError("Informe uma quantidade inteira maior que zero."); return; }
+    if (transferLines.some((line) => line.inventoryItemId === product.id)) { setError("Produto já adicionado à transferência."); return; }
+    const free = availableQuantity(product) - transferLines.filter((line) => line.inventoryItemId === product.id).reduce((sum, line) => sum + line.quantity, 0);
+    if (quantityValue > free) { setError(`Saldo disponível insuficiente de "${product.name}" (disponível: ${free}).`); return; }
+    setTransferLines([...transferLines, { inventoryItemId: product.id, name: product.name, quantity: quantityValue }]);
+    setTransferProductId(""); setTransferQty("1"); setError("");
+  }
+  async function requestTransfer() {
+    await run(async () => {
+      const created = await transferService.request(currentStoreId, transferTo, transferLines, session.userName, transferNote);
+      resetTransferForm();
+      return `Transferência solicitada para ${transferStoreName(transferTo)}.`;
+    }, "Não foi possível solicitar a transferência.");
+  }
+  async function advance(transfer: Transfer, action: "separate" | "transit" | "receive") {
+    await run(async () => {
+      if (action === "separate") await transferService.separate(transfer.id, session.userName);
+      if (action === "transit") await transferService.markInTransit(transfer.id, session.userName);
+      if (action === "receive") await transferService.receive(transfer.id, session.userName);
+      return action === "separate" ? "Transferência separada: saldo de origem baixado." : action === "transit" ? "Transferência saiu para trânsito." : "Transferência recebida: saldo creditado no destino.";
+    }, "Não foi possível atualizar a transferência.");
+  }
+  async function cancelTransfer(transfer: Transfer) {
+    await run(async () => {
+      await transferService.cancel(transfer.id, session.userName, cancelTransferReason);
+      setCancelTransferId(""); setCancelTransferReason("");
+      return transfer.status === "SEPARATED" ? "Transferência cancelada e saldo devolvido à origem." : "Transferência cancelada.";
+    }, "Não foi possível cancelar a transferência.");
+  }
+  const transferStoreName = (id: string) => stores.find((store) => store.id === id)?.name ?? id;
 
   const alerts = items.filter((item) => stockState(item) !== "OK");
   const visibleItems = filterByCategory(items, catalogFilter);
@@ -148,6 +198,43 @@ export function InventoryPage() {
         </div>
       </article>;
     }) : items.length ? <p className="empty-state">Nenhum produto nesta categoria.</p> : <p className="empty-state">Nenhum produto cadastrado nesta loja.</p>)}</div>
+
+    <div className="page-title">
+      <div><h2 className="section-title">Transferências entre filiais</h2><p className="page-intro">Solicite, separe, despache e receba produtos de outra loja: o saldo sai da origem na separação e entra no destino no recebimento, uma única vez.</p></div>
+      {canManage && stores.filter((store) => store.active && store.id !== currentStoreId).length > 0 && <Button type="button" onClick={() => { resetTransferForm(); setTransferOpen(!transferOpen); }}>{transferOpen ? "Fechar" : "Nova transferência"}</Button>}
+    </div>
+    {canManage && transferOpen && <form className="inventory-form" onSubmit={addTransferLine}>
+      <Select label="Loja de destino" aria-label="Loja de destino da transferência" value={transferTo} onChange={(event) => setTransferTo(event.target.value)} required><option value="">Selecione</option>{stores.filter((store) => store.active && store.id !== currentStoreId).map((store) => <option key={store.id} value={store.id}>{store.name}</option>)}</Select>
+      <Select label="Produto" aria-label="Produto da transferência" value={transferProductId} onChange={(event) => setTransferProductId(event.target.value)} required><option value="">Selecione</option>{items.filter((item) => availableQuantity(item) > 0).map((item) => <option key={item.id} value={item.id}>{item.name} · disponível {availableQuantity(item)}</option>)}</Select>
+      <label>Quantidade<Input type="number" min="1" step="1" value={transferQty} onChange={(event) => setTransferQty(event.target.value)} required /></label>
+      <Button type="submit">Adicionar item</Button>
+      {transferLines.length > 0 && <ul className="sale-items-list">{transferLines.map((line) => <li key={line.inventoryItemId}><span>{line.name} × {line.quantity}</span><Button type="button" onClick={() => setTransferLines(transferLines.filter((entry) => entry.inventoryItemId !== line.inventoryItemId))}>Remover</Button></li>)}</ul>}
+      <label>Observação<Input value={transferNote} onChange={(event) => setTransferNote(event.target.value)} placeholder="Opcional" /></label>
+      <div className="form-actions">
+        <Button type="button" onClick={() => void requestTransfer()} disabled={!transferTo || transferLines.length === 0}>Solicitar transferência</Button>
+        <Button type="button" onClick={resetTransferForm}>Cancelar</Button>
+      </div>
+    </form>}
+    <div className="list-card compact-list">{transfers.length ? transfers.map((transfer) => <article className="list-row" key={transfer.id}>
+      <div>
+        <strong>{transfer.fromStoreId === currentStoreId ? `→ ${transferStoreName(transfer.toStoreId)}` : `← ${transferStoreName(transfer.fromStoreId)}`}</strong>
+        <span>{transferStatusLabels[transfer.status]} · {transfer.items.map((line) => `${line.name} × ${line.quantity}`).join(" · ")}</span>
+        <span className="help-text">Solicitada em {new Date(transfer.createdAt).toLocaleString("pt-BR")} por {transfer.createdBy}{transfer.receivedAt ? ` · recebida em ${new Date(transfer.receivedAt).toLocaleString("pt-BR")} por ${transfer.receivedBy}` : ""}{transfer.cancelReason ? ` · motivo: ${transfer.cancelReason}` : ""}</span>
+      </div>
+      <div>
+        {canManage && transfer.fromStoreId === currentStoreId && transfer.status === "REQUESTED" && <Button type="button" onClick={() => void advance(transfer, "separate")}>Separar</Button>}
+        {canManage && transfer.fromStoreId === currentStoreId && transfer.status === "SEPARATED" && <Button type="button" onClick={() => void advance(transfer, "transit")}>Em trânsito</Button>}
+        {canManage && transfer.toStoreId === currentStoreId && transfer.status === "IN_TRANSIT" && <Button type="button" onClick={() => void advance(transfer, "receive")}>Receber</Button>}
+        {canManage && transfer.fromStoreId === currentStoreId && (transfer.status === "REQUESTED" || transfer.status === "SEPARATED") && <Button type="button" onClick={() => { setCancelTransferId(transfer.id); setCancelTransferReason(""); }}>Cancelar</Button>}
+      </div>
+      <Dialog open={cancelTransferId === transfer.id} onClose={() => { setCancelTransferId(""); setCancelTransferReason(""); }} title="Cancelar transferência">
+        <form className="commerce-form" onSubmit={(event) => { event.preventDefault(); void cancelTransfer(transfer); }}>
+          <label>Motivo<Input autoFocus aria-label="Motivo do cancelamento da transferência" value={cancelTransferReason} onChange={(event) => setCancelTransferReason(event.target.value)} required /></label>
+          {transfer.status === "SEPARATED" && <p className="help-text">O saldo já separado será devolvido à loja de origem.</p>}
+          <div className="form-actions"><Button type="submit">Confirmar cancelamento</Button><Button type="button" onClick={() => { setCancelTransferId(""); setCancelTransferReason(""); }}>Voltar</Button></div>
+        </form>
+      </Dialog>
+    </article>) : <p className="empty-state">Nenhuma transferência nesta loja.</p>}</div>
 
     <h2 className="section-title">Histórico de movimentações</h2>
     <div className="list-card compact-list">{movements.length ? movements.map((movement) => <article className="list-row" key={movement.id}>

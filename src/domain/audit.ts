@@ -8,7 +8,7 @@ export const auditActionLabels: Record<AuditAction, string> = {
   ADJUSTMENT: "Ajuste de estoque",
 };
 
-export const auditEntities = ["sale", "inventoryItem", "user", "store"] as const;
+export const auditEntities = ["sale", "inventoryItem", "user", "store", "transfer"] as const;
 export type AuditEntity = (typeof auditEntities)[number];
 
 export const auditEntityLabels: Record<AuditEntity, string> = {
@@ -16,6 +16,7 @@ export const auditEntityLabels: Record<AuditEntity, string> = {
   inventoryItem: "Item de estoque",
   user: "Usuário",
   store: "Loja",
+  transfer: "Transferência",
 };
 
 export interface AuditEntry {

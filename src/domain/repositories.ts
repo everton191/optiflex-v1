@@ -1,4 +1,5 @@
 import type { CurrentStoreContext, LocalSession, OrganizationSettings, Store, User } from "./access";
+import type { Transfer } from "./transfer";
 import type { AgendaEvent } from "./agenda";
 import type { Attendance, Customer } from "./customer";
 import type { ClinicalRecord, ClinicalVersion, Prescription } from "./clinical";
@@ -87,6 +88,15 @@ export interface InventoryRepository {
   updateItem(item: InventoryItem): Promise<void>;
   applyMovement(movement: InventoryMovement): Promise<InventoryItem>;
   applyReservation(itemId: string, storeId: string, delta: number): Promise<InventoryItem>;
+}
+
+export interface TransferRepository {
+  listByStore(storeId: string): Promise<Transfer[]>;
+  create(transfer: Transfer): Promise<Transfer>;
+  separate(id: string, actor: string, at: string): Promise<Transfer>;
+  markInTransit(id: string, actor: string, at: string): Promise<Transfer>;
+  receive(id: string, actor: string, at: string): Promise<Transfer>;
+  cancel(id: string, actor: string, at: string, reason: string): Promise<Transfer>;
 }
 
 export interface CashCloseInput {

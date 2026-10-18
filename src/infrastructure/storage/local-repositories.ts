@@ -4,11 +4,12 @@ import type { AgendaEvent } from "../../domain/agenda";
 import type { Attendance, Customer } from "../../domain/customer";
 import type { ClinicalRecord, Prescription } from "../../domain/clinical";
 import type { Sale } from "../../domain/sales";
+import type { Transfer } from "../../domain/transfer";
 import type { WorkOrder, WorkOrderStatus } from "../../domain/work-order";
 import { availableQuantity, type InventoryItem, type InventoryMovement } from "../../domain/inventory";
 import type { CashEntry, CashSession } from "../../domain/cash";
 import { cashTotals } from "../../domain/cash";
-import type { AdministrationRepository, AgendaRepository, AttendanceRepository, CashCloseInput, CashRepository, ClinicalRepository, CustomerRepository, InventoryRepository, PrescriptionRepository, SaleRepository, SessionRepository, SettingsRepository, WorkOrderRepository } from "../../domain/repositories";
+import type { AdministrationRepository, AgendaRepository, AttendanceRepository, CashCloseInput, CashRepository, ClinicalRepository, CustomerRepository, InventoryRepository, PrescriptionRepository, SaleRepository, SessionRepository, SettingsRepository, TransferRepository, WorkOrderRepository } from "../../domain/repositories";
 import type { AuditEntry, AuditListFilter, AuditRepository } from "../../domain/audit";
 import { database } from "./database";
 
@@ -340,6 +341,89 @@ export class LocalInventoryRepository implements InventoryRepository {
       const { reservedQuantity: _ignored, ...rest } = item;
       const updated: InventoryItem = next > 0 ? { ...rest, reservedQuantity: next } : rest;
       await database.inventoryItems.put(updated);
+      return updated;
+    });
+  }
+}
+
+export class LocalTransferRepository implements TransferRepository {
+  async listByStore(storeId: string): Promise<Transfer[]> {
+    assertStoreAccess(storeId);
+    return database.transfers.filter((transfer) => transfer.fromStoreId === storeId || transfer.toStoreId === storeId).reverse().sortBy("createdAt");
+  }
+  async create(transfer: Transfer): Promise<Transfer> {
+    assertStoreAccess(transfer.fromStoreId);
+    assertStoreAccess(transfer.toStoreId);
+    if (!transfer.items.length) throw new Error("Adicione ao menos um produto à transferência.");
+    await database.transfers.add(transfer);
+    return transfer;
+  }
+  async separate(id: string, actor: string, at: string): Promise<Transfer> {
+    return database.transaction("rw", database.transfers, database.inventoryItems, database.inventoryMovements, async () => {
+      const transfer = await database.transfers.get(id);
+      if (!transfer) throw new Error("Transferência não encontrada.");
+      if (transfer.status !== "REQUESTED") throw new Error("Somente transferências solicitadas podem ser separadas.");
+      for (const line of transfer.items) {
+        const item = await database.inventoryItems.get(line.inventoryItemId);
+        if (!item || item.storeId !== transfer.fromStoreId) throw new Error(`Produto "${line.name}" não encontrado na loja de origem.`);
+        if (availableQuantity(item) < line.quantity) throw new Error(`Saldo disponível insuficiente de "${item.name}" (disponível: ${availableQuantity(item)}).`);
+        await applyStockMovement({ id: `movement-${crypto.randomUUID()}`, itemId: item.id, storeId: transfer.fromStoreId, type: "OUT", quantity: line.quantity, reason: `Transferência ${transfer.id} → ${transfer.toStoreId}`, createdAt: at, author: actor, organizationId: transfer.organizationId ?? defaultOrganization.id });
+      }
+      const updated: Transfer = { ...transfer, status: "SEPARATED", separatedBy: actor, separatedAt: at };
+      await database.transfers.put(updated);
+      return updated;
+    });
+  }
+  async markInTransit(id: string, actor: string, at: string): Promise<Transfer> {
+    return database.transaction("rw", database.transfers, async () => {
+      const transfer = await database.transfers.get(id);
+      if (!transfer) throw new Error("Transferência não encontrada.");
+      if (transfer.status !== "SEPARATED") throw new Error("Somente transferências separadas podem sair para trânsito.");
+      const updated: Transfer = { ...transfer, status: "IN_TRANSIT", transitBy: actor, transitAt: at };
+      await database.transfers.put(updated);
+      return updated;
+    });
+  }
+  async receive(id: string, actor: string, at: string): Promise<Transfer> {
+    return database.transaction("rw", database.transfers, database.inventoryItems, database.inventoryMovements, async () => {
+      const transfer = await database.transfers.get(id);
+      if (!transfer) throw new Error("Transferência não encontrada.");
+      if (transfer.status !== "IN_TRANSIT") throw new Error("Somente transferências em trânsito podem ser recebidas.");
+      for (const line of transfer.items) {
+        const origin = await database.inventoryItems.get(line.inventoryItemId);
+        const code = origin?.code?.trim().toLowerCase() || "";
+        const name = (origin?.name || line.name).trim().toLowerCase();
+        const destination = await database.inventoryItems.where("storeId").equals(transfer.toStoreId).toArray();
+        let target = code ? destination.find((candidate) => candidate.code?.trim().toLowerCase() === code) : undefined;
+        if (!target) target = destination.find((candidate) => !candidate.code && candidate.name.trim().toLowerCase() === name);
+        const movement: InventoryMovement = { id: `movement-${crypto.randomUUID()}`, itemId: target?.id ?? "", storeId: transfer.toStoreId, type: "IN", quantity: line.quantity, reason: `Transferência ${transfer.id} ← ${transfer.fromStoreId}`, createdAt: at, author: actor, organizationId: transfer.organizationId ?? defaultOrganization.id };
+        if (target) {
+          await applyStockMovement(movement);
+        } else {
+          const created: InventoryItem = { id: `item-${crypto.randomUUID()}`, storeId: transfer.toStoreId, name: origin?.name || line.name, code: origin?.code, quantity: 0, minimumQuantity: origin?.minimumQuantity ?? 0, defaultPrice: origin?.defaultPrice, cost: origin?.cost, category: origin?.category, brand: origin?.brand, material: origin?.material, description: origin?.description, organizationId: transfer.organizationId ?? defaultOrganization.id };
+          await database.inventoryItems.put(created);
+          await applyStockMovement({ ...movement, itemId: created.id });
+        }
+      }
+      const updated: Transfer = { ...transfer, status: "RECEIVED", receivedBy: actor, receivedAt: at };
+      await database.transfers.put(updated);
+      return updated;
+    });
+  }
+  async cancel(id: string, actor: string, at: string, reason: string): Promise<Transfer> {
+    return database.transaction("rw", database.transfers, database.inventoryItems, database.inventoryMovements, async () => {
+      const transfer = await database.transfers.get(id);
+      if (!transfer) throw new Error("Transferência não encontrada.");
+      if (transfer.status !== "REQUESTED" && transfer.status !== "SEPARATED") throw new Error("Esta transferência não pode ser cancelada.");
+      if (transfer.status === "SEPARATED") {
+        for (const line of transfer.items) {
+          const item = await database.inventoryItems.get(line.inventoryItemId);
+          if (!item || item.storeId !== transfer.fromStoreId) throw new Error(`Produto "${line.name}" não encontrado na loja de origem para devolução.`);
+          await applyStockMovement({ id: `movement-${crypto.randomUUID()}`, itemId: item.id, storeId: transfer.fromStoreId, type: "IN", quantity: line.quantity, reason: `Cancelamento da transferência ${transfer.id}`, createdAt: at, author: actor, organizationId: transfer.organizationId ?? defaultOrganization.id });
+        }
+      }
+      const updated: Transfer = { ...transfer, status: "CANCELLED", cancelledBy: actor, cancelledAt: at, cancelReason: reason };
+      await database.transfers.put(updated);
       return updated;
     });
   }

@@ -6,13 +6,14 @@ import { prescriptionUsageLabels } from "./clinical";
 import { quoteStatusLabels } from "./sales";
 import { isTaxRegime, isValidCnae, isValidCnpj, isValidRegistrationCode } from "./organization";
 import { isAuditAction, isAuditEntity } from "./audit";
+import { isTransferStatus } from "./transfer";
 import { workOrderEventLabels, workOrderStatusLabels } from "./work-order";
 
 // Session is intentionally excluded: restoring business data must not import a login.
-export const backupTables = ["settings", "stores", "users", "currentStore", "customers", "attendances", "agendaEvents", "clinicalRecords", "clinicalVersions", "prescriptions", "attachments", "sales", "workOrders", "inventoryItems", "inventoryMovements", "cashSessions", "cashEntries", "auditEntries"] as const;
+export const backupTables = ["settings", "stores", "users", "currentStore", "customers", "attendances", "agendaEvents", "clinicalRecords", "clinicalVersions", "prescriptions", "attachments", "sales", "workOrders", "inventoryItems", "inventoryMovements", "cashSessions", "cashEntries", "auditEntries", "transfers"] as const;
 export type BackupTable = typeof backupTables[number];
-// Schema 10 predates attachments content; 11 predates agenda events; 12 predates structured prescriptions; 13 predates the audit log. All remain importable.
-export interface BackupSnapshot { format: "opticore"; version: 1; schema: 10 | 11 | 12 | 13 | 14; createdAt: string; tables: Record<BackupTable, Record<string, unknown>[]>; }
+// Schema 10 predates attachments content; 11 predates agenda events; 12 predates structured prescriptions; 13 predates the audit log; 14/15 predate store transfers. All remain importable.
+export interface BackupSnapshot { format: "opticore"; version: 1; schema: 10 | 11 | 12 | 13 | 14 | 15 | 16; createdAt: string; tables: Record<BackupTable, Record<string, unknown>[]>; }
 export interface BackupRepository { snapshot(): Promise<BackupSnapshot>; restore(snapshot: BackupSnapshot): Promise<void>; }
 export interface BackupCodec { encrypt(value: string, password: string): Promise<string>; decrypt(value: string, password: string): Promise<string>; }
 
@@ -25,6 +26,7 @@ const requiredStrings: Record<BackupTable, string[]> = {
   sales: ["id", "customerId", "storeId", "status", "description", "createdAt"], workOrders: ["id", "saleId", "storeId", "customerId", "status", "createdAt"],
   inventoryItems: ["id", "storeId", "name"], inventoryMovements: ["id", "itemId", "storeId", "type", "reason", "createdAt"], cashSessions: ["id", "storeId", "openedAt"], cashEntries: ["id", "sessionId", "storeId", "type", "createdAt"],
   auditEntries: ["id", "storeId", "action", "entity", "entityId", "author", "at"],
+  transfers: ["id", "fromStoreId", "toStoreId", "status", "createdAt"],
 };
 const object = (value: unknown): value is Record<string, unknown> => Boolean(value && typeof value === "object" && !Array.isArray(value));
 const invalid = () => new Error("Backup inválido ou incompatível. Nenhum dado foi substituído.");
@@ -33,7 +35,7 @@ export function validateBackup(value: unknown): BackupSnapshot {
   if (!object(value)) throw invalid();
   if (value.format !== "opticore") throw invalidReason("o arquivo não é um backup do Opticore.");
   if (value.version !== 1) throw invalidReason("versão de arquivo desconhecida.");
-  if (![10, 11, 12, 13, 14].includes(value.schema as number)) throw invalidReason("schema não suportado (arquivo de outra versão ou corrompido).");
+  if (![10, 11, 12, 13, 14, 15, 16].includes(value.schema as number)) throw invalidReason("schema não suportado (arquivo de outra versão ou corrompido).");
   if (typeof value.createdAt !== "string" || !Number.isFinite(Date.parse(value.createdAt))) throw invalidReason("data de criação ausente ou corrompida.");
   if (!object(value.tables)) throw invalidReason("estrutura de tabelas ausente.");
   const importedTables = { ...value.tables };
@@ -55,7 +57,10 @@ export function validateBackup(value: unknown): BackupSnapshot {
   } else if (value.schema === 13) {
     if (Object.keys(importedTables).length !== backupTables.length - 1 || "auditEntries" in importedTables || !("prescriptions" in importedTables)) throw invalidReason("o conteúdo das tabelas não corresponde ao schema 13.");
     importedTables.auditEntries = [];
-  } else if (Object.keys(importedTables).length !== backupTables.length || !("attachments" in importedTables) || !("agendaEvents" in importedTables) || !("prescriptions" in importedTables) || !("auditEntries" in importedTables)) throw invalidReason("faltam tabelas esperadas no arquivo (arquivo truncado ou corrompido).");
+  } else if (value.schema === 14 || value.schema === 15) {
+    if (Object.keys(importedTables).length !== backupTables.length - 1 || "transfers" in importedTables || !("attachments" in importedTables) || !("agendaEvents" in importedTables) || !("prescriptions" in importedTables) || !("auditEntries" in importedTables)) throw invalidReason("o conteúdo das tabelas não corresponde ao schema 14/15.");
+    importedTables.transfers = [];
+  } else if (Object.keys(importedTables).length !== backupTables.length || !("attachments" in importedTables) || !("agendaEvents" in importedTables) || !("prescriptions" in importedTables) || !("auditEntries" in importedTables) || !("transfers" in importedTables)) throw invalidReason("faltam tabelas esperadas no arquivo (arquivo truncado ou corrompido).");
   for (const name of backupTables) {
     const rows = importedTables[name];
     if (!Array.isArray(rows)) throw invalid();
@@ -116,6 +121,11 @@ export function validateBackup(value: unknown): BackupSnapshot {
         for (const field of ["expectedBalance", "closingBalance"]) if (row[field] !== undefined && (typeof row[field] !== "number" || !Number.isFinite(row[field]) || (row[field] as number) < 0)) throw invalid();
         if (row.difference !== undefined && (typeof row.difference !== "number" || !Number.isFinite(row.difference))) throw invalid();
       }
+      if (name === "transfers") {
+        if (!isTransferStatus(row.status)) throw invalid();
+        if (!Array.isArray(row.items) || row.items.length === 0 || row.items.some((item) => !object(item) || typeof item.inventoryItemId !== "string" || typeof item.name !== "string" || typeof item.quantity !== "number" || !Number.isInteger(item.quantity) || item.quantity <= 0)) throw invalid();
+        for (const field of ["createdBy", "note", "separatedBy", "separatedAt", "transitBy", "transitAt", "receivedBy", "receivedAt", "cancelledBy", "cancelledAt", "cancelReason"]) if (row[field] !== undefined && typeof row[field] !== "string") throw invalid();
+      }
       for (const field of ["cpf", "phone", "birthDate", "email", "receptionNotes", "closedAt", "closedBy", "closingNote", "code", "author", "updatedAt", "updatedBy", "dueAt", "notes", "cancelledBy", "professionalId", "attendanceId", "brand", "material", "description", "retifies", "retificationReason"]) if (row[field] !== undefined && typeof row[field] !== "string") throw invalid();
       if (name === "clinicalRecords" || name === "clinicalVersions") {
         if (!Array.isArray(row.attachments) || row.attachments.some((item) => !object(item) || typeof item.id !== "string" || typeof item.name !== "string" || typeof item.mimeType !== "string" || typeof item.size !== "number" || typeof item.createdAt !== "string")) throw invalid();
@@ -159,6 +169,7 @@ export function validateBackup(value: unknown): BackupSnapshot {
   for (const row of tables.prescriptions) if (!attendances.has(row.attendanceId) || !stores.has(row.storeId) || !customers.has(row.customerId)) throw invalid();
   for (const name of ["clinicalRecords", "clinicalVersions"] as const) for (const row of tables[name]) if (!attendances.has(row.attendanceId)) throw invalid();
   for (const name of ["inventoryItems", "inventoryMovements", "cashSessions", "cashEntries"] as const) for (const row of tables[name]) if (!stores.has(row.storeId)) throw invalid();
+  if (tables.transfers.some((row) => !stores.has(row.fromStoreId) || !stores.has(row.toStoreId) || row.fromStoreId === row.toStoreId)) throw invalid();
   if (tables.users.some((row) => (row.storeIds as string[]).some((id) => !stores.has(id)))) throw invalid();
   for (const [child, field, parent] of [["workOrders", "saleId", "sales"], ["inventoryMovements", "itemId", "inventoryItems"], ["cashEntries", "sessionId", "cashSessions"]] as const) {
     const parents = new Map(tables[parent].map((row) => [row.id, row]));
