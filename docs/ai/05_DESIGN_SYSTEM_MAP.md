@@ -56,6 +56,13 @@
 - Uso real: lista de usuários (cabeçalho com `th scope="col"`).
 - Wrapper semântico: o conteúdo monta `thead`/`tbody`/`tr`.
 
+### DataTable (F7-08)
+
+- Caminho: `src/design-system/components.tsx` (componente) + `src/design-system/data-table.ts` (helpers puros testados); estilos `.table-sort`/`.table-filter`/`.table-pagination` em `styles.css`.
+- Uso real: lista de clientes (`CustomersWorkspace`) e lista de produtos do Estoque (`InventoryWorkspace`).
+- Acessibilidade: headers `th scope="col" aria-sort` com botão ordenável (Tab+Enter nativo), filtro `Search` com `aria-label`, paginação com `aria-live="polite"` e botões desabilitados nas bordas, `emptyMessage` no tbody vazio.
+- API: `label`, `rows`, `columns` (`key/label/value/align?/sortable?`), `rowKey`, `renderRow?`, `pageSize?` (padrão 10), `searchPlaceholder?`/`searchLabel?`/`match?`, `emptyMessage?`.
+
 ### Dialog (F7-01)
 
 - Caminho: `src/design-system/components.tsx`; estilos `.dialog-overlay`/`.dialog`.

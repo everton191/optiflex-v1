@@ -40,6 +40,14 @@ Todos em `src/design-system/components.tsx`, com estilos globais em `src/styles.
 
 Estados de foco/erro/desabilitado documentados em `05_DESIGN_SYSTEM_MAP.md` → "Estados documentados".
 
+## DataTable (entregue em F7-08/#123)
+
+- Local: componente em `src/design-system/components.tsx`; helpers puros em `src/design-system/data-table.ts` (testados em `data-table.test.ts`).
+- Usado por: lista de clientes (`CustomersWorkspace`), lista de produtos do Estoque (`InventoryWorkspace`).
+- Responsabilidade: tabela acessível com ordenação (headers `th aria-sort` + botão ordenável por teclado), filtro opcional (prop `match` + `Search`, normalização pt-BR sem acentos) e paginação (Anterior/Próxima com `aria-live`, botões desabilitados nas bordas); `pageSize` padrão 10.
+- API: `label`, `rows`, `columns` (`key/label/value/align?/sortable?`), `rowKey`, `renderRow?` (células ricas), `pageSize?`, `searchPlaceholder?`/`searchLabel?`/`match?`, `emptyMessage?`.
+- Impacto: qualquer mudança afeta clientes e estoque; preferir `DataTable` para novas listas com ordenação/paginação em vez de `.list-card` manual.
+
 ## AppProviders / useAppContext
 
 - Local: `src/app/providers.tsx`.

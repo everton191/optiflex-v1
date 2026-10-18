@@ -6,6 +6,13 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `e44d5cb` + docs — Tabelas e filtros acessíveis (F7-08)
+
+- Helpers puros em `src/design-system/data-table.ts`: `toggleSort` (asc→desc→asc por coluna), `sortRows` (`localeCompare` pt-BR com `sensitivity: base` para texto, numérico direto), `filterRows` + `normalizeForSearch` (NFD sem diacríticos, caixa ignorada) e `paginateRows`/`pageCount`.
+- Componente `DataTable<T>` em `components.tsx`: headers `th scope="col"` com `aria-sort` e botão ordenável (teclado nativo), filtro opcional via prop `match` (usa `Search`), paginação Anterior/Próxima com `aria-live="polite"` e botões desabilitados nas bordas, `emptyMessage`, `renderRow` para células ricas e coluna `sortable: false` para ações; CSS `.table-sort`/`.table-filter`/`.table-pagination` em `styles.css`.
+- Listas de clientes (`CustomersWorkspace`) e produtos do Estoque (`InventoryWorkspace`) convertidas para o padrão (ordenar por teclado, 10 por página; badge de saldo e ações Movimentar/Editar preservados no render do estoque).
+- +9 testes em `data-table.test.ts` (toggle, ordenação pt-BR com acentos, filtro, paginação, pageCount); **405/405**, tsc 0, build 0. Libera F7-18 (desempenho).
+
 ### `8be2750` + docs — Catálogo de serviços (F2-12)
 
 - `ServiceCatalogItem` (nome, preço padrão, descrição opcional, por loja) + `assertValidServiceInput` (nome obrigatório ≤ 120, preço ≥ 0) e `ServiceCatalogService` (nome único case-insensitive por loja; criar/editar/remover com `assertStoreAccess`).
