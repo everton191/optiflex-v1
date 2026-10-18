@@ -13,7 +13,7 @@ Atualizado em: 08/10/2026 · Base: `887b64b` (schema IndexedDB `opticore-v1` v14
 | Clínico | `ClinicalRecord`, `ClinicalAttachment` (+`category`), `ClinicalAttachmentContent` (tabela `attachments`, v11), `Prescription` (+`PrescriptionEye`, contrato `PrescriptionRepository`, F1-07 `41f0bfd`) | refração estruturada e persistência da prescrição (F3-06/F3-07 consomem) | F3-06, F3-07 |
 | Comercial | `Sale` (`cancelReason?`/`cancelledAt?`/`cancelledBy?`, `paymentStatus` `PENDING`/`PARTIAL`/`PAID`), `SaleItem` | estados de orçamento, desconto/aprovação | F3-10, F3-12 |
 | Caixa | `CashSession`, `CashEntry` (`paymentMethod?`, `reason?`, `author?`; tipo `REFUND`), `PaymentMethod` (`CASH`/`PIX`/`CARD` legado/`DEBIT`/`CREDIT`), `CashMovementType`, `paidCents/cashTotals` (+`byMethod`, +`refunds`) | parcelas/carnê (`InstallmentPlan`) | F4-13 |
-| Estoque | `InventoryItem` (`defaultPrice?`/`cost?`), `InventoryMovement` | catálogo/variantes, reserva, transferência | F2-11, F4-05, F4-06 |
+| Estoque | `InventoryItem` (`defaultPrice?`/`cost?`, `reservedQuantity?` — F4-05, reserva por orçamento com `availableQuantity`), `InventoryMovement` | catálogo/variantes, transferência | F2-11, F4-06 |
 | OS | `WorkOrder` (`dueAt/notes/updatedAt/updatedBy/cancelReason/laboratory?/events`, evento `LABORATORY`; `WorkOrderStatus` fino F3-16 + `productionPipeline`/`stageEvent`/`stageIndexOf` em `work-order.ts`) | máquina de estados da fabricação (envio lab → produção → retorno → conferência → pronta → avisado → entregue, com rework p/ produção) e responsável/data por etapa derivados do histórico | F3-15 |
 | Dashboard | seletores puros (`dashboard.ts`) | métricas por perfil | F7-03 |
 | Fiscal/SaaS | — (nada) | `FiscalDocument`, tenant/outbox | F6-05, F5-07 |

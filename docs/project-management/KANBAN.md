@@ -56,7 +56,7 @@ Classificação de inventário (Etapa 4) no corpo de cada card:
 
 - Issues totais: **155** (8 épicas + 147 tarefas).
 - Tarefas por fase: F1=14 · F2=18 · F3=20 · F4=20 · F5=19 · F6=19 · F7=19 · F8=18.
-- Tarefas por status (revisado em 08/10/2026; F1-09, F2-04, F7-02, F1-11, F3-09, F3-14, F1-02, F1-06, F4-16, F2-05, F4-10, F4-18, F4-12, F2-06, F3-01, F8-06, F8-07, F1-07, F3-17, F2-11, F2-02, F3-02, F3-03, F2-07, F3-10, F4-11, F2-14, F3-07, F8-10, F8-02, F7-01, F1-05, F1-03, F7-03, F2-08, F7-05, F1-12, F3-06, F3-05, F7-11, F7-13, F3-08, F3-11, F3-16, F3-19, F2-01, F1-10, F8-17, F2-09, F3-04, F3-12 e F2-03 concluídas; F8-04 em andamento — teste automatizado entregue, evidência de aparelho pendente): DONE=70 · IN PROGRESS=1 · READY=0 · TESTING=0 · CODE REVIEW=0 · BACKLOG=25 · BLOCKED=50.
+- Tarefas por status (revisado em 08/10/2026; F1-09, F2-04, F7-02, F1-11, F3-09, F3-14, F1-02, F1-06, F4-16, F2-05, F4-10, F4-18, F4-12, F2-06, F3-01, F8-06, F8-07, F1-07, F3-17, F2-11, F2-02, F3-02, F3-03, F2-07, F3-10, F4-11, F2-14, F3-07, F8-10, F8-02, F7-01, F1-05, F1-03, F7-03, F2-08, F7-05, F1-12, F3-06, F3-05, F7-11, F7-13, F3-08, F3-11, F3-16, F3-19, F2-01, F1-10, F8-17, F2-09, F3-04, F3-12, F2-03 e F4-05 concluídas; F8-04 em andamento — teste automatizado entregue, evidência de aparelho pendente): DONE=71 · IN PROGRESS=1 · READY=0 · TESTING=0 · CODE REVIEW=0 · BACKLOG=24 · BLOCKED=50.
 - Bloqueios: **50 tarefas** bloqueadas — 47 por dependência de fase futura/externa + **3 reclassificadas em 08/10** (F4-13 #70, F8-03 #137, F3-20 #57: status desatualizado, decisão externa já registrada).
 - **Revisão de dependências 08/10/2026:** 7 ciclos detectados (SCC/Tarjan sobre este arquivo) e corrigidos em KANBAN + corpos das issues; **0 ciclos remanescentes**. Detalhe antes/depois em `DEPENDENCIES.md`.
 
@@ -149,7 +149,7 @@ Regra de ouro: **nunca mover para DONE sem evidência verificável** (comando de
 | F4-02 | [Entrada, saída e ajuste](https://github.com/everton191/optiflex-v1/issues/59) | Inventory | DONE | p1 | — |
 | F4-03 | [Histórico de movimentações](https://github.com/everton191/optiflex-v1/issues/60) | Inventory | DONE | p1 | — |
 | F4-04 | [Estoque mínimo](https://github.com/everton191/optiflex-v1/issues/61) | Inventory | DONE | p2 | — |
-| F4-05 | [Reserva de itens por venda](https://github.com/everton191/optiflex-v1/issues/62) | Inventory | BACKLOG | p2 | F3-10, F4-7. |
+| F4-05 | [Reserva de itens por venda](https://github.com/everton191/optiflex-v1/issues/62) | Inventory | DONE | p2 | F3-10 (feito), F4-07 (feito). Entregue em `d807590` — `InventoryItem.reservedQuantity?` + `availableQuantity` (sem bump Dexie); `quoteReservationDeltas` (líquido por produto ao criar/editar/remover); `InventoryRepository.applyReservation` transacional (aumento valida saldo disponível; baixa respeita reserva legada com clamp); `SalesService` com repositório de estoque — reserva em `createQuote`/`updateQuote`, liberação em cancelar/expirar/recusar e conversão em baixa na confirmação (transação do repositório); `adjust` manual não come estoque reservado; UI do caixa com "disponível" no seletor; backup valida `reservedQuantity`; +12 testes (criação/concorrência/cancelar/expirar/confirmar/editar/legado/ajuste/reabertura); 380/380, build 0, tsc 0. |
 | F4-06 | [Transferência entre filiais](https://github.com/everton191/optiflex-v1/issues/63) | Inventory | BACKLOG | p2 | F4-2, F2-02. |
 | F4-07 | [Baixa transacional](https://github.com/everton191/optiflex-v1/issues/64) | Inventory | DONE | p0 | — |
 | F4-08 | [Abertura de caixa](https://github.com/everton191/optiflex-v1/issues/65) | Cash | DONE | p1 | — |
@@ -272,12 +272,11 @@ Ordem recomendada para a próxima sessão de desenvolvimento (status READY/IN PR
 | # | ID | Issue | Tarefa | Prioridade | Dependências | Justificativa |
 |---|---|---|---|---|---|---|
 | 1 | F8-04 | #138 | [Infraestrutura] Testes offline | P1 | F3-09 (feito), F8-01 (feito) | IN PROGRESS: automatizado entregue (`f5b8e0b`); aguardando execução do procedimento de aparelho real (RELEASE_CHECKLIST §5.1) e registro da evidência para fechar. |
-| 2 | F4-05 | #62 | [Inventory] Reserva de itens por venda | P2 | F3-10 (feito), F4-07 (feito) | Base para produtos prontos (F3-18). |
-| 3 | F4-06 | #63 | [Inventory] Transferência entre filiais | P2 | F4-02 (feito), F2-02 (feito) | Multi-loja já existe. |
-| 4 | F2-12 | #33 | [Inventory] Serviços | P2 | F2-11 (feito) | Catálogo completa o inventário não físico. |
-| 5 | F7-08 | #123 | [Ux] Tabelas e filtros | P2 | F7-01 (feito) | Consolida primitivas; libera F7-18. |
-| 6 | F7-09 | #124 | [Ux] Modais e diálogos | P2 | F7-01 (feito) | Primitivas já em uso disperso. |
-| 7 | F2-18 | #39 | [Administration] Cadastro inicial assistido | P3 | F2-01/F2-02/F2-04 (feitos) | Onboarding; libera F7-15. |
+| 2 | F4-06 | #63 | [Inventory] Transferência entre filiais | P2 | F4-02 (feito), F2-02 (feito) | Multi-loja já existe. |
+| 3 | F2-12 | #33 | [Inventory] Serviços | P2 | F2-11 (feito) | Catálogo completa o inventário não físico. |
+| 4 | F7-08 | #123 | [Ux] Tabelas e filtros | P2 | F7-01 (feito) | Consolida primitivas; libera F7-18. |
+| 5 | F7-09 | #124 | [Ux] Modais e diálogos | P2 | F7-01 (feito) | Primitivas já em uso disperso. |
+| 6 | F2-18 | #39 | [Administration] Cadastro inicial assistido | P3 | F2-01/F2-02/F2-04 (feitos) | Onboarding; libera F7-15. |
 
 Reservas (mesma ordem): F2-13, F2-15, F2-16, F7-06, F7-07, F7-10, F7-14, F7-16, F7-17 — todas com dependências concluídas. F3-04 e F3-12 foram consumidos em 08/10/2026 (`f43627c`, `93ebb03`); limites de desconto seguiram os defaults propostos (5%/R$ 50, 15%/R$ 300, 30%/R$ 1000) e podem ser ajustados por decisão do usuário.
 

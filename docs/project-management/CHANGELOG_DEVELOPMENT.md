@@ -6,6 +6,14 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `d807590` + docs — Reserva de itens por venda (F4-05)
+
+- `InventoryItem.reservedQuantity?` + `availableQuantity` (saldo − reservado; sem bump de schema); `quoteReservationDeltas` puro (líquido por produto entre rascunho anterior e novo).
+- `InventoryRepository.applyReservation` transacional: aumento só passa se houver saldo disponível; baixa respeita reservas legadas (clamp em 0).
+- `SalesService` ganha repositório de estoque: `createQuote`/`updateQuote` reservam, `cancel`/`transitionQuote` (EXPIRED/REJECTED) liberam, `confirm` converte a reserva em baixa na mesma transação do repositório; orçamentos legados sem reserva gravada cancelam/expiram sem quebrar.
+- `InventoryService.adjust` não deixa movimento manual comer estoque reservado; UI do caixa exibe "disponível" no seletor de produtos e valida o saldo já incluindo os itens do rascunho.
+- Backup valida `reservedQuantity` (não-negativa, numérica); +12 testes (domínio + IndexedDB: concorrência, cancelar/expirar/recusar, confirmar, editar rascunho, legado, ajuste, reabertura); **380/380**, tsc 0, build 0.
+
 ### `75df1c0` + docs — Identificação fiscal da empresa (F2-03)
 
 - `TaxRegime` (SIMPLES_NACIONAL, SIMPLES_EXCESSO_SUBRECEITA, REGIME_NORMAL, MEI) com `taxRegimeLabels`/`isTaxRegime`; IE (`stateRegistration`), IM (`municipalRegistration`) e CNAE (`formatCnae`/`isValidCnae`, 7 dígitos formatados `4773-5/02` enquanto digita) em `OrganizationSettings` — campos opcionais, sem bump de schema.
