@@ -1,5 +1,6 @@
-import { useId } from "react";
+import { useId, useState } from "react";
 import type { ButtonHTMLAttributes, HTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from "react";
+import { filterRows, pageCount, paginateRows, sortRows, toggleSort, type DataTableColumn, type SortState } from "./data-table";
 
 export function Button({ children, ...props }: ButtonHTMLAttributes<HTMLButtonElement>) {
   return <button className="button" {...props}>{children}</button>;
@@ -40,6 +41,51 @@ export function Tabs({ items, value, onChange, label, className = "" }: { items:
 
 export function Table({ label, children }: { label: string; children: ReactNode }) {
   return <div className="table-wrap"><table className="data-table" aria-label={label}>{children}</table></div>;
+}
+
+export interface DataTableProps<T> {
+  label: string;
+  rows: readonly T[];
+  columns: readonly DataTableColumn<T>[];
+  rowKey: (row: T) => string;
+  renderRow?: (row: T) => ReactNode;
+  pageSize?: number;
+  searchPlaceholder?: string;
+  searchLabel?: string;
+  match?: (row: T, needle: string) => boolean;
+  emptyMessage?: string;
+}
+
+export function DataTable<T>({ label, rows, columns, rowKey, renderRow, pageSize, searchPlaceholder, searchLabel, match, emptyMessage = "Nenhum registro encontrado." }: DataTableProps<T>) {
+  const [sort, setSort] = useState<SortState>();
+  const [query, setQuery] = useState("");
+  const [page, setPage] = useState(0);
+  const sortColumn = columns.find((column) => column.key === sort?.key);
+  const filtered = match ? filterRows(rows, query, match) : rows;
+  const sorted = sortColumn ? sortRows(filtered, sortColumn, sort?.direction ?? "asc") : filtered;
+  const size = Math.max(1, pageSize ?? 10);
+  const pages = pageCount(sorted.length, size);
+  const safePage = Math.min(page, pages - 1);
+  const visible = paginateRows(sorted, safePage, size);
+  const searchId = useId();
+  return <div className="table-wrap">
+    {match && <div className="table-filter"><Search id={searchId} aria-label={searchLabel ?? "Filtrar registros"} placeholder={searchPlaceholder} value={query} onChange={(event) => { setQuery(event.target.value); setPage(0); }} /></div>}
+    <table className="data-table" aria-label={label}>
+      <thead><tr>{columns.map((column) => {
+        const active = sort?.key === column.key;
+        const ariaSort = active ? (sort?.direction === "asc" ? "ascending" : "descending") : "none";
+        return <th key={column.key} scope="col" aria-sort={column.sortable === false ? undefined : ariaSort} style={column.align === "right" ? { textAlign: "right" } : undefined}>
+          {column.sortable === false ? column.label : <button type="button" className="table-sort" aria-label={`Ordenar por ${column.label}`} onClick={() => { setSort(toggleSort(sort, column.key)); setPage(0); }}>{column.label}{active && <span aria-hidden="true">{sort?.direction === "asc" ? " ▲" : " ▼"}</span>}</button>}
+        </th>;
+      })}</tr></thead>
+      <tbody>{visible.length ? visible.map((row) => renderRow ? <tr key={rowKey(row)}>{renderRow(row)}</tr> : <tr key={rowKey(row)}>{columns.map((column) => <td key={column.key} style={column.align === "right" ? { textAlign: "right" } : undefined}>{column.value(row)}</td>)}</tr>) : <tr><td colSpan={columns.length} className="empty-state">{emptyMessage}</td></tr>}</tbody>
+    </table>
+    {sorted.length > size && <div className="table-pagination" role="navigation" aria-label="Paginação da tabela">
+      <Button type="button" onClick={() => setPage(safePage - 1)} disabled={safePage === 0} aria-label="Página anterior">Anterior</Button>
+      <span aria-live="polite">Página {safePage + 1} de {pages} · {sorted.length} {sorted.length === 1 ? "registro" : "registros"}</span>
+      <Button type="button" onClick={() => setPage(safePage + 1)} disabled={safePage >= pages - 1} aria-label="Próxima página">Próxima</Button>
+    </div>}
+  </div>;
 }
 
 function CloseButton({ onClose }: { onClose: () => void }) {

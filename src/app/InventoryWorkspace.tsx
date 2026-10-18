@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { errorMessage } from "../domain/errors";
-import { Button, Dialog, Drawer, ErrorState, Input, Select, Skeleton } from "../design-system/components";
+import { Button, DataTable, Dialog, Drawer, ErrorState, Input, Select, Skeleton } from "../design-system/components";
 import { hasPermission } from "../domain/access";
 import { InventoryService } from "../domain/inventory-service";
 import { AuditService } from "../domain/audit-service";
@@ -218,18 +218,23 @@ export function InventoryPage() {
       <button type="button" role="tab" aria-selected={catalogFilter === "ALL"} className={catalogFilter === "ALL" ? "active" : ""} onClick={() => setCatalogFilter("ALL")}>Todas <span>{items.length}</span></button>
       {productCategories.map((value) => <button type="button" role="tab" key={value} aria-selected={catalogFilter === value} className={catalogFilter === value ? "active" : ""} onClick={() => setCatalogFilter(value)}>{productCategoryLabels[value]} <span>{items.filter((item) => item.category === value).length}</span></button>)}
     </div>
-    <div className="list-card compact-list">{loading ? <Skeleton lines={4} label="Carregando estoque…" /> : !error && (visibleItems.length ? visibleItems.map((item) => {
+    {loading ? <Skeleton lines={4} label="Carregando estoque…" /> : !error && <DataTable label="Lista de produtos" rows={visibleItems} columns={[
+      { key: "name", label: "Produto", value: (item) => item.name },
+      { key: "category", label: "Categoria", value: (item) => item.category ? productCategoryLabels[item.category] : "" },
+      { key: "quantity", label: "Saldo", value: (item) => item.quantity, align: "right" },
+      { key: "price", label: "Preço", value: (item) => item.defaultPrice ?? -1, align: "right" },
+      { key: "actions", label: "Ações", value: () => "", sortable: false }
+    ]} rowKey={(item) => item.id} pageSize={10} emptyMessage={items.length ? "Nenhum produto nesta categoria." : "Nenhum produto cadastrado nesta loja."} renderRow={(item) => {
       const state = stockState(item);
       const margin = item.defaultPrice !== undefined && item.cost !== undefined ? marginCents(item.defaultPrice, item.cost) : undefined;
-      return <article className="list-row" key={item.id}>
-        <div><strong>{item.category ? `${productCategoryLabels[item.category]} · ` : ""}{item.name}</strong><span>{item.brand ? `Marca ${item.brand} · ` : ""}{item.material ? `${item.material} · ` : ""}{item.code ? `Código ${item.code} · ` : ""}Mínimo {item.minimumQuantity}{item.defaultPrice !== undefined ? ` · Preço R$ ${item.defaultPrice.toFixed(2)}` : ""}{canManage && item.cost !== undefined ? ` · Custo R$ ${item.cost.toFixed(2)}` : ""}{canManage && margin !== undefined ? ` · Margem R$ ${(margin / 100).toFixed(2)}` : ""}</span>{item.description && <span className="help-text">{item.description}</span>}</div>
-        <div>
-          <span className={`badge ${stateClasses[state]}`}>{item.quantity} disponíveis · {stateLabels[state]}</span>
-          {canManage && <Button type="button" onClick={() => { resetProductForm(false); setEditing(undefined); setMoving(item); setMoveType("IN"); setMoveQuantity(""); setMoveReason(""); }}>Movimentar</Button>}
-          {canManage && <Button type="button" onClick={() => { resetMovement(); editProduct(item); }}>Editar</Button>}
-        </div>
-      </article>;
-    }) : items.length ? <p className="empty-state">Nenhum produto nesta categoria.</p> : <p className="empty-state">Nenhum produto cadastrado nesta loja.</p>)}</div>
+      return <>
+        <td><div className="cell-stack"><strong>{item.category ? `${productCategoryLabels[item.category]} · ` : ""}{item.name}</strong><span>{item.brand ? `Marca ${item.brand} · ` : ""}{item.material ? `${item.material} · ` : ""}{item.code ? `Código ${item.code} · ` : ""}Mínimo {item.minimumQuantity}</span>{item.description && <span className="help-text">{item.description}</span>}</div></td>
+        <td>{item.category ? productCategoryLabels[item.category] : "—"}</td>
+        <td style={{ textAlign: "right" }}><span className={`badge ${stateClasses[state]}`}>{item.quantity} · {stateLabels[state]}</span></td>
+        <td style={{ textAlign: "right" }}>{item.defaultPrice !== undefined ? `R$ ${item.defaultPrice.toFixed(2)}` : "—"}{canManage && item.cost !== undefined ? <div className="help-text">Custo R$ {item.cost.toFixed(2)}{margin !== undefined ? ` · Margem R$ ${(margin / 100).toFixed(2)}` : ""}</div> : null}</td>
+        <td><div className="table-actions">{canManage && <Button type="button" onClick={() => { resetProductForm(false); setEditing(undefined); setMoving(item); setMoveType("IN"); setMoveQuantity(""); setMoveReason(""); }}>Movimentar</Button>}{canManage && <Button type="button" onClick={() => { resetMovement(); editProduct(item); }}>Editar</Button>}</div></td>
+      </>;
+    }} />}
 
     <div className="page-title">
       <div><h2 className="section-title">Transferências entre filiais</h2><p className="page-intro">Solicite, separe, despache e receba produtos de outra loja: o saldo sai da origem na separação e entra no destino no recebimento, uma única vez.</p></div>

@@ -221,6 +221,12 @@ textarea { min-height: 6rem; }
 .data-table tr:last-child td { border-bottom: 0; }
 .cell-stack { display: grid; gap: var(--space-1); justify-items: start; }
 .table-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.table-sort { border: 0; background: none; padding: 0; font: inherit; color: inherit; text-transform: inherit; letter-spacing: inherit; cursor: pointer; }
+.table-sort:hover, .table-sort:focus-visible { color: var(--color-text); }
+.table-sort:focus-visible { outline: 3px solid color-mix(in srgb, var(--color-focus), transparent 75%); outline-offset: 2px; border-radius: var(--radius-sm); }
+.table-filter { padding: var(--space-4) var(--space-4) 0; }
+.table-filter .search-field { margin-top: 0; }
+.table-pagination { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-4); color: var(--color-muted); font-size: .875rem; }
 .overlay-close { border: 1px solid var(--color-border); background: var(--color-surface); border-radius: var(--radius-sm); width: 2rem; height: 2rem; cursor: pointer; font-size: 1rem; line-height: 1; color: var(--color-text); }
 .dialog-overlay, .drawer-overlay { position: fixed; inset: 0; z-index: 40; background: rgba(12, 36, 52, .45); display: flex; }
 .dialog-overlay { align-items: center; justify-content: center; padding: var(--space-4); }
