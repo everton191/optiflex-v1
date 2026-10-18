@@ -6,6 +6,12 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `b7f3e0a` + docs — Cadastro inicial assistido (F2-18)
+
+- `src/domain/onboarding.ts`: `onboardingSteps` (Organização/Loja/Usuário/Produtos/Revisão, opcionais marcados), navegação `nextOnboardingStep`/`previousOnboardingStep` pulando etapas puláveis, `buildOnboardingSummary` (resumo com placeholders) e `OnboardingService` (`completeOrganization` normaliza/valida/grava settings; `createStore`/`createOwner` via AdministrationService, OWNER obrigatório).
+- Rota `/admin/assistente` (`OnboardingPage`, guarda `settings.manage`, link "Assistente inicial" no menu Administração): 5 etapas com progresso `aria-current`; cada passo persiste imediatamente (saveSettings/createStore/createUser/InventoryService.create) — fechar no meio não perde dados; produtos iniciais admitem vários itens; revisão final com etapas puladas e "Concluir" → dashboard; seed demo preservada (fora de escopo).
+- Guard matrix 22→23 rotas (`permission-routes.test.ts`); +9 testes em `onboarding.test.ts`; 414/414, build 0, tsc 0. Libera F7-15; fila esvaziada (só resta F8-04 IN PROGRESS).
+
 ### `fbb2989` + docs — Modais e diálogos acessíveis (F7-09)
 
 - Hook `useOverlayFocus` em `components.tsx`: `Dialog`/`Drawer` com foco inicial no primeiro elemento focável, trap de Tab (cicla dentro do overlay; Shift+Tab volta; foco fora é puxado para dentro), Escape fecha e o foco retorna ao gatilho ao fechar.

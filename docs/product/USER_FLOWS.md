@@ -31,3 +31,12 @@ Fluxos de ponta a ponta usados pela equipe e por testes manuais. Cada fluxo refe
 4. Em qualquer linha da lista, clica em **Imprimir**: a rota `/prescricoes/:prescriptionId` abre a receita óptica com paciente, profissional, tipo de uso, OD/OE, observações e o número da versão sempre visível (inclusive em reimpressões).
 5. Clica em **Imprimir** na página da receita: o diálogo de impressão do navegador abre com a barra lateral/topo ocultos (`@media print`).
 6. No caixa, ao criar um orçamento, o vendedor seleciona uma prescrição do cliente: o snapshot (versão, uso e graus) entra na venda sem redigitação.
+
+## Cadastro inicial assistido (F2-18, `b7f3e0a`)
+
+1. Usuário com permissão `settings.manage` abre **Assistente inicial** no menu Administração (`/admin/assistente`); o progresso mostra as 5 etapas (Organização, Loja, Usuário, Produtos, Revisão) com "opcional" nas puláveis.
+2. **Organização**: nome da organização e cargo exibido na área clínica são obrigatórios; razão social e CNPJ são opcionais (formatado ao digitar). "Salvar e continuar" normaliza e grava os settings imediatamente.
+3. **Loja**: informa o nome da primeira loja — criada via serviço de administração e usada no passo de produtos; pode ser pulada (lojas existentes continuam disponíveis).
+4. **Usuário**: cria um OWNER (nome, e-mail e senha) ligado à loja criada ou a todas as ativas; pode ser pulado.
+5. **Produtos iniciais**: adiciona um ou mais itens (nome, código opcional, categoria, saldo inicial, estoque mínimo e preço opcional) direto no catálogo da loja; "Concluir produtos" ou "Pular esta etapa".
+6. **Revisão**: mostra organização, loja, usuário, produtos e etapas puladas; "Concluir e ir para o dashboard" leva à home. Cada etapa salva ao avançar — fechar o navegador no meio não perde o que já foi gravado; o assistente pode ser refeito a qualquer momento.

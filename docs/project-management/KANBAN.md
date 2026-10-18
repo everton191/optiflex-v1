@@ -56,7 +56,7 @@ Classificação de inventário (Etapa 4) no corpo de cada card:
 
 - Issues totais: **155** (8 épicas + 147 tarefas).
 - Tarefas por fase: F1=14 · F2=18 · F3=20 · F4=20 · F5=19 · F6=19 · F7=19 · F8=18.
-- Tarefas por status (revisado em 08/10/2026; F1-09, F2-04, F7-02, F1-11, F3-09, F3-14, F1-02, F1-06, F4-16, F2-05, F4-10, F4-18, F4-12, F2-06, F3-01, F8-06, F8-07, F1-07, F3-17, F2-11, F2-02, F3-02, F3-03, F2-07, F3-10, F4-11, F2-14, F3-07, F8-10, F8-02, F7-01, F1-05, F1-03, F7-03, F2-08, F7-05, F1-12, F3-06, F3-05, F7-11, F7-13, F3-08, F3-11, F3-16, F3-19, F2-01, F1-10, F8-17, F2-09, F3-04, F3-12, F2-03, F4-05, F4-06, F2-12, F7-08 e F7-09 concluídas; F8-04 em andamento — teste automatizado entregue, evidência de aparelho pendente): DONE=75 · IN PROGRESS=1 · READY=0 · TESTING=0 · CODE REVIEW=0 · BACKLOG=20 · BLOCKED=50.
+- Tarefas por status (revisado em 08/10/2026; F1-09, F2-04, F7-02, F1-11, F3-09, F3-14, F1-02, F1-06, F4-16, F2-05, F4-10, F4-18, F4-12, F2-06, F3-01, F8-06, F8-07, F1-07, F3-17, F2-11, F2-02, F3-02, F3-03, F2-07, F3-10, F4-11, F2-14, F3-07, F8-10, F8-02, F7-01, F1-05, F1-03, F7-03, F2-08, F7-05, F1-12, F3-06, F3-05, F7-11, F7-13, F3-08, F3-11, F3-16, F3-19, F2-01, F1-10, F8-17, F2-09, F3-04, F3-12, F2-03, F4-05, F4-06, F2-12, F7-08, F7-09 e F2-18 concluídas; F8-04 em andamento — teste automatizado entregue, evidência de aparelho pendente): DONE=76 · IN PROGRESS=1 · READY=0 · TESTING=0 · CODE REVIEW=0 · BACKLOG=19 · BLOCKED=50.
 - Bloqueios: **50 tarefas** bloqueadas — 47 por dependência de fase futura/externa + **3 reclassificadas em 08/10** (F4-13 #70, F8-03 #137, F3-20 #57: status desatualizado, decisão externa já registrada).
 - **Revisão de dependências 08/10/2026:** 7 ciclos detectados (SCC/Tarjan sobre este arquivo) e corrigidos em KANBAN + corpos das issues; **0 ciclos remanescentes**. Detalhe antes/depois em `DEPENDENCIES.md`.
 
@@ -112,7 +112,7 @@ Regra de ouro: **nunca mover para DONE sem evidência verificável** (comando de
 | F2-15 | [Campos fiscais dos produtos](https://github.com/everton191/optiflex-v1/issues/36) | Inventory | BACKLOG | p2 | F2-11; bloqueia F6-04. |
 | F2-16 | [Importação por planilha](https://github.com/everton191/optiflex-v1/issues/37) | Inventory | BACKLOG | p3 | F2-11, F2-08 (duplicidade). |
 | F2-17 | [Importação por XML fiscal, quando aplicável](https://github.com/everton191/optiflex-v1/issues/38) | Fiscal | BLOCKED | p3 | F6-07/F6-15 (modelo fiscal), F2-11. |
-| F2-18 | [Cadastro inicial assistido](https://github.com/everton191/optiflex-v1/issues/39) | Administration | BACKLOG | p3 | F2-01 (feito), F2-02 (feito), F2-04 (feito). |
+| F2-18 | [Cadastro inicial assistido](https://github.com/everton191/optiflex-v1/issues/39) | Administration | DONE | p3 | F2-01 (feito), F2-02 (feito), F2-04 (feito). Entregue em `b7f3e0a` — `src/domain/onboarding.ts` (`OnboardingService` + steps `organization`/`store`/`user`/`products`/`review` com `nextOnboardingStep`/`previousOnboardingStep` pulando opcionais e `buildOnboardingSummary`) + 9 testes; rota `/admin/assistente` (`OnboardingPage`, guarda `settings.manage`, guard matrix 22→23, link "Assistente inicial" no menu Administração) com passos Organização (normaliza e salva settings), Loja (`createStore`), Usuário (OWNER com loja criada/ativas), Produtos iniciais (InventoryService, múltiplos, pulável) e Revisão (resumo + etapas puladas; "Concluir" → dashboard); cada etapa persiste imediatamente; seed demo preservada (fora de escopo); 414/414, build 0, tsc 0. Libera F7-15. |
 
 ### FASE 3 — OPERAÇÃO DA ÓTICA — épica #3
 
@@ -235,7 +235,7 @@ Regra de ouro: **nunca mover para DONE sem evidência verificável** (comando de
 | F7-12 | [Notificações](https://github.com/everton191/optiflex-v1/issues/127) | Ux | BACKLOG | p2 | F4-13, F3-17, F4-04. |
 | F7-13 | [Impressões e PDFs](https://github.com/everton191/optiflex-v1/issues/128) | Ux | DONE | p1 | F3-05, F3-10. Ciclo corrigido 08/10: F4-14 depende de F7-13. Entregue em `09e816a` — componente `PrintLayout` (`title`/`meta`/`brand`/`actions`; marca "Opticore" e paleta preto/branco ajustáveis) em `components.tsx` + classes `.print-*` em `styles.css` (`@media print` estendido); receita envolvida no layout; nova rota `/vendas/:saleId` (`SaleDocumentPage`, guard `sales.read`) com botão "Imprimir" no Caixa (popup `window.open` removido); detalhe da OS em `PrintLayout` com Ações/Insumos/Histórico em `.no-print`; matriz de guards = 21 rotas; 308/308, build 0, tsc 0. Teste manual de impressão dos 4 documentos pendente (CA do card). |
 | F7-14 | [Etiquetas e comprovantes](https://github.com/everton191/optiflex-v1/issues/129) | Ux | BACKLOG | p3 | F7-13, F2-14. |
-| F7-15 | [Assistente de configuração inicial](https://github.com/everton191/optiflex-v1/issues/130) | Ux | BACKLOG | p3 | F2-18. |
+| F7-15 | [Assistente de configuração inicial](https://github.com/everton191/optiflex-v1/issues/130) | Ux | BACKLOG | p3 | F2-18 (feito em `b7f3e0a` — assistente funcional em `/admin/assistente`; F7-15 cobre refinamento de UX). |
 | F7-16 | [Ajuda contextual](https://github.com/everton191/optiflex-v1/issues/131) | Ux | BACKLOG | p3 | F7-01. |
 | F7-17 | [Acessibilidade](https://github.com/everton191/optiflex-v1/issues/132) | Ux | BACKLOG | p2 | F7-01, F7-11. |
 | F7-18 | [Desempenho](https://github.com/everton191/optiflex-v1/issues/133) | Ux | BACKLOG | p2 | F7-08. |
@@ -272,9 +272,8 @@ Ordem recomendada para a próxima sessão de desenvolvimento (status READY/IN PR
 | # | ID | Issue | Tarefa | Prioridade | Dependências | Justificativa |
 |---|---|---|---|---|---|---|
 | 1 | F8-04 | #138 | [Infraestrutura] Testes offline | P1 | F3-09 (feito), F8-01 (feito) | IN PROGRESS: automatizado entregue (`f5b8e0b`); aguardando execução do procedimento de aparelho real (RELEASE_CHECKLIST §5.1) e registro da evidência para fechar. |
-| 2 | F2-18 | #39 | [Administration] Cadastro inicial assistido | P3 | F2-01/F2-02/F2-04 (feitos) | Onboarding; libera F7-15. |
 
-Reservas (mesma ordem): F2-13, F2-15, F2-16, F7-06, F7-07, F7-10, F7-14, F7-16, F7-17, F7-18 — todas com dependências concluídas. F3-04 e F3-12 foram consumidos em 08/10/2026 (`f43627c`, `93ebb03`); limites de desconto seguiram os defaults propostos (5%/R$ 50, 15%/R$ 300, 30%/R$ 1000) e podem ser ajustados por decisão do usuário. F7-18 (desempenho) foi desbloqueada por F7-08 e entra nas reservas.
+Reservas (mesma ordem): F2-13, F2-15, F2-16, F7-06, F7-07, F7-10, F7-14, F7-15 (F2-18 concluído), F7-16, F7-17, F7-18 — todas com dependências concluídas. F3-04 e F3-12 foram consumidos em 08/10/2026 (`f43627c`, `93ebb03`); limites de desconto seguiram os defaults propostos (5%/R$ 50, 15%/R$ 300, 30%/R$ 1000) e podem ser ajustados por decisão do usuário. F7-18 (desempenho) foi desbloqueada por F7-08 e entra nas reservas. F2-18 foi concluída em 08/10/2026 (`b7f3e0a`) e saiu da fila.
 
 Os `#?` devem ser resolvidos pela tabela acima (coluna ID → link da issue). Os números já estão fixados nas tabelas das fases; para referência rápida: consulte `DEPENDENCIES.md`.
 
