@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { errorMessage } from "../domain/errors";
 import { Link, useBlocker, useParams } from "react-router-dom";
-import { Button, Card, Input, PrintLayout } from "../design-system/components";
+import { Button, Card, ConfirmDialog, Input, PrintLayout } from "../design-system/components";
 import { ClinicalService } from "../domain/clinical-service";
 import { ATTACHMENT_MAX_BYTES, ATTACHMENT_TYPE_LABEL, activePrescription, attachmentCategoryKeys, clinicalAttachmentCategoryLabels, formatPrescriptionEye, formatPrescriptionMeasures, measurementOriginKeys, measurementOriginLabels, prescriptionDocument, prescriptionUsageKeys, prescriptionUsageLabels, type ClinicalAttachment, type ClinicalAttachmentCategory, type ClinicalVersion, type MeasurementOrigin, type Prescription, type PrescriptionUsage } from "../domain/clinical";
 import type { Customer } from "../domain/customer";
@@ -31,6 +31,7 @@ function ClinicalWorkspace({ attendanceId }: { attendanceId: string }) {
   const [error, setError] = useState(""); const [attempt, setAttempt] = useState(0);
   const [busy, setBusy] = useState(false); const [confirm, setConfirm] = useState(false); const [reason, setReason] = useState("");
   const [file, setFile] = useState<File>(); const [category, setCategory] = useState<ClinicalAttachmentCategory>("EXAM"); const [attachmentError, setAttachmentError] = useState("");
+  const [pendingDelete, setPendingDelete] = useState<ClinicalAttachment>();
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]); const [rxError, setRxError] = useState("");
   const [odSphere, setOdSphere] = useState(""); const [odCylinder, setOdCylinder] = useState(""); const [odAxis, setOdAxis] = useState(""); const [odAdd, setOdAdd] = useState("");
   const [oeSphere, setOeSphere] = useState(""); const [oeCylinder, setOeCylinder] = useState(""); const [oeAxis, setOeAxis] = useState(""); const [oeAdd, setOeAdd] = useState("");
@@ -100,14 +101,13 @@ function ClinicalWorkspace({ attendanceId }: { attendanceId: string }) {
   }
   async function removeAttachment(attachment: ClinicalAttachment) {
     if (!draft || pending.current || draft.record.finalizedAt) return;
-    if (!window.confirm(`Excluir o anexo "${attachment.name}"? Esta ação não pode ser desfeita.`)) return;
     pending.current = true; setBusy(true); setAttachmentError("");
     try {
       await draft.detach(attachment.id);
       const stillReferenced = versions.some((version) => version.attachments.some((item) => item.id === attachment.id));
       if (!stillReferenced) await service.dropAttachmentContent(attachment.id, context);
     } catch (failure) { setAttachmentError(errorMessage(failure, "Não foi possível excluir o anexo.")); }
-    finally { pending.current = false; setBusy(false); }
+    finally { pending.current = false; setBusy(false); setPendingDelete(undefined); }
   }
   function resetRxForm() {
     setOdSphere(""); setOdCylinder(""); setOdAxis(""); setOdAdd("");
@@ -182,7 +182,7 @@ function ClinicalWorkspace({ attendanceId }: { attendanceId: string }) {
       <div className="list-card compact-list">
         {record.attachments.length ? record.attachments.map((attachment) => <article className="list-row" key={attachment.id}>
           <div><strong>{attachment.name}</strong><span>{clinicalAttachmentCategoryLabels[attachment.category ?? "DOCUMENT"]} · {formatAttachmentSize(attachment.size)} · {new Date(attachment.createdAt).toLocaleString("pt-BR")}</span></div>
-          <div><Button type="button" disabled={busy} onClick={() => void openAttachment(attachment)}>Prévia</Button>{!record.finalizedAt && <Button type="button" disabled={busy} onClick={() => void removeAttachment(attachment)}>Excluir</Button>}</div>
+          <div><Button type="button" disabled={busy} onClick={() => void openAttachment(attachment)}>Prévia</Button>{!record.finalizedAt && <Button type="button" disabled={busy} onClick={() => setPendingDelete(attachment)}>Excluir</Button>}</div>
         </article>) : <p className="empty-state">Nenhum anexo enviado.</p>}
       </div>
       {!record.finalizedAt && <form className="settings-form" onSubmit={(event) => void attach(event)}>
@@ -194,6 +194,7 @@ function ClinicalWorkspace({ attendanceId }: { attendanceId: string }) {
       {attachmentError && <p role="alert" className="notice error-text">{attachmentError}</p>}
     </section>
     <h2>Versões finalizadas</h2>{versions.length ? versions.map((version) => <details className="clinical-version" key={version.id}><summary>Versão {version.version ?? 1} · {new Date(version.finalizedAt).toLocaleString("pt-BR")} · {version.author || "Registro anterior"}</summary>{version.amendmentReason && <p>Motivo: {version.amendmentReason}</p>}{fields.map(([field, label]) => <section key={field}><h3>{label}</h3><p className="preserved-text">{version[field] || "Não informado"}</p></section>)}</details>) : <p>Nenhuma versão finalizada.</p>}
+    <ConfirmDialog open={Boolean(pendingDelete)} destructive title="Excluir anexo" message={pendingDelete ? `Excluir o anexo "${pendingDelete.name}"? Esta ação não pode ser desfeita.` : ""} confirmLabel="Excluir anexo" onConfirm={() => { if (pendingDelete) void removeAttachment(pendingDelete); }} onCancel={() => setPendingDelete(undefined)} />
   </div>;
 }
 

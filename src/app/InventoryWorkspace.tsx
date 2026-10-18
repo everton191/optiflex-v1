@@ -268,7 +268,7 @@ export function InventoryPage() {
         <form className="commerce-form" onSubmit={(event) => { event.preventDefault(); void cancelTransfer(transfer); }}>
           <label>Motivo<Input autoFocus aria-label="Motivo do cancelamento da transferência" value={cancelTransferReason} onChange={(event) => setCancelTransferReason(event.target.value)} required /></label>
           {transfer.status === "SEPARATED" && <p className="help-text">O saldo já separado será devolvido à loja de origem.</p>}
-          <div className="form-actions"><Button type="submit">Confirmar cancelamento</Button><Button type="button" onClick={() => { setCancelTransferId(""); setCancelTransferReason(""); }}>Voltar</Button></div>
+          <div className="form-actions"><Button type="submit" className="button-danger">Confirmar cancelamento</Button><Button type="button" onClick={() => { setCancelTransferId(""); setCancelTransferReason(""); }}>Voltar</Button></div>
         </form>
       </Dialog>
     </article>) : <p className="empty-state">Nenhuma transferência nesta loja.</p>}</div>

@@ -1,9 +1,9 @@
-import { useId, useState } from "react";
-import type { ButtonHTMLAttributes, HTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import type { ButtonHTMLAttributes, HTMLAttributes, InputHTMLAttributes, KeyboardEvent, ReactNode, SelectHTMLAttributes } from "react";
 import { filterRows, pageCount, paginateRows, sortRows, toggleSort, type DataTableColumn, type SortState } from "./data-table";
 
-export function Button({ children, ...props }: ButtonHTMLAttributes<HTMLButtonElement>) {
-  return <button className="button" {...props}>{children}</button>;
+export function Button({ children, className = "", ...props }: ButtonHTMLAttributes<HTMLButtonElement>) {
+  return <button className={`button ${className}`.trim()} {...props}>{children}</button>;
 }
 
 export function Card({ children }: { children: ReactNode }) {
@@ -100,10 +100,39 @@ export interface OverlayProps {
   footer?: ReactNode;
 }
 
+const FOCUSABLE = "button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])";
+
+function useOverlayFocus(open: boolean, onClose: () => void) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (!open) return;
+    triggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const panel = panelRef.current;
+    const first = panel?.querySelector<HTMLElement>(FOCUSABLE);
+    (first ?? panel)?.focus();
+    return () => { triggerRef.current?.focus(); };
+  }, [open]);
+  function trapTab(event: KeyboardEvent<HTMLElement>) {
+    if (event.key !== "Tab") return;
+    const panel = panelRef.current;
+    if (!panel) return;
+    const focusables = Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE));
+    if (!focusables.length) { event.preventDefault(); return; }
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    else if (!panel.contains(document.activeElement)) { event.preventDefault(); first.focus(); }
+  }
+  return { panelRef, trapTab, onClose };
+}
+
 export function Dialog({ open, onClose, title, children, footer }: OverlayProps) {
+  const { panelRef, trapTab } = useOverlayFocus(open, onClose);
   if (!open) return null;
   return <div className="dialog-overlay" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-    <div className="dialog" role="dialog" aria-modal="true" aria-label={title} onKeyDown={(event) => { if (event.key === "Escape") onClose(); }}>
+    <div ref={panelRef} className="dialog" role="dialog" aria-modal="true" aria-label={title} tabIndex={-1} onKeyDown={(event) => { if (event.key === "Escape") onClose(); trapTab(event); }}>
       <div className="overlay-head"><h2>{title}</h2><CloseButton onClose={onClose} /></div>
       <div className="overlay-body">{children}</div>
       {footer && <div className="overlay-foot">{footer}</div>}
@@ -112,14 +141,30 @@ export function Dialog({ open, onClose, title, children, footer }: OverlayProps)
 }
 
 export function Drawer({ open, onClose, title, children, footer }: OverlayProps) {
+  const { panelRef, trapTab } = useOverlayFocus(open, onClose);
   if (!open) return null;
   return <div className="drawer-overlay" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-    <aside className="drawer" role="dialog" aria-modal="true" aria-label={title} onKeyDown={(event) => { if (event.key === "Escape") onClose(); }}>
+    <aside ref={panelRef} className="drawer" role="dialog" aria-modal="true" aria-label={title} tabIndex={-1} onKeyDown={(event) => { if (event.key === "Escape") onClose(); trapTab(event); }}>
       <div className="overlay-head"><h2>{title}</h2><CloseButton onClose={onClose} /></div>
       <div className="overlay-body">{children}</div>
       {footer && <div className="overlay-foot">{footer}</div>}
     </aside>
   </div>;
+}
+
+export interface ConfirmDialogProps {
+  open: boolean;
+  title: string;
+  message: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  destructive?: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
+export function ConfirmDialog({ open, title, message, confirmLabel = "Confirmar", cancelLabel = "Voltar", destructive = false, onConfirm, onCancel }: ConfirmDialogProps) {
+  return <Dialog open={open} onClose={onCancel} title={title} footer={<div className="form-actions"><Button type="button" className={destructive ? "button-danger" : ""} onClick={onConfirm}>{confirmLabel}</Button><Button type="button" onClick={onCancel}>{cancelLabel}</Button></div>}><p>{message}</p></Dialog>;
 }
 
 export function Toast({ tone = "success", onClose, children }: { tone?: "success" | "error"; onClose?: () => void; children: ReactNode }) {
