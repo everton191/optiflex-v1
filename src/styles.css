@@ -22,7 +22,7 @@ body { font-size: .9375rem; }
 .brand { margin-bottom: var(--space-4); }
 .sidebar a { padding: .625rem .75rem; }
 .sidebar-bottom { padding-top: var(--space-4); }
-.topbar { height: 3.5rem; padding: 0 var(--space-6); }
+.topbar { min-height: 3.5rem; height: auto; padding: 0 var(--space-6); }
 .page { width: 100%; max-width: 90rem; padding: var(--space-6); }
 .page h1 { font-size: clamp(1.5rem, 2.4vw, 2rem); }
 .page-intro { margin-block: var(--space-2) 0; }
@@ -99,6 +99,7 @@ textarea { min-height: 6rem; }
 .brand-copy strong, .user-summary strong { font-size: .875rem; }
 .brand-copy small { color: color-mix(in srgb, white, transparent 35%); font-size: .6875rem; font-weight: 500; }
 .user-summary { text-align: right; }
+.user-summary .badge { font-size: .625rem; padding: 0 var(--space-2); }
 .user-summary small { color: var(--color-muted); font-size: .6875rem; }
 .nav-section-label { padding: var(--space-2) .75rem var(--space-1); color: color-mix(in srgb, white, transparent 48%); font-size: .625rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
 .content { background: color-mix(in srgb, var(--color-surface), var(--color-border) 18%); }
