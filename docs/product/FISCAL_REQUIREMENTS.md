@@ -1,47 +1,42 @@
-# FISCAL REQUIREMENTS — requisitos fiscais (Fase 6)
+# FISCAL REQUIREMENTS — requisitos fiscais do Opticore
 
-**Status: NÃO INICIADO — bloqueado pela decisão P2 (especificação tributária + provedor fiscal) em `docs/project-management/DECISIONS.md`.**
-Épica #6 · cards F6-01..F6-19 + F2-15/F2-17. **Proibido implementar cálculo tributário presumido sem especificação validada** (auditoria).
-**F2-03 concluída em 08/10/2026 (`75df1c0`):** identificação fiscal da empresa persistida e validada em `OrganizationSettings` (CNPJ, regime tributário, IE, IM, CNAE e endereço fiscal) com formulário nas configurações e suporte a backup — base exigida por F6-01..03.
+> Documento de requisitos da Fase 6 (Notas Fiscais), que permanece **BLOCKED** por
+> especificação fiscal/decisão de provedor (raiz P2 no `KANBAN.md`).
+> Este arquivo consolida o que **já está pronto** na base e o que **depende da especificação**.
 
-Atualizado em: 07/10/2026 · grep em `src/` não encontrou nenhum código fiscal (NF-e/NFC-e/NCM/CFOP/certificado).
+## O que já existe (sem cálculo tributário)
 
-## Responsabilidades separadas (SaaS × cliente)
+### Cadastro da empresa (F2-03 `75df1c0`, F2-01 `4f78fe6`)
 
-| Assunto | Responsabilidade |
-|---|---|
-| Regras fiscais da empresa (regime, NCM/CFOP aplicáveis, obrigações) | **Empresa cliente** (com seu contador) |
-| Emissão em nome da empresa (certificado, credenciais, prazos legais) | **Empresa cliente** |
-| Modelo de documentos, validação, tratamento de rejeição, arquivamento XML | Produto (Opticore) com adapter do provedor |
-| Disponibilidade da ferramenta, segurança das credenciais fornecidas, logs | **Fornecedor do SaaS** |
-| Cálculo tributário | **Não implementar** sem especificação validada (não é responsabilidade presumida do SaaS) |
+- `OrganizationSettings`: `taxRegime` (SIMPLES_NACIONAL, SIMPLES_EXCESSO_SUBRECEITA, REGIME_NORMAL, MEI), IE (`stateRegistration`), IM (`municipalRegistration`), CNAE (`formatCnae`/`isValidCnae`, 7 dígitos), razão social, CNPJ (`isValidCnpj` com dígito verificador), telefone, e-mail e endereço.
+- Normalização e validação no `saveSettings`; exibição no dashboard (razão social · CNPJ · cidade/UF).
 
-## Escopo planejado (resumo dos cards)
+### Campos fiscais por produto (F2-15 `c124ede`)
 
-1. **Identificação fiscal da empresa** (F6-01..03): CNPJ já existe em dados jurídicos (F2-03), + regime, IE, IM, CNAE.
-2. **Classificação de produto** (F2-15 → F6-04): NCM, CFOP, CEST, unidade por item.
-3. **Modelo independente de documento** (F6-05): entidade `FiscalDocument` com adapter por provedor (nunca amarrar o domínio a um provedor).
-4. **Integração** (F6-06..08): API emissora, NF-e, NFC-e (com QR Code/DANFE), NFS-e quando o município exigir (F6-09).
-5. **Operação segura** (F6-10..12): certificado A1 em cofre de segredos, credenciamento, ambientes homologação/produção com indicador visível.
-6. **Qualidade do envio** (F6-13..15): validação prévia, tradução de rejeições, cancelamento/eventos com prazo e rastro.
-7. **Documentos** (F6-16..17): XML + auxiliares arquivados com busca; histórico por loja/período.
-8. **Segurança/governança** (F6-18..19): sem segredo em repo/log; versão da regra carimbada no documento.
-9. **Homologação** (F8-11): evidência de aprovação por tipo antes de produção.
+- `InventoryItem.fiscal?` (`ProductFiscalFields`) — **opcional**, sem bump Dexie:
+  - `ncm` — 8 dígitos (ex.: `9004.10.00`), armazenado só com dígitos, exibido com pontuação (`formatNcm`);
+  - `cfop` — 4 dígitos (ex.: `5102`, `6108`);
+  - `cest` — 7 dígitos (ex.: `03.007.00`), exibido com pontuação (`formatCest`);
+  - `unit` — enum `fiscalUnits`: UN, CX, KG, M, PAR, KIT.
+- Validação básica em `normalizeProductFiscal` (criação/edição); `createVariant` herda o fiscal da base.
+- Backup valida o objeto `fiscal` (campos string + unidade enum).
+- UI: fieldset "Dados fiscais (opcional — preparação para NF-e)" no cadastro de produto.
 
-## Pré-requisitos fora da Fase 6
+## O que depende da especificação (Fase 6 — BLOCKED)
 
-- F2-03 dados jurídicos · F2-15 campos fiscais do produto · F4-10 formas de pagamento (NFC-e) · F4-18 estornos (cancelamento de venda × evento fiscal).
+- **F6-01** Cadastro fiscal da ótica — depende da especificação fiscal externa (F2-03 pronto).
+- **F6-04** NCM, CFOP e demais classificações — dependência F2-15 **concluída**; segue BLOCKED pela especificação (tabelas oficiais, regras por regime/produto).
+- Cálculo tributário, emissão/assinatura/envio de NF-e, carta de correção e cancelamento — **fora do escopo até hoje** (F2-15 explicitamente sem cálculo).
+- Homologação fiscal (F8-11) e migração de XML (F2-17) permanecem bloqueadas pela mesma raiz.
 
-## Marco de entrada (gate)
+## Decisões pendentes (aguardam o usuário)
 
-Só iniciar F6-01+ quando existir, em `DECISIONS.md`:
+1. **Provedor/modelo de NF-e** (P2): emissor local com SEFAZ, serviço terceirizado ou PSP — define F6-01..F6-06.
+2. **Regime tributário real da ótica piloto** (F6-02): SIMPLES/MEI/normal — decisão contábil do cliente.
+3. **Tabelas de referência**: NCM/CFOP/CEST oficiais a usar como base de validação (hoje apenas formato é validado, não conteúdo).
 
-1. Definição de quais documentos a ótica emite (NF-e, NFC-e, NFS-e?).
-2. Regime tributário e estado/município (regras variam).
-3. Provedor fiscal escolhido + quem faz credenciamento.
-4. Confirmação de quem responde pelos dados fiscais (cliente × SaaS).
+## Regras mantidas neste documento
 
-## Fontes
-
-- Auditoria Fase H/F: `docs/DEVELOPMENT_AUDIT_A_H.md`.
-- `docs/project-management/KANBAN.md` (fase 6) · `DEPENDENCIES.md` (cadeia 6) · `DECISIONS.md` (P2).
+- Nenhum valor tributário é calculado pelo Opticore até a especificação da Fase 6.
+- Campos fiscais preenchidos são **dados de entrada** (preparação), não resultado de cálculo.
+- Qualquer evolução (validação de conteúdo NCM/CFOP, CFOP por natureza da operação) deve começar aqui e nos cards da Fase 6.

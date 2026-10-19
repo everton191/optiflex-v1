@@ -6,6 +6,12 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `c124ede` + docs — Campos fiscais dos produtos (F2-15)
+
+- `InventoryItem.fiscal?` (`ProductFiscalFields`: NCM, CFOP, CEST, unidade fiscal) opcional e sem bump Dexie; `fiscalUnits` UN/CX/KG/M/PAR/KIT.
+- Validação básica sem cálculo: `normalizeProductFiscal` (dígitos; NCM 8, CFOP 4, CEST 7; unidade enum) + formatação `formatNcm`/`formatCest` e `fiscalSummary`; create/update persistem e limpam, variante herda da base.
+- UI: fieldset "Dados fiscais (opcional)" no cadastro de produto com formatação ao digitar; resumo na linha do produto; backup valida `fiscal` (objeto/strings/enum); +4 testes +3 no backup; 426/426, build 0, tsc 0. Desbloqueia dep de F6-04 (Fase 6 segue BLOCKED pela especificação).
+
 ### `0353eb6` + docs — Variantes e características dos produtos (F2-13)
 
 - Atributos configuráveis por categoria em `inventory.ts`: `ProductVariantAttributes` (cor, tamanho, material, índice, tratamento) com `variantFieldsByCategory` (FRAME cor/tamanho/material, LENS índice/tratamento, ACCESSORY cor/material) e helpers puros (`normalizeVariantAttributes`, `buildVariantName`, `variantCodeSuffix`, `filterByVariantField`, `variantFieldOptions`).
