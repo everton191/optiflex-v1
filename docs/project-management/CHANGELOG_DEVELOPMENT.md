@@ -6,6 +6,12 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `0353eb6` + docs — Variantes e características dos produtos (F2-13)
+
+- Atributos configuráveis por categoria em `inventory.ts`: `ProductVariantAttributes` (cor, tamanho, material, índice, tratamento) com `variantFieldsByCategory` (FRAME cor/tamanho/material, LENS índice/tratamento, ACCESSORY cor/material) e helpers puros (`normalizeVariantAttributes`, `buildVariantName`, `variantCodeSuffix`, `filterByVariantField`, `variantFieldOptions`).
+- `InventoryService.createVariant`: variante vira item de estoque **próprio** (saldo, código com regra `BASE-COR-TAM` e sufixo em colisão, movimento "Estoque inicial da variante"); create/update persistem `variantAttributes` (update limpa ao esvaziar); backup valida o objeto.
+- UI do Estoque: campos de atributo por categoria no cadastro, botão "Variante" por linha (Drawer com saldo e código), coluna "Atributos" e filtros por valor de atributo; +8 testes de domínio +2 de backup; 422/422, build 0, tsc 0.
+
 ### `b7f3e0a` + docs — Cadastro inicial assistido (F2-18)
 
 - `src/domain/onboarding.ts`: `onboardingSteps` (Organização/Loja/Usuário/Produtos/Revisão, opcionais marcados), navegação `nextOnboardingStep`/`previousOnboardingStep` pulando etapas puláveis, `buildOnboardingSummary` (resumo com placeholders) e `OnboardingService` (`completeOrganization` normaliza/valida/grava settings; `createStore`/`createOwner` via AdministrationService, OWNER obrigatório).
