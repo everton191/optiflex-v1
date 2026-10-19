@@ -4,8 +4,8 @@ import { Button, DataTable, Dialog, Drawer, ErrorState, Input, Select, Skeleton 
 import { hasPermission } from "../domain/access";
 import { InventoryService } from "../domain/inventory-service";
 import { AuditService } from "../domain/audit-service";
-import type { InventoryItem, InventoryMovement, InventoryMovementType, ProductCategory, ProductCategoryFilter, VariantField } from "../domain/inventory";
-import { availableQuantity, filterByCategory, filterByVariantField, hasVariantAttributes, marginCents, normalizeVariantAttributes, productCategories, productCategoryLabels, stockState, variantFieldLabels, variantFieldsByCategory, variantFieldOptions, variantSummary } from "../domain/inventory";
+import type { InventoryItem, InventoryMovement, InventoryMovementType, ProductCategory, ProductCategoryFilter, VariantField, FiscalUnit } from "../domain/inventory";
+import { availableQuantity, filterByCategory, filterByVariantField, fiscalSummary, fiscalUnitLabels, fiscalUnits, formatCest, formatNcm, hasVariantAttributes, marginCents, normalizeVariantAttributes, productCategories, productCategoryLabels, stockState, variantFieldLabels, variantFieldsByCategory, variantFieldOptions, variantSummary } from "../domain/inventory";
 import type { Transfer, TransferItem } from "../domain/transfer";
 import { transferStatusLabels } from "../domain/transfer";
 import { TransferService } from "../domain/transfer-service";
@@ -49,6 +49,10 @@ export function InventoryPage() {
   const [variantSize, setVariantSize] = useState("");
   const [variantLensIndex, setVariantLensIndex] = useState("");
   const [variantTreatment, setVariantTreatment] = useState("");
+  const [fiscalNcm, setFiscalNcm] = useState("");
+  const [fiscalCfop, setFiscalCfop] = useState("");
+  const [fiscalCest, setFiscalCest] = useState("");
+  const [fiscalUnit, setFiscalUnit] = useState<FiscalUnit | "">("");
   const [attributeFilter, setAttributeFilter] = useState("");
   const [variantBase, setVariantBase] = useState<InventoryItem>();
   const [vColor, setVColor] = useState("");
@@ -93,8 +97,8 @@ export function InventoryPage() {
     pending.current = true; setMessage(""); setError("");
     try { setMessage(await action()); await refresh(); } catch (reason) { setError(errorMessage(reason, fallback)); } finally { pending.current = false; }
   }
-  function resetProductForm(open: boolean) { setFormOpen(open); setEditing(undefined); setName(""); setCode(""); setQuantity(""); setMinimum(""); setDefaultPrice(""); setCost(""); setCategory(""); setBrand(""); setMaterial(""); setDescription(""); setVariantColor(""); setVariantSize(""); setVariantLensIndex(""); setVariantTreatment(""); }
-  function editProduct(item: InventoryItem) { setMoving(undefined); setFormOpen(true); setEditing(item); setName(item.name); setCode(item.code ?? ""); setQuantity(String(item.quantity)); setMinimum(String(item.minimumQuantity)); setDefaultPrice(item.defaultPrice !== undefined ? String(item.defaultPrice) : ""); setCost(item.cost !== undefined ? String(item.cost) : ""); setCategory(item.category ?? ""); setBrand(item.brand ?? ""); setMaterial(item.material ?? ""); setDescription(item.description ?? ""); setVariantColor(item.variantAttributes?.color ?? ""); setVariantSize(item.variantAttributes?.size ?? ""); setVariantLensIndex(item.variantAttributes?.lensIndex ?? ""); setVariantTreatment(item.variantAttributes?.treatment ?? ""); }
+  function resetProductForm(open: boolean) { setFormOpen(open); setEditing(undefined); setName(""); setCode(""); setQuantity(""); setMinimum(""); setDefaultPrice(""); setCost(""); setCategory(""); setBrand(""); setMaterial(""); setDescription(""); setVariantColor(""); setVariantSize(""); setVariantLensIndex(""); setVariantTreatment(""); setFiscalNcm(""); setFiscalCfop(""); setFiscalCest(""); setFiscalUnit(""); }
+  function editProduct(item: InventoryItem) { setMoving(undefined); setFormOpen(true); setEditing(item); setName(item.name); setCode(item.code ?? ""); setQuantity(String(item.quantity)); setMinimum(String(item.minimumQuantity)); setDefaultPrice(item.defaultPrice !== undefined ? String(item.defaultPrice) : ""); setCost(item.cost !== undefined ? String(item.cost) : ""); setCategory(item.category ?? ""); setBrand(item.brand ?? ""); setMaterial(item.material ?? ""); setDescription(item.description ?? ""); setVariantColor(item.variantAttributes?.color ?? ""); setVariantSize(item.variantAttributes?.size ?? ""); setVariantLensIndex(item.variantAttributes?.lensIndex ?? ""); setVariantTreatment(item.variantAttributes?.treatment ?? ""); setFiscalNcm(item.fiscal?.ncm ?? ""); setFiscalCfop(item.fiscal?.cfop ?? ""); setFiscalCest(item.fiscal?.cest ?? ""); setFiscalUnit(item.fiscal?.unit ?? ""); }
   function resetMovement() { setMoving(undefined); setMoveType("IN"); setMoveQuantity(""); setMoveReason(""); }
   function resetVariantForm() { setVariantBase(undefined); setVColor(""); setVSize(""); setVMaterial(""); setVLensIndex(""); setVTreatment(""); setVQuantity("0"); setVCode(""); }
   function openVariantForm(item: InventoryItem) { resetProductForm(false); resetMovement(); setVariantBase(item); }
@@ -103,13 +107,14 @@ export function InventoryPage() {
     event.preventDefault();
     const prices = { defaultPrice: defaultPrice.trim() ? Number(defaultPrice) : undefined, cost: cost.trim() ? Number(cost) : undefined };
     const sheet = { category: category as ProductCategory, brand, material, description };
+    const fiscal = { ncm: fiscalNcm, cfop: fiscalCfop, cest: fiscalCest, unit: fiscalUnit || undefined };
     await run(async () => {
       if (editing) {
-        await service.update(editing, { name, code, minimumQuantity: Number(minimum), ...prices, ...sheet, variantAttributes: { color: variantColor, size: variantSize, material, lensIndex: variantLensIndex, treatment: variantTreatment } });
+        await service.update(editing, { name, code, minimumQuantity: Number(minimum), ...prices, ...sheet, variantAttributes: { color: variantColor, size: variantSize, material, lensIndex: variantLensIndex, treatment: variantTreatment }, fiscal });
         resetProductForm(false);
         return "Produto atualizado.";
       }
-      await service.create(currentStoreId, { name, code, quantity: Number(quantity || 0), minimumQuantity: Number(minimum || 0), ...prices, ...sheet, variantAttributes: { color: variantColor, size: variantSize, material, lensIndex: variantLensIndex, treatment: variantTreatment } }, session.userName);
+      await service.create(currentStoreId, { name, code, quantity: Number(quantity || 0), minimumQuantity: Number(minimum || 0), ...prices, ...sheet, variantAttributes: { color: variantColor, size: variantSize, material, lensIndex: variantLensIndex, treatment: variantTreatment }, fiscal }, session.userName);
       resetProductForm(false);
       return "Produto cadastrado.";
     }, "Não foi possível salvar o produto.");
@@ -233,6 +238,12 @@ export function InventoryPage() {
         <label>Tratamento<Input value={variantTreatment} onChange={(event) => setVariantTreatment(event.target.value)} placeholder="Opcional (ex.: antirreflexo)" /></label>
       </>}
       {category === "ACCESSORY" && <label>Cor<Input value={variantColor} onChange={(event) => setVariantColor(event.target.value)} placeholder="Opcional" /></label>}
+      <fieldset className="form-fieldset"><legend>Dados fiscais (opcional — preparação para NF-e)</legend>
+        <label>NCM<Input inputMode="numeric" value={fiscalNcm ? formatNcm(fiscalNcm) : ""} onChange={(event) => setFiscalNcm(event.target.value.replace(/\D/g, "").slice(0, 8))} placeholder="0000.00.00" /></label>
+        <label>CFOP<Input inputMode="numeric" value={fiscalCfop} onChange={(event) => setFiscalCfop(event.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="Ex.: 5102" /></label>
+        <label>CEST<Input inputMode="numeric" value={fiscalCest ? formatCest(fiscalCest) : ""} onChange={(event) => setFiscalCest(event.target.value.replace(/\D/g, "").slice(0, 7))} placeholder="00.000.00" /></label>
+        <Select label="Unidade fiscal" aria-label="Unidade fiscal" value={fiscalUnit} onChange={(event) => setFiscalUnit(event.target.value as FiscalUnit | "")}><option value="">—</option>{fiscalUnits.map((value) => <option key={value} value={value}>{fiscalUnitLabels[value]}</option>)}</Select>
+      </fieldset>
       <label>Descrição<Input value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Opcional (ficha: grau, curvatura, etc.)" /></label>
       <div className="form-actions">
         <Button type="submit">{editing ? "Salvar alterações" : "Cadastrar produto"}</Button>
@@ -277,7 +288,7 @@ export function InventoryPage() {
       const state = stockState(item);
       const margin = item.defaultPrice !== undefined && item.cost !== undefined ? marginCents(item.defaultPrice, item.cost) : undefined;
       return <>
-        <td><div className="cell-stack"><strong>{item.category ? `${productCategoryLabels[item.category]} · ` : ""}{item.name}</strong><span>{item.brand ? `Marca ${item.brand} · ` : ""}{item.material ? `${item.material} · ` : ""}{item.code ? `Código ${item.code} · ` : ""}Mínimo {item.minimumQuantity}</span>{item.description && <span className="help-text">{item.description}</span>}</div></td>
+        <td><div className="cell-stack"><strong>{item.category ? `${productCategoryLabels[item.category]} · ` : ""}{item.name}</strong><span>{item.brand ? `Marca ${item.brand} · ` : ""}{item.material ? `${item.material} · ` : ""}{item.code ? `Código ${item.code} · ` : ""}Mínimo {item.minimumQuantity}</span>{item.fiscal && <span className="help-text">{fiscalSummary(item.fiscal)}</span>}{item.description && <span className="help-text">{item.description}</span>}</div></td>
         <td>{item.category ? productCategoryLabels[item.category] : "—"}</td>
         <td>{hasVariantAttributes(item.variantAttributes) ? <span className="badge">{variantSummary(item.variantAttributes)}</span> : "—"}</td>
         <td style={{ textAlign: "right" }}><span className={`badge ${stateClasses[state]}`}>{item.quantity} · {stateLabels[state]}</span></td>

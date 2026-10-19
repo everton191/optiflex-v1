@@ -2,7 +2,7 @@
 import { InventoryService } from "./inventory-service";
 import { AuditService } from "./audit-service";
 import type { InventoryItem } from "./inventory";
-import { filterByCategory, filterByVariantField, hasVariantAttributes, marginCents, movementDelta, normalizeVariantAttributes, stockState, variantCodeSuffix, variantFieldOptions, variantSummary, buildVariantName } from "./inventory";
+import { filterByCategory, filterByVariantField, fiscalSummary, formatCest, formatNcm, hasProductFiscal, hasVariantAttributes, marginCents, movementDelta, normalizeProductFiscal, normalizeVariantAttributes, stockState, variantCodeSuffix, variantFieldOptions, variantSummary, buildVariantName } from "./inventory";
 
 const repository = { listByStore: vi.fn(), listMovements: vi.fn(), createItem: vi.fn(), updateItem: vi.fn(), applyMovement: vi.fn(), applyReservation: vi.fn() };
 const service = new InventoryService(repository);
@@ -304,5 +304,45 @@ describe("variant creation", () => {
     expect(created.variantAttributes).toEqual({ lensIndex: "1.60", treatment: "Antirreflexo" });
     const updated = await service.update(created, { name: "Lente", code: "LT-9", minimumQuantity: 1, category: "LENS", variantAttributes: { lensIndex: "", treatment: "" } });
     expect(updated.variantAttributes).toBeUndefined();
+  });
+});
+
+describe("fiscal fields", () => {
+  it("normalizes digits and formats NCM/CEST for display", () => {
+    expect(normalizeProductFiscal({ ncm: " 9004.10.00 ", cfop: "5.102", cest: " 03.007.00 ", unit: "UN" })).toEqual({ ncm: "90041000", cfop: "5102", cest: "0300700", unit: "UN" });
+    expect(normalizeProductFiscal({ ncm: "", cfop: undefined, unit: "" })).toEqual({});
+    expect(formatNcm("90041000")).toBe("9004.10.00");
+    expect(formatNcm("9004")).toBe("9004");
+    expect(formatCest("0300700")).toBe("03.007.00");
+    expect(hasProductFiscal({ ncm: "90041000" })).toBe(true);
+    expect(hasProductFiscal({})).toBe(false);
+    expect(fiscalSummary({ ncm: "90041000", cfop: "5102", unit: "CX" })).toBe("NCM 9004.10.00 · CFOP 5102 · Caixa (CX)");
+  });
+
+  it("rejects wrong digit counts and unknown units", () => {
+    expect(() => normalizeProductFiscal({ ncm: "123" })).toThrow("NCM deve ter 8 dígitos");
+    expect(() => normalizeProductFiscal({ cfop: "51" })).toThrow("CFOP deve ter 4 dígitos");
+    expect(() => normalizeProductFiscal({ cest: "030" })).toThrow("CEST deve ter 7 dígitos");
+    expect(() => normalizeProductFiscal({ unit: "TON" as never })).toThrow("unidade fiscal válida");
+  });
+
+  it("persists fiscal fields on create, update and clears them when emptied", async () => {
+    repository.listByStore.mockResolvedValue([]);
+    repository.createItem.mockResolvedValue(undefined);
+    repository.updateItem.mockResolvedValue(undefined);
+    const created = await service.create("store-centro", { name: "Armação", code: "AR-20", quantity: 1, minimumQuantity: 0, category: "FRAME", fiscal: { ncm: "9003.19.00", unit: "UN" } });
+    expect(created.fiscal).toEqual({ ncm: "90031900", unit: "UN" });
+    await expect(service.create("store-centro", { name: "Outra", code: "AR-21", quantity: 1, minimumQuantity: 0, category: "FRAME", fiscal: { cfop: "5" } })).rejects.toThrow("CFOP deve ter 4 dígitos");
+    const updated = await service.update(created, { name: "Armação", code: "AR-20", minimumQuantity: 0, category: "FRAME", fiscal: { ncm: "", unit: "" } });
+    expect(updated.fiscal).toBeUndefined();
+  });
+
+  it("copies the base fiscal fields when creating a variant", async () => {
+    repository.listByStore.mockResolvedValue([]);
+    repository.createItem.mockResolvedValue(undefined);
+    const base: InventoryItem = { id: "item-f", storeId: "store-centro", name: "Lente", code: "LT-30", quantity: 3, minimumQuantity: 1, category: "LENS", fiscal: { ncm: "90011000", cfop: "6108" } };
+    const variant = await service.createVariant(base, { attributes: { lensIndex: "1.67" }, quantity: 1 });
+    expect(variant.fiscal).toEqual({ ncm: "90011000", cfop: "6108" });
+    expect(variant.fiscal).not.toBe(base.fiscal);
   });
 });

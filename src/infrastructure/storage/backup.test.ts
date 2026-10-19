@@ -196,6 +196,12 @@ describe("encrypted backup and transactional restore", () => {
     expect(() => validateBackup(withAttributes)).not.toThrow();
     const badAttributes = structuredClone(snapshot); (badAttributes.tables.inventoryItems[0] as { variantAttributes?: unknown }).variantAttributes = { lensIndex: 42 };
     expect(() => validateBackup(badAttributes)).toThrow("inválido");
+    const withFiscal = structuredClone(snapshot); (withFiscal.tables.inventoryItems[0] as { fiscal?: unknown }).fiscal = { ncm: "90011000", cfop: "6108", cest: "0300700", unit: "UN" };
+    expect(() => validateBackup(withFiscal)).not.toThrow();
+    const badFiscalNcm = structuredClone(snapshot); (badFiscalNcm.tables.inventoryItems[0] as { fiscal?: unknown }).fiscal = { ncm: 90011000 };
+    expect(() => validateBackup(badFiscalNcm)).toThrow("inválido");
+    const badFiscalUnit = structuredClone(snapshot); (badFiscalUnit.tables.inventoryItems[0] as { fiscal?: unknown }).fiscal = { unit: "TON" };
+    expect(() => validateBackup(badFiscalUnit)).toThrow("inválido");
     const withReason = structuredClone(snapshot);
     withReason.tables.cashEntries[0] = { ...withReason.tables.cashEntries[0], type: "DEPOSIT" as never, reason: "Troco do banco", author: "Operadora" };
     expect(() => validateBackup(withReason)).not.toThrow();

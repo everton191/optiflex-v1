@@ -1,7 +1,7 @@
 import { rolePermissions, type RoleKey } from "./access";
 import { paymentMethodLabels } from "./cash";
 import { isAttendancePriority } from "./customer";
-import { isProductCategory } from "./inventory";
+import { isFiscalUnit, isProductCategory } from "./inventory";
 import { prescriptionUsageLabels } from "./clinical";
 import { quoteStatusLabels } from "./sales";
 import { isTaxRegime, isValidCnae, isValidCnpj, isValidRegistrationCode } from "./organization";
@@ -111,6 +111,12 @@ export function validateBackup(value: unknown): BackupSnapshot {
         const attributes = row.variantAttributes;
         if (!object(attributes)) throw invalid();
         for (const field of ["color", "size", "material", "lensIndex", "treatment"]) if ((attributes as Record<string, unknown>)[field] !== undefined && typeof (attributes as Record<string, unknown>)[field] !== "string") throw invalid();
+      }
+      if (name === "inventoryItems" && row.fiscal !== undefined) {
+        const fiscal = row.fiscal;
+        if (!object(fiscal)) throw invalid();
+        for (const field of ["ncm", "cfop", "cest"]) if ((fiscal as Record<string, unknown>)[field] !== undefined && typeof (fiscal as Record<string, unknown>)[field] !== "string") throw invalid();
+        if ((fiscal as Record<string, unknown>).unit !== undefined && !isFiscalUnit((fiscal as Record<string, unknown>).unit)) throw invalid();
       }
       if (name === "attendances" && row.priority !== undefined && !isAttendancePriority(row.priority)) throw invalid();
       if (name === "sales" && row.items !== undefined && (!Array.isArray(row.items) || row.items.some((item) => !object(item) || typeof item.inventoryItemId !== "string" || typeof item.name !== "string" || typeof item.quantity !== "number" || !Number.isFinite(item.quantity) || item.quantity <= 0 || typeof item.unitPrice !== "number" || !Number.isFinite(item.unitPrice) || item.unitPrice < 0))) throw invalid();

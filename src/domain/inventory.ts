@@ -25,6 +25,74 @@ export interface InventoryItem {
   material?: string;
   description?: string;
   variantAttributes?: ProductVariantAttributes;
+  fiscal?: ProductFiscalFields;
+}
+
+export const fiscalUnits = ["UN", "CX", "KG", "M", "PAR", "KIT"] as const;
+export type FiscalUnit = (typeof fiscalUnits)[number];
+export const fiscalUnitLabels: Record<FiscalUnit, string> = { UN: "Unidade (UN)", CX: "Caixa (CX)", KG: "Quilo (KG)", M: "Metro (M)", PAR: "Par (PAR)", KIT: "Kit (KIT)" };
+
+export function isFiscalUnit(value: unknown): value is FiscalUnit {
+  return typeof value === "string" && (fiscalUnits as readonly string[]).includes(value);
+}
+
+export interface ProductFiscalFields {
+  ncm?: string;
+  cfop?: string;
+  cest?: string;
+  unit?: FiscalUnit;
+}
+
+export interface ProductFiscalInput {
+  ncm?: string;
+  cfop?: string;
+  cest?: string;
+  unit?: string;
+}
+
+export function onlyDigits(value: string): string {
+  return value.replace(/\D/g, "");
+}
+
+export function formatNcm(value: string): string {
+  const digits = onlyDigits(value).slice(0, 8);
+  return digits.length > 6 ? `${digits.slice(0, 4)}.${digits.slice(4, 6)}.${digits.slice(6)}` : digits.length > 4 ? `${digits.slice(0, 4)}.${digits.slice(4)}` : digits;
+}
+
+export function formatCest(value: string): string {
+  const digits = onlyDigits(value).slice(0, 7);
+  return digits.length > 5 ? `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5)}` : digits.length > 2 ? `${digits.slice(0, 2)}.${digits.slice(2)}` : digits;
+}
+
+export function normalizeProductFiscal(input: ProductFiscalInput): ProductFiscalFields {
+  const ncm = onlyDigits(input.ncm?.trim() ?? "");
+  const cfop = onlyDigits(input.cfop?.trim() ?? "");
+  const cest = onlyDigits(input.cest?.trim() ?? "");
+  const unit = input.unit?.trim();
+  if (ncm && ncm.length !== 8) throw new Error("NCM deve ter 8 dígitos.");
+  if (cfop && cfop.length !== 4) throw new Error("CFOP deve ter 4 dígitos.");
+  if (cest && cest.length !== 7) throw new Error("CEST deve ter 7 dígitos.");
+  if (unit && !isFiscalUnit(unit)) throw new Error("Selecione uma unidade fiscal válida.");
+  const fiscal: ProductFiscalFields = {};
+  if (ncm) fiscal.ncm = ncm;
+  if (cfop) fiscal.cfop = cfop;
+  if (cest) fiscal.cest = cest;
+  if (unit) fiscal.unit = unit as FiscalUnit;
+  return fiscal;
+}
+
+export function hasProductFiscal(fiscal: ProductFiscalFields | undefined): fiscal is ProductFiscalFields {
+  return Boolean(fiscal && (fiscal.ncm || fiscal.cfop || fiscal.cest || fiscal.unit));
+}
+
+export function fiscalSummary(fiscal: ProductFiscalFields | undefined): string {
+  if (!fiscal) return "";
+  const parts: string[] = [];
+  if (fiscal.ncm) parts.push(`NCM ${formatNcm(fiscal.ncm)}`);
+  if (fiscal.cfop) parts.push(`CFOP ${fiscal.cfop}`);
+  if (fiscal.cest) parts.push(`CEST ${formatCest(fiscal.cest)}`);
+  if (fiscal.unit) parts.push(fiscalUnitLabels[fiscal.unit]);
+  return parts.join(" · ");
 }
 
 export type VariantField = "color" | "size" | "material" | "lensIndex" | "treatment";
