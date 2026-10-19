@@ -40,3 +40,13 @@ Fluxos de ponta a ponta usados pela equipe e por testes manuais. Cada fluxo refe
 4. **Usuário**: cria um OWNER (nome, e-mail e senha) ligado à loja criada ou a todas as ativas; pode ser pulado.
 5. **Produtos iniciais**: adiciona um ou mais itens (nome, código opcional, categoria, saldo inicial, estoque mínimo e preço opcional) direto no catálogo da loja; "Concluir produtos" ou "Pular esta etapa".
 6. **Revisão**: mostra organização, loja, usuário, produtos e etapas puladas; "Concluir e ir para o dashboard" leva à home. Cada etapa salva ao avançar — fechar o navegador no meio não perde o que já foi gravado; o assistente pode ser refeito a qualquer momento.
+
+## Importação de produtos por CSV (F2-16, `db1ade9`)
+
+1. Usuário com permissão de gerenciar estoque abre **Estoque** e clica em **Importar CSV** no cabeçalho da seção de produtos; escolhe um arquivo `.csv` (exemplo pronto: [`IMPORT_EXAMPLE.csv`](./IMPORT_EXAMPLE.csv)).
+2. Colunas obrigatórias: **nome**, **código**, **categoria** (rótulo "Armação"/"Lente"/"Acesso" ou código FRAME/LENS/ACCESSORY). Opcionais: **quantidade**, **estoque mínimo**, **preço**, **custo**, **marca**, **material**, **descrição** — cabeçalhos no plural/singular, com ou sem acento, em pt-BR ou inglês são reconhecidos (ex.: `nome`/`product`, `código`/`sku`, `preço`/`price`).
+3. **Arquivo inválido é rejeitado com motivo** antes de qualquer prévia: vazio, sem cabeçalho, colunas obrigatórias ausentes (lista quais), sem linhas de dados ou aspas não fechadas.
+4. A **prévia** abre em diálogo com as contagens (prontas, existentes, duplicadas, com erro) e cada linha com seu status: `READY`, `ERROR` (motivo por célula — nome vazio, código/quantidade/categoria/preço inválidos, saldo acima do disponível), `DUPLICATE_IN_FILE` (mesmo código repetido no arquivo) ou `EXISTS` (código já cadastrado na loja). As 30 primeiras linhas são exibidas.
+5. Marcar **Atualizar produtos já existentes pelo código (cadastro e preços; o saldo atual não é alterado)** faz as linhas `EXISTS` atualizarem o cadastro e os preços pelo código — **o saldo nunca é alterado** pela importação, e células em branco preservam o valor cadastrado.
+6. Confirmar aplica tudo em **uma transação única**: se algo falhar no meio, nada é gravado (rollback) e o erro aparece. No sucesso, a tela informa quantos produtos foram **criados, atualizados e ignorados**, e cada item criado recebe um movimento "Importação de planilha" com o saldo inicial. Linhas com erro ou duplicadas são simplesmente puladas (corrige o CSV e importa de novo).
+

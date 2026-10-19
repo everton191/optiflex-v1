@@ -6,6 +6,12 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `db1ade9` + docs — Importação de produtos por CSV (F2-16)
+
+- `src/domain/inventory-import.ts`: `parseCsv` (RFC4180: aspas, `""`, vírgulas, CRLF, BOM, linhas vazias) com `InvalidImportError` motivado; `mapImportColumns` com aliases pt-BR/inglês (`nome`/`product`, `código`/`sku`, `preço`/`price`…); `parseImportNumber` pt-BR (`1.234,56`, `R$ 12,50`); `parseImportCategory` aceita rótulo ou código.
+- `previewInventoryImport`: status por linha `READY`/`ERROR` (motivos por célula)/`DUPLICATE_IN_FILE`/`EXISTS` e rejeição com lista de colunas obrigatórias ausentes; `applyInventoryImport`: pré-validação de códigos e criação em **lote transacional único** (`createMany` com movimento "Importação de planilha"; falha = rollback, nenhum update) + atualização opcional por código preservando saldo e células vazias (`rawCells`).
+- `InventoryRepository.createMany` + implementação Dexie em transação `rw` (risco do card); UI no Estoque: "Importar CSV" → prévia em Dialog (contagens, motivos, 30 primeiras linhas, checkbox de atualização) e resultado criados/atualizados/ignorados; +13 testes de parser/mapeamento/preview/aplicação (inclui falha de transação); 439/439, build 0, tsc 0.
+
 ### `c124ede` + docs — Campos fiscais dos produtos (F2-15)
 
 - `InventoryItem.fiscal?` (`ProductFiscalFields`: NCM, CFOP, CEST, unidade fiscal) opcional e sem bump Dexie; `fiscalUnits` UN/CX/KG/M/PAR/KIT.
