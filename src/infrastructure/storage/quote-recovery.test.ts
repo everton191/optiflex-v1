@@ -9,6 +9,7 @@ const inventoryStub: InventoryRepository = {
   listByStore: async () => [],
   listMovements: async () => [],
   createItem: async () => {},
+  createMany: async () => {},
   updateItem: async () => {},
   applyMovement: async () => { throw new Error("unused"); },
   applyReservation: async (itemId, storeId) => ({ id: itemId, storeId, name: "Produto", quantity: 99, minimumQuantity: 0 })

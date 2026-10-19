@@ -147,6 +147,9 @@ textarea { min-height: 6rem; }
 .cash-totals small { color: var(--color-muted); }
 .cash-totals strong { font-size: 1rem; }
 .inventory-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: var(--space-3); align-items: end; max-width: 58rem; margin-block: var(--space-4); }
+.inventory-section-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); margin-top: var(--space-8); }
+.inventory-section-head .section-title { margin-top: 0; }
+.import-preview-list { max-height: 18rem; overflow-y: auto; }
 .inventory-form .form-fieldset { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-sm); margin: 0; padding: var(--space-3) var(--space-4) var(--space-4); }
 .form-fieldset legend { font-weight: 700; font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; color: var(--color-muted); padding: 0 var(--space-2); }
 .form-fieldset label { display: grid; gap: var(--space-2); font-weight: 600; }

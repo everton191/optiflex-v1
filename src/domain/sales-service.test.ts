@@ -9,6 +9,7 @@ const inventoryStub: InventoryRepository = {
   listByStore: vi.fn(async () => []),
   listMovements: vi.fn(async () => []),
   createItem: vi.fn(async () => {}),
+  createMany: vi.fn(async () => {}),
   updateItem: vi.fn(async () => {}),
   applyMovement: vi.fn(async () => { throw new Error("unused"); }),
   applyReservation: vi.fn(async (itemId: string, storeId: string) => ({ id: itemId, storeId, name: "Produto", quantity: 99, minimumQuantity: 0 }))

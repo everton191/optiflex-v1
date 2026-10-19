@@ -317,6 +317,30 @@ export class LocalInventoryRepository implements InventoryRepository {
       }
     });
   }
+  async createMany(items: InventoryItem[], initialMovements: InventoryMovement[]): Promise<void> {
+    if (!items.length) throw new Error("Nenhum produto para importar.");
+    for (const item of items) assertRecordAccess(item);
+    for (const movement of initialMovements) assertRecordAccess(movement);
+    return database.transaction("rw", database.inventoryItems, database.inventoryMovements, async () => {
+      const storeIds = [...new Set(items.map((item) => item.storeId))];
+      const existing = await database.inventoryItems.where("storeId").anyOf(storeIds).toArray();
+      const byId = new Set(existing.map((item) => item.id));
+      const codes = new Set(existing.map((item) => `${item.storeId}:${item.code?.trim().toLowerCase() ?? ""}`));
+      for (const item of items) {
+        if (byId.has(item.id)) throw new Error("Produto já cadastrado.");
+        const codeKey = `${item.storeId}:${item.code?.trim().toLowerCase() ?? ""}`;
+        if (codes.has(codeKey)) throw new Error(`Código já cadastrado nesta loja: ${item.code}.`);
+        byId.add(item.id);
+        codes.add(codeKey);
+        await database.inventoryItems.put(item);
+      }
+      for (const movement of initialMovements) {
+        const owner = items.find((item) => item.id === movement.itemId);
+        if (!owner || movement.itemId !== owner.id || movement.storeId !== owner.storeId) throw new Error("Movimentação inicial incompatível com o produto.");
+        await database.inventoryMovements.put(movement);
+      }
+    });
+  }
   async updateItem(item: InventoryItem): Promise<void> {
     assertRecordAccess(item);
     return database.transaction("rw", database.inventoryItems, async () => {

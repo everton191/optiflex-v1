@@ -6,6 +6,7 @@ import { InventoryService } from "../domain/inventory-service";
 import { AuditService } from "../domain/audit-service";
 import type { InventoryItem, InventoryMovement, InventoryMovementType, ProductCategory, ProductCategoryFilter, VariantField, FiscalUnit } from "../domain/inventory";
 import { availableQuantity, filterByCategory, filterByVariantField, fiscalSummary, fiscalUnitLabels, fiscalUnits, formatCest, formatNcm, hasVariantAttributes, marginCents, normalizeVariantAttributes, productCategories, productCategoryLabels, stockState, variantFieldLabels, variantFieldsByCategory, variantFieldOptions, variantSummary } from "../domain/inventory";
+import { InvalidImportError, applyInventoryImport, previewInventoryImport, type ImportPreview } from "../domain/inventory-import";
 import type { Transfer, TransferItem } from "../domain/transfer";
 import { transferStatusLabels } from "../domain/transfer";
 import { TransferService } from "../domain/transfer-service";
@@ -17,6 +18,7 @@ import { useAppContext, useSession } from "./providers";
 const service = new InventoryService(new LocalInventoryRepository(), new AuditService(new LocalAuditRepository()));
 const transferService = new TransferService(new LocalTransferRepository(), new LocalInventoryRepository(), new AuditService(new LocalAuditRepository()));
 const serviceCatalog = new ServiceCatalogService(new LocalServiceCatalogRepository());
+const importRepository = new LocalInventoryRepository();
 const stateLabels = { OK: "Disponível", LOW: "Abaixo do mínimo", OUT: "Esgotado" } as const;
 const stateClasses = { OK: "", LOW: "is-low", OUT: "is-out" } as const;
 const movementLabels = { IN: "Entrada", OUT: "Saída", ADJUSTMENT: "Ajuste" } as const;
@@ -80,6 +82,10 @@ export function InventoryPage() {
   const [servicePrice, setServicePrice] = useState("");
   const [serviceDescription, setServiceDescription] = useState("");
   const [editingServiceId, setEditingServiceId] = useState("");
+  const [importPreview, setImportPreview] = useState<ImportPreview>();
+  const [importFileName, setImportFileName] = useState("");
+  const [importUpdateExisting, setImportUpdateExisting] = useState(false);
+  const importFileRef = useRef<HTMLInputElement>(null);
   const pending = useRef(false);
 
   async function refresh() {
@@ -203,6 +209,30 @@ export function InventoryPage() {
     }, "Não foi possível remover o serviço.");
   }
 
+  const importStatusLabels = { READY: "Pronto", ERROR: "Erro", EXISTS: "Já existe", DUPLICATE_IN_FILE: "Repetido" } as const;
+  const importAppliable = (importPreview?.readyCount ?? 0) + (importUpdateExisting ? (importPreview?.updateCount ?? 0) : 0);
+
+  async function readImportFile(file: File) {
+    setImportFileName(file.name); setImportPreview(undefined);
+    try {
+      const text = await file.text();
+      setImportPreview(previewInventoryImport(text, items));
+    } catch (reason) {
+      setError(reason instanceof InvalidImportError ? `Importação rejeitada: ${reason.message}` : errorMessage(reason, "Não foi possível ler o arquivo."));
+    }
+  }
+
+  function closeImportDialog() { setImportPreview(undefined); setImportFileName(""); setImportUpdateExisting(false); if (importFileRef.current) importFileRef.current.value = ""; }
+
+  async function confirmImport() {
+    if (!importPreview) return;
+    await run(async () => {
+      const result = await applyInventoryImport(importRepository, currentStoreId, importPreview, { updateExisting: importUpdateExisting, author: session.userName });
+      closeImportDialog();
+      return `Importação concluída: ${result.created} criado(s), ${result.updated} atualizado(s), ${result.skipped} ignorado(s).`;
+    }, "Não foi possível concluir a importação.");
+  }
+
   const alerts = items.filter((item) => stockState(item) !== "OK");
   const categoryItems = filterByCategory(items, catalogFilter);
   const [filterFieldRaw, filterValue] = attributeFilter.split(":");
@@ -218,6 +248,23 @@ export function InventoryPage() {
     {message && <p className="notice success" role="status">{message}</p>}
     {error && <p className="notice error-text" role="alert">{error} <Button type="button" onClick={retry}>Tentar novamente</Button></p>}
     {alerts.length > 0 && <p className="notice error-text" role="status">{alerts.length} {alerts.length === 1 ? "produto está" : "produtos estão"} no limite mínimo ou esgotado{alerts.length === 1 ? "" : "s"}.</p>}
+
+    {canManage && <Dialog open={Boolean(importPreview)} onClose={closeImportDialog} title={`Prévia da importação${importFileName ? ` — ${importFileName}` : ""}`}>
+      {importPreview && <>
+        <p role="status">{importPreview.rows.length} linha(s) lida(s): {importPreview.readyCount} pronta(s) · {importPreview.updateCount} já existente(s) · {importPreview.errorCount} com erro · {importPreview.duplicateCount} repetida(s).</p>
+        {importPreview.errorCount > 0 && <p className="notice error-text">Linhas com erro serão ignoradas: {importPreview.rows.filter((row) => row.status === "ERROR").slice(0, 5).map((row) => `linha ${row.line} (${row.messages[0]})`).join("; ")}{importPreview.errorCount > 5 ? ` e mais ${importPreview.errorCount - 5}` : ""}.</p>}
+        <div className="list-card compact-list import-preview-list">{importPreview.rows.slice(0, 30).map((row) => <article className="list-row" key={`${row.line}-${row.code}`}>
+          <div><strong>{row.name || "— sem nome —"}</strong><span>Linha {row.line} · {row.code || "— sem código —"} · {row.category ? productCategoryLabels[row.category] : "—"} · saldo {row.quantity}</span>{row.messages.length > 0 && <span className="help-text">{row.messages.join(" ")}</span>}</div>
+          <div><span className={`badge${row.status === "ERROR" ? " is-out" : row.status === "READY" ? "" : " is-low"}`}>{importStatusLabels[row.status]}</span></div>
+        </article>)}</div>
+        {importPreview.rows.length > 30 && <p className="help-text">Mostrando as primeiras 30 de {importPreview.rows.length} linhas.</p>}
+        <label className="check-label"><input type="checkbox" checked={importUpdateExisting} onChange={(event) => setImportUpdateExisting(event.target.checked)} /> Atualizar produtos já existentes pelo código (cadastro e preços; o saldo atual não é alterado)</label>
+        <div className="form-actions">
+          <Button type="button" onClick={() => void confirmImport()} disabled={importAppliable === 0}>Importar {importAppliable} produto(s)</Button>
+          <Button type="button" onClick={closeImportDialog}>Cancelar</Button>
+        </div>
+      </>}
+    </Dialog>}
 
     {canManage && formOpen && <form className="inventory-form" onSubmit={saveProduct}>
       <label>Produto<Input value={name} onChange={(event) => setName(event.target.value)} required /></label>
@@ -271,7 +318,11 @@ export function InventoryPage() {
       </div>
     </form>}</Drawer>}
 
-    <h2 className="section-title">Produtos</h2>
+    <div className="inventory-section-head">
+      <h2 className="section-title">Produtos</h2>
+      {canManage && <Button type="button" onClick={() => { closeImportDialog(); importFileRef.current?.click(); }}>Importar CSV</Button>}
+      <input ref={importFileRef} type="file" accept=".csv,text/csv" hidden aria-label="Arquivo CSV de produtos" onChange={(event) => { const file = event.target.files?.[0]; if (file) void readImportFile(file); }} />
+    </div>
     <div className="status-filters" role="tablist" aria-label="Filtrar produtos por categoria">
       <button type="button" role="tab" aria-selected={catalogFilter === "ALL"} className={catalogFilter === "ALL" ? "active" : ""} onClick={() => { setCatalogFilter("ALL"); setAttributeFilter(""); }}>Todas <span>{items.length}</span></button>
       {productCategories.map((value) => <button type="button" role="tab" key={value} aria-selected={catalogFilter === value} className={catalogFilter === value ? "active" : ""} onClick={() => { setCatalogFilter(value); setAttributeFilter(""); }}>{productCategoryLabels[value]} <span>{items.filter((item) => item.category === value).length}</span></button>)}

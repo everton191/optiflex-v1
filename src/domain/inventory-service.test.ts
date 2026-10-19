@@ -4,7 +4,7 @@ import { AuditService } from "./audit-service";
 import type { InventoryItem } from "./inventory";
 import { filterByCategory, filterByVariantField, fiscalSummary, formatCest, formatNcm, hasProductFiscal, hasVariantAttributes, marginCents, movementDelta, normalizeProductFiscal, normalizeVariantAttributes, stockState, variantCodeSuffix, variantFieldOptions, variantSummary, buildVariantName } from "./inventory";
 
-const repository = { listByStore: vi.fn(), listMovements: vi.fn(), createItem: vi.fn(), updateItem: vi.fn(), applyMovement: vi.fn(), applyReservation: vi.fn() };
+const repository = { listByStore: vi.fn(), listMovements: vi.fn(), createItem: vi.fn(), createMany: vi.fn(), updateItem: vi.fn(), applyMovement: vi.fn(), applyReservation: vi.fn() };
 const service = new InventoryService(repository);
 const item: InventoryItem = { id: "item-1", storeId: "store-centro", name: "Armação", quantity: 10, minimumQuantity: 3, category: "FRAME" };
 beforeEach(() => { vi.resetAllMocks(); repository.listByStore.mockResolvedValue([]); });
