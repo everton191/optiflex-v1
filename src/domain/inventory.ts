@@ -24,6 +24,67 @@ export interface InventoryItem {
   brand?: string;
   material?: string;
   description?: string;
+  variantAttributes?: ProductVariantAttributes;
+}
+
+export type VariantField = "color" | "size" | "material" | "lensIndex" | "treatment";
+
+export const variantFieldLabels: Record<VariantField, string> = { color: "Cor", size: "Tamanho", material: "Material", lensIndex: "Índice", treatment: "Tratamento" };
+
+export const variantFieldsByCategory: Record<ProductCategory, readonly VariantField[]> = {
+  FRAME: ["color", "size", "material"],
+  LENS: ["lensIndex", "treatment"],
+  ACCESSORY: ["color", "material"]
+};
+
+export interface ProductVariantAttributes {
+  color?: string;
+  size?: string;
+  material?: string;
+  lensIndex?: string;
+  treatment?: string;
+}
+
+export function normalizeVariantAttributes(category: ProductCategory, input: Partial<ProductVariantAttributes>): ProductVariantAttributes {
+  const allowed = variantFieldsByCategory[category] ?? [];
+  const normalized: ProductVariantAttributes = {};
+  for (const field of allowed) {
+    const value = input[field]?.trim();
+    if (value) normalized[field] = value;
+  }
+  return normalized;
+}
+
+export function hasVariantAttributes(attributes: ProductVariantAttributes | undefined): attributes is ProductVariantAttributes {
+  return Boolean(attributes && Object.values(attributes).some((value) => Boolean(value?.trim())));
+}
+
+export function variantSummary(attributes: ProductVariantAttributes | undefined): string {
+  if (!attributes) return "";
+  return (Object.keys(variantFieldLabels) as VariantField[]).flatMap((field) => { const value = attributes[field]?.trim(); return value ? [`${variantFieldLabels[field]} ${value}`] : []; }).join(" · ");
+}
+
+export function buildVariantName(baseName: string, attributes: ProductVariantAttributes): string {
+  const summary = variantSummary(attributes);
+  return summary ? `${baseName.trim()} · ${summary}` : baseName.trim();
+}
+
+export function variantCodeSuffix(attributes: ProductVariantAttributes): string {
+  return (Object.keys(variantFieldLabels) as VariantField[]).flatMap((field) => { const value = attributes[field]?.trim(); return value ? [value.toUpperCase().replace(/[^A-ZÀ-Ú0-9]+/g, "-")] : []; }).join("-");
+}
+
+export function filterByVariantField(items: readonly InventoryItem[], field: VariantField, value: string): InventoryItem[] {
+  const needle = value.trim().toLowerCase();
+  return items.filter((item) => item.variantAttributes?.[field]?.trim().toLowerCase() === needle);
+}
+
+export function variantFieldOptions(items: readonly InventoryItem[], field: VariantField): string[] {
+  const values = new Set<string>();
+  for (const item of items) {
+    const value = item.variantAttributes?.[field]?.trim();
+    if (value) values.add(value);
+  }
+  return [...values].sort((a, b) => a.localeCompare(b, "pt-BR"));
 }
 
 export function filterByCategory(items: readonly InventoryItem[], filter: ProductCategoryFilter): InventoryItem[] {

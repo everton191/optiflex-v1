@@ -107,6 +107,11 @@ export function validateBackup(value: unknown): BackupSnapshot {
       if (name === "inventoryItems" && row.reservedQuantity !== undefined && (typeof row.reservedQuantity !== "number" || !Number.isFinite(row.reservedQuantity) || row.reservedQuantity < 0)) throw invalid();
       if (name === "inventoryItems" && row.cost !== undefined && (typeof row.cost !== "number" || !Number.isFinite(row.cost) || row.cost < 0)) throw invalid();
       if (name === "inventoryItems" && row.category !== undefined && !isProductCategory(row.category)) throw invalid();
+      if (name === "inventoryItems" && row.variantAttributes !== undefined) {
+        const attributes = row.variantAttributes;
+        if (!object(attributes)) throw invalid();
+        for (const field of ["color", "size", "material", "lensIndex", "treatment"]) if ((attributes as Record<string, unknown>)[field] !== undefined && typeof (attributes as Record<string, unknown>)[field] !== "string") throw invalid();
+      }
       if (name === "attendances" && row.priority !== undefined && !isAttendancePriority(row.priority)) throw invalid();
       if (name === "sales" && row.items !== undefined && (!Array.isArray(row.items) || row.items.some((item) => !object(item) || typeof item.inventoryItemId !== "string" || typeof item.name !== "string" || typeof item.quantity !== "number" || !Number.isFinite(item.quantity) || item.quantity <= 0 || typeof item.unitPrice !== "number" || !Number.isFinite(item.unitPrice) || item.unitPrice < 0))) throw invalid();
       if (name === "sales" && row.items !== undefined && Array.isArray(row.items)) for (const item of row.items as Record<string, unknown>[]) if (item.category !== undefined && !isProductCategory(item.category)) throw invalid();

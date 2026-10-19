@@ -2,7 +2,7 @@
 import { InventoryService } from "./inventory-service";
 import { AuditService } from "./audit-service";
 import type { InventoryItem } from "./inventory";
-import { filterByCategory, marginCents, movementDelta, stockState } from "./inventory";
+import { filterByCategory, filterByVariantField, hasVariantAttributes, marginCents, movementDelta, normalizeVariantAttributes, stockState, variantCodeSuffix, variantFieldOptions, variantSummary, buildVariantName } from "./inventory";
 
 const repository = { listByStore: vi.fn(), listMovements: vi.fn(), createItem: vi.fn(), updateItem: vi.fn(), applyMovement: vi.fn(), applyReservation: vi.fn() };
 const service = new InventoryService(repository);
@@ -229,5 +229,80 @@ describe("adjustments respect reserved stock", () => {
     repository.applyMovement.mockResolvedValue({ ...reserved, quantity: 4 });
     const updated = await service.adjust(reserved, "OUT", 1, "Ajuste manual", "Operador");
     expect(updated.quantity).toBe(4);
+  });
+});
+
+describe("variant attributes", () => {
+  it("keeps only the fields allowed for the category", () => {
+    expect(normalizeVariantAttributes("FRAME", { color: " preta ", size: "52", lensIndex: "1.60", material: "" })).toEqual({ color: "preta", size: "52" });
+    expect(normalizeVariantAttributes("LENS", { color: "preta", lensIndex: "1.60", treatment: " Antirreflexo " })).toEqual({ lensIndex: "1.60", treatment: "Antirreflexo" });
+    expect(normalizeVariantAttributes("ACCESSORY", { color: "azul", size: "P" })).toEqual({ color: "azul" });
+  });
+
+  it("builds name, code suffix and summary from the filled attributes", () => {
+    const attributes = { color: "preta", size: "52", material: "metal" };
+    expect(buildVariantName("Armação Rayban", attributes)).toBe("Armação Rayban · Cor preta · Tamanho 52 · Material metal");
+    expect(variantSummary(attributes)).toBe("Cor preta · Tamanho 52 · Material metal");
+    expect(variantCodeSuffix(attributes)).toBe("PRETA-52-METAL");
+    expect(hasVariantAttributes(attributes)).toBe(true);
+    expect(hasVariantAttributes({})).toBe(false);
+    expect(hasVariantAttributes(undefined)).toBe(false);
+  });
+
+  it("filters and lists options per attribute field", () => {
+    const items: InventoryItem[] = [
+      { ...item, id: "a", variantAttributes: { color: "preta", size: "52" } },
+      { ...item, id: "b", variantAttributes: { color: " dourada ", size: "50" } },
+      { ...item, id: "c" }
+    ];
+    expect(filterByVariantField(items, "color", "PRETA").map((entry) => entry.id)).toEqual(["a"]);
+    expect(variantFieldOptions(items, "size")).toEqual(["50", "52"]);
+  });
+});
+
+describe("variant creation", () => {
+  const base: InventoryItem = { ...item, code: "AR-1", brand: "Rayban", material: "Acetato", defaultPrice: 300, cost: 150 };
+
+  it("creates a sibling item with its own stock, code and initial movement", async () => {
+    repository.listByStore.mockResolvedValue([base]);
+    repository.createItem.mockResolvedValue(undefined);
+    const created = await service.createVariant(base, { attributes: { color: " preta ", size: "52" }, quantity: 4 }, "Operador");
+    expect(created).toMatchObject({ storeId: "store-centro", name: "Armação · Cor preta · Tamanho 52", code: "AR-1-PRETA-52", quantity: 4, category: "FRAME", brand: "Rayban", defaultPrice: 300, cost: 150, variantAttributes: { color: "preta", size: "52" } });
+    expect(created.id).not.toBe(base.id);
+    const [stored, initial] = repository.createItem.mock.calls[0];
+    expect(stored.id).not.toBe(base.id);
+    expect(initial).toMatchObject({ itemId: stored.id, type: "IN", quantity: 4, reason: "Estoque inicial da variante", author: "Operador" });
+  });
+
+  it("keeps the base material when the variant does not override it and honours an explicit code", async () => {
+    repository.listByStore.mockResolvedValue([base]);
+    repository.createItem.mockResolvedValue(undefined);
+    const created = await service.createVariant(base, { attributes: { color: "dourada" }, quantity: 0, code: " ar-d " });
+    expect(created).toMatchObject({ code: "AR-D", material: "Acetato", variantAttributes: { color: "dourada" } });
+    expect(repository.createItem.mock.calls[0][1]).toBeUndefined();
+  });
+
+  it("avoids a code collision by appending a numeric suffix", async () => {
+    repository.listByStore.mockResolvedValue([base, { ...item, id: "other", code: "AR-1-PRETA-52" }]);
+    repository.createItem.mockResolvedValue(undefined);
+    const created = await service.createVariant(base, { attributes: { color: "preta", size: "52" }, quantity: 1 });
+    expect(created.code).toBe("AR-1-PRETA-52-2");
+  });
+
+  it("requires a category, at least one attribute and a valid quantity", async () => {
+    await expect(service.createVariant({ ...base, category: undefined }, { attributes: { color: "preta" }, quantity: 1 })).rejects.toThrow("categoria");
+    await expect(service.createVariant(base, { attributes: { color: "  " }, quantity: 1 })).rejects.toThrow("ao menos um atributo");
+    await expect(service.createVariant(base, { attributes: { color: "preta" }, quantity: -1 })).rejects.toThrow("saldo inicial");
+    expect(repository.createItem).not.toHaveBeenCalled();
+  });
+
+  it("persists variant attributes on create and clears them on update when emptied", async () => {
+    repository.listByStore.mockResolvedValue([]);
+    repository.createItem.mockResolvedValue(undefined);
+    repository.updateItem.mockResolvedValue(undefined);
+    const created = await service.create("store-centro", { name: "Lente", code: "LT-9", quantity: 2, minimumQuantity: 1, category: "LENS", variantAttributes: { lensIndex: "1.60", treatment: "Antirreflexo", color: "verde" } });
+    expect(created.variantAttributes).toEqual({ lensIndex: "1.60", treatment: "Antirreflexo" });
+    const updated = await service.update(created, { name: "Lente", code: "LT-9", minimumQuantity: 1, category: "LENS", variantAttributes: { lensIndex: "", treatment: "" } });
+    expect(updated.variantAttributes).toBeUndefined();
   });
 });

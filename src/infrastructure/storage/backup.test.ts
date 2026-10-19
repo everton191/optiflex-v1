@@ -192,6 +192,10 @@ describe("encrypted backup and transactional restore", () => {
     expect(() => validateBackup(badReservedType)).toThrow("inválido");
     const legacyWithoutReservation = structuredClone(snapshot); delete (legacyWithoutReservation.tables.inventoryItems[0] as { reservedQuantity?: unknown }).reservedQuantity;
     expect(() => validateBackup(legacyWithoutReservation)).not.toThrow();
+    const withAttributes = structuredClone(snapshot); (withAttributes.tables.inventoryItems[0] as { variantAttributes?: unknown }).variantAttributes = { lensIndex: "1.60", treatment: "Antirreflexo" };
+    expect(() => validateBackup(withAttributes)).not.toThrow();
+    const badAttributes = structuredClone(snapshot); (badAttributes.tables.inventoryItems[0] as { variantAttributes?: unknown }).variantAttributes = { lensIndex: 42 };
+    expect(() => validateBackup(badAttributes)).toThrow("inválido");
     const withReason = structuredClone(snapshot);
     withReason.tables.cashEntries[0] = { ...withReason.tables.cashEntries[0], type: "DEPOSIT" as never, reason: "Troco do banco", author: "Operadora" };
     expect(() => validateBackup(withReason)).not.toThrow();

@@ -4,8 +4,8 @@ import { Button, DataTable, Dialog, Drawer, ErrorState, Input, Select, Skeleton 
 import { hasPermission } from "../domain/access";
 import { InventoryService } from "../domain/inventory-service";
 import { AuditService } from "../domain/audit-service";
-import type { InventoryItem, InventoryMovement, InventoryMovementType, ProductCategory, ProductCategoryFilter } from "../domain/inventory";
-import { availableQuantity, filterByCategory, marginCents, productCategories, productCategoryLabels, stockState } from "../domain/inventory";
+import type { InventoryItem, InventoryMovement, InventoryMovementType, ProductCategory, ProductCategoryFilter, VariantField } from "../domain/inventory";
+import { availableQuantity, filterByCategory, filterByVariantField, hasVariantAttributes, marginCents, normalizeVariantAttributes, productCategories, productCategoryLabels, stockState, variantFieldLabels, variantFieldsByCategory, variantFieldOptions, variantSummary } from "../domain/inventory";
 import type { Transfer, TransferItem } from "../domain/transfer";
 import { transferStatusLabels } from "../domain/transfer";
 import { TransferService } from "../domain/transfer-service";
@@ -45,6 +45,19 @@ export function InventoryPage() {
   const [brand, setBrand] = useState("");
   const [material, setMaterial] = useState("");
   const [description, setDescription] = useState("");
+  const [variantColor, setVariantColor] = useState("");
+  const [variantSize, setVariantSize] = useState("");
+  const [variantLensIndex, setVariantLensIndex] = useState("");
+  const [variantTreatment, setVariantTreatment] = useState("");
+  const [attributeFilter, setAttributeFilter] = useState("");
+  const [variantBase, setVariantBase] = useState<InventoryItem>();
+  const [vColor, setVColor] = useState("");
+  const [vSize, setVSize] = useState("");
+  const [vMaterial, setVMaterial] = useState("");
+  const [vLensIndex, setVLensIndex] = useState("");
+  const [vTreatment, setVTreatment] = useState("");
+  const [vQuantity, setVQuantity] = useState("0");
+  const [vCode, setVCode] = useState("");
   const [catalogFilter, setCatalogFilter] = useState<ProductCategoryFilter>("ALL");
   const [moving, setMoving] = useState<InventoryItem>();
   const [moveType, setMoveType] = useState<InventoryMovementType>("IN");
@@ -80,9 +93,11 @@ export function InventoryPage() {
     pending.current = true; setMessage(""); setError("");
     try { setMessage(await action()); await refresh(); } catch (reason) { setError(errorMessage(reason, fallback)); } finally { pending.current = false; }
   }
-  function resetProductForm(open: boolean) { setFormOpen(open); setEditing(undefined); setName(""); setCode(""); setQuantity(""); setMinimum(""); setDefaultPrice(""); setCost(""); setCategory(""); setBrand(""); setMaterial(""); setDescription(""); }
-  function editProduct(item: InventoryItem) { setMoving(undefined); setFormOpen(true); setEditing(item); setName(item.name); setCode(item.code ?? ""); setQuantity(String(item.quantity)); setMinimum(String(item.minimumQuantity)); setDefaultPrice(item.defaultPrice !== undefined ? String(item.defaultPrice) : ""); setCost(item.cost !== undefined ? String(item.cost) : ""); setCategory(item.category ?? ""); setBrand(item.brand ?? ""); setMaterial(item.material ?? ""); setDescription(item.description ?? ""); }
+  function resetProductForm(open: boolean) { setFormOpen(open); setEditing(undefined); setName(""); setCode(""); setQuantity(""); setMinimum(""); setDefaultPrice(""); setCost(""); setCategory(""); setBrand(""); setMaterial(""); setDescription(""); setVariantColor(""); setVariantSize(""); setVariantLensIndex(""); setVariantTreatment(""); }
+  function editProduct(item: InventoryItem) { setMoving(undefined); setFormOpen(true); setEditing(item); setName(item.name); setCode(item.code ?? ""); setQuantity(String(item.quantity)); setMinimum(String(item.minimumQuantity)); setDefaultPrice(item.defaultPrice !== undefined ? String(item.defaultPrice) : ""); setCost(item.cost !== undefined ? String(item.cost) : ""); setCategory(item.category ?? ""); setBrand(item.brand ?? ""); setMaterial(item.material ?? ""); setDescription(item.description ?? ""); setVariantColor(item.variantAttributes?.color ?? ""); setVariantSize(item.variantAttributes?.size ?? ""); setVariantLensIndex(item.variantAttributes?.lensIndex ?? ""); setVariantTreatment(item.variantAttributes?.treatment ?? ""); }
   function resetMovement() { setMoving(undefined); setMoveType("IN"); setMoveQuantity(""); setMoveReason(""); }
+  function resetVariantForm() { setVariantBase(undefined); setVColor(""); setVSize(""); setVMaterial(""); setVLensIndex(""); setVTreatment(""); setVQuantity("0"); setVCode(""); }
+  function openVariantForm(item: InventoryItem) { resetProductForm(false); resetMovement(); setVariantBase(item); }
 
   async function saveProduct(event: React.FormEvent) {
     event.preventDefault();
@@ -90,14 +105,25 @@ export function InventoryPage() {
     const sheet = { category: category as ProductCategory, brand, material, description };
     await run(async () => {
       if (editing) {
-        await service.update(editing, { name, code, minimumQuantity: Number(minimum), ...prices, ...sheet });
+        await service.update(editing, { name, code, minimumQuantity: Number(minimum), ...prices, ...sheet, variantAttributes: { color: variantColor, size: variantSize, material, lensIndex: variantLensIndex, treatment: variantTreatment } });
         resetProductForm(false);
         return "Produto atualizado.";
       }
-      await service.create(currentStoreId, { name, code, quantity: Number(quantity || 0), minimumQuantity: Number(minimum || 0), ...prices, ...sheet }, session.userName);
+      await service.create(currentStoreId, { name, code, quantity: Number(quantity || 0), minimumQuantity: Number(minimum || 0), ...prices, ...sheet, variantAttributes: { color: variantColor, size: variantSize, material, lensIndex: variantLensIndex, treatment: variantTreatment } }, session.userName);
       resetProductForm(false);
       return "Produto cadastrado.";
     }, "Não foi possível salvar o produto.");
+  }
+
+  async function saveVariant(event: React.FormEvent) {
+    event.preventDefault();
+    const base = variantBase;
+    if (!base) return;
+    await run(async () => {
+      await service.createVariant(base, { attributes: { color: vColor, size: vSize, material: vMaterial, lensIndex: vLensIndex, treatment: vTreatment }, quantity: Number(vQuantity || 0), code: vCode || undefined }, session.userName);
+      resetVariantForm();
+      return `Variante de "${base.name}" cadastrada com saldo próprio.`;
+    }, "Não foi possível criar a variante.");
   }
 
   async function applyMovement(event: React.FormEvent) {
@@ -173,7 +199,11 @@ export function InventoryPage() {
   }
 
   const alerts = items.filter((item) => stockState(item) !== "OK");
-  const visibleItems = filterByCategory(items, catalogFilter);
+  const categoryItems = filterByCategory(items, catalogFilter);
+  const [filterFieldRaw, filterValue] = attributeFilter.split(":");
+  const filterField = (variantFieldLabels[filterFieldRaw as VariantField] ? filterFieldRaw : "") as "" | VariantField;
+  const visibleItems = filterField && filterValue ? filterByVariantField(categoryItems, filterField, filterValue) : categoryItems;
+  const filterOptions = (Object.keys(variantFieldLabels) as VariantField[]).flatMap((field) => variantFieldOptions(categoryItems, field).map((value) => ({ field, value, label: `${variantFieldLabels[field]}: ${value}` })));
   const itemName = (id: string) => items.find((item) => item.id === id)?.name ?? "Produto removido";
   return <div className="page inventory-page">
     <div className="page-title">
@@ -194,6 +224,15 @@ export function InventoryPage() {
       <label>Custo (R$)<Input type="number" min="0" step="0.01" value={cost} onChange={(event) => setCost(event.target.value)} placeholder="Opcional" /></label>
       <label>Marca<Input value={brand} onChange={(event) => setBrand(event.target.value)} placeholder="Opcional" /></label>
       <label>Material<Input value={material} onChange={(event) => setMaterial(event.target.value)} placeholder="Opcional" /></label>
+      {category === "FRAME" && <>
+        <label>Cor<Input value={variantColor} onChange={(event) => setVariantColor(event.target.value)} placeholder="Opcional (ex.: preta, dourada)" /></label>
+        <label>Tamanho<Input value={variantSize} onChange={(event) => setVariantSize(event.target.value)} placeholder="Opcional (ex.: 52, infantil)" /></label>
+      </>}
+      {category === "LENS" && <>
+        <label>Índice<Input value={variantLensIndex} onChange={(event) => setVariantLensIndex(event.target.value)} placeholder="Opcional (ex.: 1.60)" /></label>
+        <label>Tratamento<Input value={variantTreatment} onChange={(event) => setVariantTreatment(event.target.value)} placeholder="Opcional (ex.: antirreflexo)" /></label>
+      </>}
+      {category === "ACCESSORY" && <label>Cor<Input value={variantColor} onChange={(event) => setVariantColor(event.target.value)} placeholder="Opcional" /></label>}
       <label>Descrição<Input value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Opcional (ficha: grau, curvatura, etc.)" /></label>
       <div className="form-actions">
         <Button type="submit">{editing ? "Salvar alterações" : "Cadastrar produto"}</Button>
@@ -201,6 +240,14 @@ export function InventoryPage() {
       </div>
       {editing && <p className="help-text">O saldo não é editado aqui: use Movimentar para registrar entrada, saída ou ajuste com motivo.</p>}
     </form>}
+
+    {canManage && <Drawer open={Boolean(variantBase)} onClose={resetVariantForm} title={variantBase ? `Criar variante de ${variantBase.name}` : "Criar variante"}>{variantBase && variantBase.category && <form className="inventory-form" onSubmit={saveVariant}>
+      <p className="help-text inventory-moving">A variante vira um item de estoque <strong>próprio</strong>, com saldo, código e movimentações separados de <strong>{variantBase.name}</strong>.</p>
+      {variantFieldsByCategory[variantBase.category].map((field) => <label key={field}>{variantFieldLabels[field]}{field === "material" ? <Input value={vMaterial} onChange={(event) => setVMaterial(event.target.value)} placeholder={`Herdado: ${variantBase.material ?? "—"}`} /> : field === "color" ? <Input value={vColor} onChange={(event) => setVColor(event.target.value)} required /> : field === "size" ? <Input value={vSize} onChange={(event) => setVSize(event.target.value)} required /> : field === "lensIndex" ? <Input value={vLensIndex} onChange={(event) => setVLensIndex(event.target.value)} required /> : <Input value={vTreatment} onChange={(event) => setVTreatment(event.target.value)} required />}</label>)}
+      <label>Saldo inicial<Input type="number" min="0" step="1" value={vQuantity} onChange={(event) => setVQuantity(event.target.value)} required /></label>
+      <label>Código<Input value={vCode} onChange={(event) => setVCode(event.target.value)} placeholder={`Opcional — padrão ${variantBase.code ?? "VAR"}-ATRIBUTO`} /></label>
+      <div className="form-actions"><Button type="submit">Criar variante</Button><Button type="button" onClick={resetVariantForm}>Cancelar</Button></div>
+    </form>}</Drawer>}
 
     {canManage && <Drawer open={Boolean(moving)} onClose={resetMovement} title={moving ? `Movimentar ${moving.name}` : "Movimentar produto"}>{moving && <form className="inventory-form" onSubmit={applyMovement}>
       <p className="help-text inventory-moving">Movimentando <strong>{moving.name}</strong> · saldo atual {moving.quantity}</p>
@@ -215,24 +262,27 @@ export function InventoryPage() {
 
     <h2 className="section-title">Produtos</h2>
     <div className="status-filters" role="tablist" aria-label="Filtrar produtos por categoria">
-      <button type="button" role="tab" aria-selected={catalogFilter === "ALL"} className={catalogFilter === "ALL" ? "active" : ""} onClick={() => setCatalogFilter("ALL")}>Todas <span>{items.length}</span></button>
-      {productCategories.map((value) => <button type="button" role="tab" key={value} aria-selected={catalogFilter === value} className={catalogFilter === value ? "active" : ""} onClick={() => setCatalogFilter(value)}>{productCategoryLabels[value]} <span>{items.filter((item) => item.category === value).length}</span></button>)}
+      <button type="button" role="tab" aria-selected={catalogFilter === "ALL"} className={catalogFilter === "ALL" ? "active" : ""} onClick={() => { setCatalogFilter("ALL"); setAttributeFilter(""); }}>Todas <span>{items.length}</span></button>
+      {productCategories.map((value) => <button type="button" role="tab" key={value} aria-selected={catalogFilter === value} className={catalogFilter === value ? "active" : ""} onClick={() => { setCatalogFilter(value); setAttributeFilter(""); }}>{productCategoryLabels[value]} <span>{items.filter((item) => item.category === value).length}</span></button>)}
     </div>
+    {filterOptions.length > 0 && <div className="status-filters" role="group" aria-label="Filtrar produtos por atributo de variante"><button type="button" aria-pressed={!attributeFilter} className={attributeFilter === "" ? "active" : ""} onClick={() => setAttributeFilter("")}>Sem filtro de atributo</button>{filterOptions.map((option) => { const key = `${option.field}:${option.value}`; return <button type="button" key={key} aria-pressed={attributeFilter === key} className={attributeFilter === key ? "active" : ""} onClick={() => setAttributeFilter(key)}>{option.label}</button>; })}</div>}
     {loading ? <Skeleton lines={4} label="Carregando estoque…" /> : !error && <DataTable label="Lista de produtos" rows={visibleItems} columns={[
       { key: "name", label: "Produto", value: (item) => item.name },
       { key: "category", label: "Categoria", value: (item) => item.category ? productCategoryLabels[item.category] : "" },
+      { key: "attributes", label: "Atributos", value: (item) => variantSummary(item.variantAttributes) },
       { key: "quantity", label: "Saldo", value: (item) => item.quantity, align: "right" },
       { key: "price", label: "Preço", value: (item) => item.defaultPrice ?? -1, align: "right" },
       { key: "actions", label: "Ações", value: () => "", sortable: false }
-    ]} rowKey={(item) => item.id} pageSize={10} emptyMessage={items.length ? "Nenhum produto nesta categoria." : "Nenhum produto cadastrado nesta loja."} renderRow={(item) => {
+    ]} rowKey={(item) => item.id} pageSize={10} emptyMessage={items.length ? "Nenhum produto com este filtro." : "Nenhum produto cadastrado nesta loja."} renderRow={(item) => {
       const state = stockState(item);
       const margin = item.defaultPrice !== undefined && item.cost !== undefined ? marginCents(item.defaultPrice, item.cost) : undefined;
       return <>
         <td><div className="cell-stack"><strong>{item.category ? `${productCategoryLabels[item.category]} · ` : ""}{item.name}</strong><span>{item.brand ? `Marca ${item.brand} · ` : ""}{item.material ? `${item.material} · ` : ""}{item.code ? `Código ${item.code} · ` : ""}Mínimo {item.minimumQuantity}</span>{item.description && <span className="help-text">{item.description}</span>}</div></td>
         <td>{item.category ? productCategoryLabels[item.category] : "—"}</td>
+        <td>{hasVariantAttributes(item.variantAttributes) ? <span className="badge">{variantSummary(item.variantAttributes)}</span> : "—"}</td>
         <td style={{ textAlign: "right" }}><span className={`badge ${stateClasses[state]}`}>{item.quantity} · {stateLabels[state]}</span></td>
         <td style={{ textAlign: "right" }}>{item.defaultPrice !== undefined ? `R$ ${item.defaultPrice.toFixed(2)}` : "—"}{canManage && item.cost !== undefined ? <div className="help-text">Custo R$ {item.cost.toFixed(2)}{margin !== undefined ? ` · Margem R$ ${(margin / 100).toFixed(2)}` : ""}</div> : null}</td>
-        <td><div className="table-actions">{canManage && <Button type="button" onClick={() => { resetProductForm(false); setEditing(undefined); setMoving(item); setMoveType("IN"); setMoveQuantity(""); setMoveReason(""); }}>Movimentar</Button>}{canManage && <Button type="button" onClick={() => { resetMovement(); editProduct(item); }}>Editar</Button>}</div></td>
+        <td><div className="table-actions">{canManage && <Button type="button" onClick={() => { resetProductForm(false); setEditing(undefined); setMoving(item); setMoveType("IN"); setMoveQuantity(""); setMoveReason(""); }}>Movimentar</Button>}{canManage && item.category && <Button type="button" onClick={() => openVariantForm(item)}>Variante</Button>}{canManage && <Button type="button" onClick={() => { resetMovement(); editProduct(item); }}>Editar</Button>}</div></td>
       </>;
     }} />}
 
