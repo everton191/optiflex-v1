@@ -180,6 +180,8 @@ Não há tokens separados para sizes, z-index ou breakpoints.
 - 721–1100px em paisagem: desktop compacto/tablet;
 - acima disso: desktop.
 
+Validação de tablet (F7-06, `13ca34b`): o tablet escolhe a apresentação pela orientação — retrato usa a experiência móvel (menu inferior fixo, uma coluna) e paisagem mantém o menu lateral reduzido. Os dois tamanhos padrão foram verificados em Chrome headless nas 12 telas principais, sem transbordamento horizontal (`scrollWidth == clientWidth`), com o `.topbar` em `min-height: 3.5rem` + `height: auto` (o fixo de 3.5rem cortava o resumo do usuário, que passou a ter badge compacto). Prints de 768×1024 e 1024×768 ficam no relatório da sessão.
+
 ## Regra de mudança
 
 - Cor/espaço/raio/sombra global → `tokens.css`.

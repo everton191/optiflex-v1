@@ -6,6 +6,12 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `13ca34b` + docs — Tablets nas duas orientações (F7-06)
+
+- `.topbar` deixa de cortar o resumo do usuário: `min-height: 3.5rem` + `height: auto` (o `height` fixo de 56px cortava em 3px o bloco de 61px, no tablet e no desktop) e badge "Demonstração" compacto (`.user-summary .badge`), mantendo 56px no caso normal.
+- Validação automatizada em Chrome headless nos tamanhos exigidos pelo card: 768×1024 (retrato) e 1024×768 (paisagem) nas 12 telas principais — nenhum transbordamento horizontal (`scrollWidth == clientWidth` em 24/24) + estoque populado (produto e serviço) nas duas orientações; screenshots inspecionados.
+- Media queries de tablet (retrato = experiência móvel até 1024px; paisagem = menu lateral de 12.5rem até 1100px) já presentes; documentadas em `05_DESIGN_SYSTEM_MAP.md`; 439/439, build 0, tsc 0.
+
 ### `db1ade9` + docs — Importação de produtos por CSV (F2-16)
 
 - `src/domain/inventory-import.ts`: `parseCsv` (RFC4180: aspas, `""`, vírgulas, CRLF, BOM, linhas vazias) com `InvalidImportError` motivado; `mapImportColumns` com aliases pt-BR/inglês (`nome`/`product`, `código`/`sku`, `preço`/`price`…); `parseImportNumber` pt-BR (`1.234,56`, `R$ 12,50`); `parseImportCategory` aceita rótulo ou código.
