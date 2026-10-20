@@ -6,6 +6,12 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `e924212` + docs — Busca global (F7-10)
+
+- Paleta de comandos global `Ctrl+K`/`Cmd+K` (`src/app/CommandPalette.tsx`, reusando `Dialog` com focus trap/Escape) com gatilho "Buscar" no topbar; índice em memória em `src/domain/global-search.ts` com `navigationEntries` como fonte única dos menus do `AppShell` (alinhamento com `routeGuards` garantido por teste), `actionEntries` (Novo cliente/Novo atendimento) e builders de clientes/produtos/vendas/OS carregados na abertura por permissão.
+- P0 de permissão no seletor `globalSearchResults`: `hasPermission` por entrada + `canAccessRecord` por loja no `AccessContext` — vendedor sem ações de gestão nem estoque, loja isolada em escopo STORE, NETWORK/ORGANIZATION veem a rede; dado clínico não indexado (fora de escopo do card).
+- Matching normalizado sem acento/espaço (CPF, código de produto), ranking página→ação→registros, limite 10; +13 testes em `global-search.test.ts` (matriz vendedor/recepção/gerente/dono/financeiro) — 468/468, build 0, tsc 0; regressão de tablet 24/24 e smoke da paleta (abre, filtra, navega, fecha) em Chrome headless.
+
 ### `9191a6a` + docs — Formulários reutilizáveis (F7-07)
 
 - `src/domain/field-rules.ts`: regras puras de formulário por tipo de dado — moeda pt-BR (`parseBrazilianNumber`, `parseMoneyInput` com rejeição de negativos, `moneyInputError` com sobrecarga `required`), documento (`normalizeDocument`, `isValidCPF`, `isValidCNPJ`, `isValidDocument`, `formatDocument` com máscara progressiva CPF/CNPJ, `documentError`) e data (`parseDateInput` com validação de calendário, `dateInputError` com `notFuture`, `formatDateBR` sem o off-by-one de `toLocaleDateString` em UTC-3).

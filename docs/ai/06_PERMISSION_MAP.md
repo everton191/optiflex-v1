@@ -76,6 +76,14 @@ Não foi encontrado `user.role === "admin"`. `CashDeskPage` usa combinações de
 - `src/domain/access.test.ts`: matriz de permissões por role, integridade (OWNER completo, FINANCE/AUDITOR read-only), sync de sessão e expiração.
 - `src/domain/access-scope.test.ts` + `src/infrastructure/storage/access-scope.test.ts`: escopo SELF/STORE/ORG/NETWORK e enforcement nos repositories (escrita, listagem e histórico do cliente).
 
+## Busca global (F7-10, `e924212`)
+
+- Paleta de comandos (`Ctrl+K`/`Cmd+K`) em `src/app/CommandPalette.tsx`; índice e seletor puros em `src/domain/global-search.ts`.
+- `navigationEntries` é a fonte única dos menus do `AppShell` e carrega a permissão de cada página; `permission-routes`/teste de alinhamento garantem paridade com `routeGuards` (mudança de menu ou rota que quebre o par falha o teste).
+- Gating no seletor `globalSearchResults`: `hasPermission(session.role, entry.permission)` por entrada e `canAccessRecord` por `storeId` quando a entrada é um registro — vendedor não vê ações de gestão nem itens de estoque; escopo STORE isola por loja; NETWORK/ORGANIZATION veem a rede.
+- Registros entram no índice só após carregamento por permissão (`listCustomers`, inventário, vendas, OS); dado clínico (prescrições, prontuários, anexos) não é indexado.
+- UI: gatilho "Buscar" no topbar, combobox com `aria-controls`/`aria-activedescendant`, lista `role="listbox"`; Escape/Tab-trap via `Dialog`.
+
 ## Riscos
 
 - `attendance.create` não tem guard interno de permissão (o escopo de loja sim, via repository).
