@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { errorMessage } from "../domain/errors";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAppContext, useSession } from "./providers";
-import { Button, DataTable, Input, PageHeader, Search, Skeleton } from "../design-system/components";
+import { Button, DataTable, DateInput, DocumentInput, Input, PageHeader, Search, Skeleton } from "../design-system/components";
+import { dateInputError, documentError, formatDocument, formatDateBR } from "../domain/field-rules";
 import { hasPermission } from "../domain/access";
 import type { Customer } from "../domain/customer";
 import { findDuplicateCustomer } from "../domain/customer";
@@ -58,7 +59,7 @@ export function CustomerProfilePage() {
   if (loading) return <div className="page" role="status">Carregando cliente…</div>;
   if (error) return <div className="page"><p role="alert">{error}</p><Button type="button" onClick={() => setAttempt((value) => value + 1)}>Tentar novamente</Button></div>;
   if (!customer) return <div className="page"><h1>Cliente não encontrado</h1></div>;
-  return <div className="page"><p className="eyebrow">Cliente</p><div className="page-title"><div><h1>{customer.name}</h1><p className="page-intro">{customer.phone || "Sem telefone"} · {customer.cpf || "Sem CPF"}{customer.email ? ` · ${customer.email}` : ""}{customer.birthDate ? ` · ${new Date(customer.birthDate).toLocaleDateString("pt-BR")}` : ""}</p></div><div className="page-title-actions">{hasPermission(session.role, "customers.manage") && <Link className="button secondary" to={`/clientes/${customer.id}/editar`}>Editar cadastro</Link>}{hasPermission(session.role, "attendance.create") && <Link className="button" to={`/atendimentos?customer=${customer.id}`}>Novo atendimento</Link>}</div></div><h2 className="section-title">Histórico</h2>
+  return <div className="page"><p className="eyebrow">Cliente</p><div className="page-title"><div><h1>{customer.name}</h1><p className="page-intro">{customer.phone || "Sem telefone"} · {customer.cpf || "Sem CPF"}{customer.email ? ` · ${customer.email}` : ""}{customer.birthDate ? ` · ${formatDateBR(customer.birthDate)}` : ""}</p></div><div className="page-title-actions">{hasPermission(session.role, "customers.manage") && <Link className="button secondary" to={`/clientes/${customer.id}/editar`}>Editar cadastro</Link>}{hasPermission(session.role, "attendance.create") && <Link className="button" to={`/atendimentos?customer=${customer.id}`}>Novo atendimento</Link>}</div></div><h2 className="section-title">Histórico</h2>
     <div className="status-filters" role="tablist" aria-label="Filtrar histórico por tipo">
       <button type="button" role="tab" aria-selected={kindFilter === ""} className={kindFilter === "" ? "active" : ""} onClick={() => setKindFilter("")}>Todos <span>{events.length}</span></button>
       {customerHistoryKinds.filter((kind) => visibleKinds.includes(kind)).map((kind) => <button key={kind} type="button" role="tab" aria-selected={kindFilter === kind} className={kindFilter === kind ? "active" : ""} onClick={() => setKindFilter(kind)}>{customerHistoryKindLabels[kind]} <span>{events.filter((event) => event.kind === kind).length}</span></button>)}
@@ -79,6 +80,7 @@ export function CustomerNewPage() {
   const [known, setKnown] = useState<Customer[]>([]); const [duplicate, setDuplicate] = useState<Customer>();
   const [override, setOverride] = useState(false); const [overrideReason, setOverrideReason] = useState("");
   const canStart = hasPermission(session.role, "attendance.create");
+  const cpfIssue = documentError(cpf);
   useEffect(() => { void receptionService.listCustomers("").then((items) => setKnown(items)).catch(() => setKnown([])); }, []);
   function change(setter: (value: string) => void) {
     return (event: React.ChangeEvent<HTMLInputElement>) => { setter(event.target.value); setDuplicate(undefined); setOverride(false); setOverrideReason(""); };
@@ -86,6 +88,7 @@ export function CustomerNewPage() {
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     if (pending.current || !hasPermission(session.role, "customers.manage")) return;
+    if (cpfIssue) { setError(cpfIssue); return; }
     if (!override) {
       const found = findDuplicateCustomer(known, { name, phone, cpf });
       if (found) { setDuplicate(found); setError(""); return; }
@@ -97,7 +100,7 @@ export function CustomerNewPage() {
     } catch (reason) { setError(errorMessage(reason, !name.trim() ? "Informe o nome do cliente." : "Não foi possível salvar o cliente. Tente novamente.")); }
     finally { pending.current = false; setSaving(false); }
   }
-  return <div className="page"><p className="eyebrow">Recepção</p><h1>Novo cliente</h1><form className="settings-form" onSubmit={submit}><label>Nome completo<Input value={name} onChange={change(setName)} disabled={saving} required /></label><label>Telefone<Input value={phone} onChange={change(setPhone)} disabled={saving} /></label><label>CPF/CNPJ<Input value={cpf} onChange={change(setCpf)} disabled={saving} /></label>{duplicate && <div className="notice" role="alert"><p>Possível cliente duplicado: <strong>{duplicate.name}</strong>{duplicate.phone ? ` · ${duplicate.phone}` : ""}{duplicate.cpf ? ` · ${duplicate.cpf}` : ""} já está cadastrado. Cadastrar de novo quebra histórico e financeiro.</p>{override ? <label>Motivo para cadastrar mesmo assim<Input value={overrideReason} onChange={(event) => setOverrideReason(event.target.value)} disabled={saving} required /></label> : <div className="form-actions"><Button type="button" onClick={() => setOverride(true)} disabled={saving}>Cadastrar mesmo assim</Button><Button type="button" onClick={() => { setDuplicate(undefined); setOverride(false); }} disabled={saving}>Revisar cadastro</Button></div>}</div>}{error && <p role="alert" className="error-text">{error}</p>}<Button type="submit" disabled={saving}>{saving ? "Salvando…" : canStart ? "Salvar e iniciar atendimento" : "Salvar cliente"}</Button></form></div>;
+  return <div className="page"><p className="eyebrow">Recepção</p><h1>Novo cliente</h1><form className="settings-form" onSubmit={submit}><label>Nome completo<Input value={name} onChange={change(setName)} disabled={saving} required /></label><label>Telefone<Input value={phone} onChange={change(setPhone)} disabled={saving} /></label><label>CPF/CNPJ<DocumentInput value={cpf} onValueChange={(next) => { setCpf(next); setDuplicate(undefined); setOverride(false); setOverrideReason(""); }} disabled={saving} /></label>{cpfIssue && <p className="error-text" role="alert">{cpfIssue}</p>}{duplicate && <div className="notice" role="alert"><p>Possível cliente duplicado: <strong>{duplicate.name}</strong>{duplicate.phone ? ` · ${duplicate.phone}` : ""}{duplicate.cpf ? ` · ${duplicate.cpf}` : ""} já está cadastrado. Cadastrar de novo quebra histórico e financeiro.</p>{override ? <label>Motivo para cadastrar mesmo assim<Input value={overrideReason} onChange={(event) => setOverrideReason(event.target.value)} disabled={saving} required /></label> : <div className="form-actions"><Button type="button" onClick={() => setOverride(true)} disabled={saving}>Cadastrar mesmo assim</Button><Button type="button" onClick={() => { setDuplicate(undefined); setOverride(false); }} disabled={saving}>Revisar cadastro</Button></div>}</div>}{error && <p role="alert" className="error-text">{error}</p>}<Button type="submit" disabled={saving}>{saving ? "Salvando…" : canStart ? "Salvar e iniciar atendimento" : "Salvar cliente"}</Button></form></div>;
 }
 
 export function CustomerEditPage() {
@@ -107,6 +110,7 @@ export function CustomerEditPage() {
   const [email, setEmail] = useState(""); const [birthDate, setBirthDate] = useState("");
   const [loading, setLoading] = useState(true); const [saving, setSaving] = useState(false);
   const [error, setError] = useState(""); const [attempt, setAttempt] = useState(0); const pending = useRef(false);
+  const cpfIssue = documentError(cpf); const birthDateIssue = dateInputError(birthDate, { notFuture: true });
   useEffect(() => {
     let active = true;
     setLoading(true); setError("");
@@ -114,7 +118,7 @@ export function CustomerEditPage() {
       .then((customer) => {
         if (!active) return;
         if (!customer) { setError("Cliente não encontrado."); return; }
-        setName(customer.name); setPhone(customer.phone ?? ""); setCpf(customer.cpf ?? ""); setEmail(customer.email ?? ""); setBirthDate(customer.birthDate ?? "");
+        setName(customer.name); setPhone(customer.phone ?? ""); setCpf(formatDocument(customer.cpf ?? "")); setEmail(customer.email ?? ""); setBirthDate(customer.birthDate ?? "");
       })
       .catch((reason) => { if (active) setError(errorMessage(reason, "Não foi possível abrir este cliente.")); })
       .finally(() => { if (active) setLoading(false); });
@@ -123,6 +127,8 @@ export function CustomerEditPage() {
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     if (pending.current || !hasPermission(session.role, "customers.manage")) return;
+    if (cpfIssue) { setError(cpfIssue); return; }
+    if (birthDateIssue) { setError(birthDateIssue); return; }
     pending.current = true; setSaving(true); setError("");
     try {
       await receptionService.updateCustomer(customerId, { name, phone, cpf, email, birthDate });
@@ -131,5 +137,5 @@ export function CustomerEditPage() {
     finally { pending.current = false; setSaving(false); }
   }
   if (loading) return <div className="page" role="status">Carregando cliente…</div>;
-  return <div className="page"><p className="eyebrow">Cliente</p><h1>Editar cadastro</h1>{error && !saving && <p role="alert" className="error-text">{error} <Button type="button" onClick={() => setAttempt((value) => value + 1)}>Tentar novamente</Button></p>}<form className="settings-form" onSubmit={submit}><label>Nome completo<Input value={name} onChange={(event) => setName(event.target.value)} disabled={saving} required /></label><label>Telefone<Input value={phone} onChange={(event) => setPhone(event.target.value)} disabled={saving} /></label><label>CPF/CNPJ<Input value={cpf} onChange={(event) => setCpf(event.target.value)} disabled={saving} /></label><label>E-mail<Input type="email" value={email} onChange={(event) => setEmail(event.target.value)} disabled={saving} /></label><label>Data de nascimento<Input type="date" value={birthDate} onChange={(event) => setBirthDate(event.target.value)} disabled={saving} /></label>{error && saving && <p role="alert" className="error-text">{error}</p>}<div className="form-actions"><Button type="submit" disabled={saving}>{saving ? "Salvando…" : "Salvar alterações"}</Button><Button type="button" onClick={() => navigate(`/clientes/${customerId}`)} disabled={saving}>Cancelar</Button></div></form></div>;
+  return <div className="page"><p className="eyebrow">Cliente</p><h1>Editar cadastro</h1>{error && !saving && <p role="alert" className="error-text">{error} <Button type="button" onClick={() => setAttempt((value) => value + 1)}>Tentar novamente</Button></p>}<form className="settings-form" onSubmit={submit}><label>Nome completo<Input value={name} onChange={(event) => setName(event.target.value)} disabled={saving} required /></label><label>Telefone<Input value={phone} onChange={(event) => setPhone(event.target.value)} disabled={saving} /></label><label>CPF/CNPJ<DocumentInput value={cpf} onValueChange={setCpf} disabled={saving} /></label>{cpfIssue && <p className="error-text" role="alert">{cpfIssue}</p>}<label>E-mail<Input type="email" value={email} onChange={(event) => setEmail(event.target.value)} disabled={saving} /></label><label>Data de nascimento<DateInput value={birthDate} onChange={(event) => setBirthDate(event.target.value)} disabled={saving} /></label>{birthDateIssue && <p className="error-text" role="alert">{birthDateIssue}</p>}{error && saving && <p role="alert" className="error-text">{error}</p>}<div className="form-actions"><Button type="submit" disabled={saving}>{saving ? "Salvando…" : "Salvar alterações"}</Button><Button type="button" onClick={() => navigate(`/clientes/${customerId}`)} disabled={saving}>Cancelar</Button></div></form></div>;
 }

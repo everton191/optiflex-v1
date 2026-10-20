@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { errorMessage } from "../domain/errors";
-import { Button, DataTable, Dialog, Drawer, ErrorState, Input, Select, Skeleton } from "../design-system/components";
+import { Button, DataTable, Dialog, Drawer, ErrorState, Input, MoneyInput, Select, Skeleton } from "../design-system/components";
+import { moneyInputError, parseMoneyInput } from "../domain/field-rules";
 import { hasPermission } from "../domain/access";
 import { InventoryService } from "../domain/inventory-service";
 import { AuditService } from "../domain/audit-service";
@@ -111,7 +112,7 @@ export function InventoryPage() {
 
   async function saveProduct(event: React.FormEvent) {
     event.preventDefault();
-    const prices = { defaultPrice: defaultPrice.trim() ? Number(defaultPrice) : undefined, cost: cost.trim() ? Number(cost) : undefined };
+    const prices = { defaultPrice: parseMoneyInput(defaultPrice), cost: parseMoneyInput(cost) };
     const sheet = { category: category as ProductCategory, brand, material, description };
     const fiscal = { ncm: fiscalNcm, cfop: fiscalCfop, cest: fiscalCest, unit: fiscalUnit || undefined };
     await run(async () => {
@@ -189,7 +190,9 @@ export function InventoryPage() {
   async function saveService(event: React.FormEvent) {
     event.preventDefault();
     await run(async () => {
-      const input = { name: serviceName, defaultPrice: Number(servicePrice), description: serviceDescription };
+      const price = parseMoneyInput(servicePrice);
+      if (price === undefined) throw new Error(moneyInputError(servicePrice, { required: true }));
+      const input = { name: serviceName, defaultPrice: price, description: serviceDescription };
       if (editingServiceId) {
         const target = services.find((entry) => entry.id === editingServiceId);
         if (!target) throw new Error("Serviço não encontrado.");
@@ -272,8 +275,8 @@ export function InventoryPage() {
       <Select label="Categoria" aria-label="Categoria do produto" value={category} onChange={(event) => setCategory(event.target.value as ProductCategory)} required><option value="">Selecione</option>{productCategories.map((value) => <option key={value} value={value}>{productCategoryLabels[value]}</option>)}</Select>
       {!editing && <label>Saldo inicial<Input type="number" min="0" step="1" value={quantity} onChange={(event) => setQuantity(event.target.value)} placeholder="0" /></label>}
       <label>Estoque mínimo<Input type="number" min="0" step="1" value={minimum} onChange={(event) => setMinimum(event.target.value)} placeholder="0" /></label>
-      <label>Preço padrão (R$)<Input type="number" min="0" step="0.01" value={defaultPrice} onChange={(event) => setDefaultPrice(event.target.value)} placeholder="Opcional" /></label>
-      <label>Custo (R$)<Input type="number" min="0" step="0.01" value={cost} onChange={(event) => setCost(event.target.value)} placeholder="Opcional" /></label>
+      <label>Preço padrão (R$)<MoneyInput value={defaultPrice} onChange={(event) => setDefaultPrice(event.target.value)} placeholder="Opcional" /></label>
+      <label>Custo (R$)<MoneyInput value={cost} onChange={(event) => setCost(event.target.value)} placeholder="Opcional" /></label>
       <label>Marca<Input value={brand} onChange={(event) => setBrand(event.target.value)} placeholder="Opcional" /></label>
       <label>Material<Input value={material} onChange={(event) => setMaterial(event.target.value)} placeholder="Opcional" /></label>
       {category === "FRAME" && <>
@@ -391,7 +394,7 @@ export function InventoryPage() {
     </div>
     {canManage && <form className="inventory-form" onSubmit={saveService}>
       <label>Nome<Input value={serviceName} onChange={(event) => setServiceName(event.target.value)} placeholder="Ex.: Montagem padrão" required /></label>
-      <label>Preço padrão (R$)<Input type="number" min="0" step="0.01" value={servicePrice} onChange={(event) => setServicePrice(event.target.value)} required /></label>
+      <label>Preço padrão (R$)<MoneyInput value={servicePrice} onChange={(event) => setServicePrice(event.target.value)} required /></label>
       <label>Descrição<Input value={serviceDescription} onChange={(event) => setServiceDescription(event.target.value)} placeholder="Opcional" /></label>
       <div className="form-actions"><Button type="submit">{editingServiceId ? "Salvar serviço" : "Cadastrar serviço"}</Button></div>
     </form>}

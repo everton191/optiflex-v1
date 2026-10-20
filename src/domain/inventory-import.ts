@@ -1,5 +1,6 @@
 import type { InventoryItem, InventoryMovement, ProductCategory } from "./inventory";
 import { productCategoryLabels, productCategories } from "./inventory";
+import { parseBrazilianNumber } from "./field-rules";
 import type { InventoryRepository } from "./repositories";
 
 export type ImportField = "name" | "code" | "category" | "quantity" | "minimumQuantity" | "defaultPrice" | "cost" | "brand" | "material" | "description";
@@ -72,11 +73,7 @@ export function mapImportColumns(headers: readonly string[]): ImportMapping {
 }
 
 export function parseImportNumber(value: string): number | undefined {
-  const text = value.trim().replace(/R\$/g, "").replace(/\s/g, "");
-  if (!text) return undefined;
-  const withDot = text.includes(",") ? text.replace(/\./g, "").replace(",", ".") : text;
-  const number = Number(withDot);
-  return Number.isFinite(number) ? number : Number.NaN;
+  return parseBrazilianNumber(value);
 }
 
 export function parseImportCategory(value: string): ProductCategory | undefined {

@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { errorMessage } from "../domain/errors";
-import { Badge, Button, EmptyState, Input, PageHeader, Select, Skeleton, Table } from "../design-system/components";
+import { Badge, Button, DocumentInput, EmptyState, Input, PageHeader, Select, Skeleton, Table } from "../design-system/components";
 import { allPermissions, hasPermission, roleDefinitions } from "../domain/access";
 import type { RoleKey, Store, TaxRegime, User } from "../domain/access";
-import { formatCnae, formatCnpj, taxRegimeLabels } from "../domain/organization";
+import { formatCnae, taxRegimeLabels } from "../domain/organization";
 import { AuditService } from "../domain/audit-service";
 import { auditActions, auditActionLabels, auditEntities, auditEntityLabels, type AuditAction, type AuditEntity, type AuditEntry } from "../domain/audit";
 import { useAppContext, useSession } from "./providers";
@@ -32,7 +32,7 @@ export function SettingsPage() {
     <p className="help-text">Use o nome adotado pela empresa, como Médico, Oftalmologista ou Profissional autorizado.</p>
     <h2>Dados da empresa</h2>
     <label>Razão social<Input {...field("legalName")} placeholder="Opcional" /></label>
-    <label>CNPJ<Input {...field("cnpj")} inputMode="numeric" placeholder="00.000.000/0000-00" onChange={(event) => { setSaved(false); setDraft({ ...draft, cnpj: formatCnpj(event.target.value) }); }} /></label>
+    <label>CNPJ<DocumentInput kind="CNPJ" value={draft.cnpj ?? ""} placeholder="00.000.000/0000-00" onValueChange={(next) => { setSaved(false); setDraft({ ...draft, cnpj: next }); }} /></label>
     <label>Regime tributário<select aria-label="Regime tributário" value={draft.taxRegime ?? ""} onChange={(event) => { setSaved(false); setDraft({ ...draft, taxRegime: (event.target.value || undefined) as TaxRegime | undefined }); }}><option value="">Opcional</option>{(Object.keys(taxRegimeLabels) as TaxRegime[]).map((regime) => <option key={regime} value={regime}>{taxRegimeLabels[regime]}</option>)}</select></label>
     <label>Inscrição estadual (IE)<Input {...field("stateRegistration")} placeholder="Opcional ou ISENTO" onChange={(event) => { setSaved(false); setDraft({ ...draft, stateRegistration: event.target.value.toUpperCase() }); }} /></label>
     <label>Inscrição municipal (IM)<Input {...field("municipalRegistration")} placeholder="Opcional" onChange={(event) => { setSaved(false); setDraft({ ...draft, municipalRegistration: event.target.value.toUpperCase() }); }} /></label>

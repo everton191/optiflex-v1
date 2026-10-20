@@ -1,10 +1,10 @@
 ﻿import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { errorMessage } from "../domain/errors";
-import { Button, Input, PageHeader, Select, Skeleton } from "../design-system/components";
+import { Button, DocumentInput, Input, MoneyInput, PageHeader, Select, Skeleton } from "../design-system/components";
 import { hasPermission } from "../domain/access";
 import type { OrganizationSettings } from "../domain/access";
-import { formatCnpj } from "../domain/organization";
+import { parseMoneyInput } from "../domain/field-rules";
 import { buildOnboardingSummary, nextOnboardingStep, onboardingSteps, previousOnboardingStep, type OnboardingStepId } from "../domain/onboarding";
 import { productCategories, productCategoryLabels, type ProductCategory } from "../domain/inventory";
 import { InventoryService } from "../domain/inventory-service";
@@ -99,7 +99,7 @@ export function OnboardingPage() {
   async function saveProduct(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     await run(async () => {
-      await inventoryService.create(storeIdForProducts, { name: product.name, code: product.code || undefined, category: product.category, quantity: Number(product.quantity) || 0, minimumQuantity: Number(product.minimum) || 0, defaultPrice: product.price ? Number(product.price) : undefined }, session.userName);
+      await inventoryService.create(storeIdForProducts, { name: product.name, code: product.code || undefined, category: product.category, quantity: Number(product.quantity) || 0, minimumQuantity: Number(product.minimum) || 0, defaultPrice: parseMoneyInput(product.price) }, session.userName);
       setProductNames((current) => [...current, product.name.trim()]);
       setProduct(emptyProduct);
     });
@@ -117,7 +117,7 @@ export function OnboardingPage() {
       <label>Nome da organização<Input value={organizationName} onChange={(event) => setOrganizationName(event.target.value)} required disabled={busy} /></label>
       <label>Cargo exibido na área clínica<Input value={clinicalProfessionalLabel} onChange={(event) => setClinicalProfessionalLabel(event.target.value)} required disabled={busy} /></label>
       <label>Razão social<Input value={legalName} onChange={(event) => setLegalName(event.target.value)} placeholder="Opcional" disabled={busy} /></label>
-      <label>CNPJ<Input value={cnpj} inputMode="numeric" placeholder="00.000.000/0000-00" onChange={(event) => setCnpj(formatCnpj(event.target.value))} disabled={busy} /></label>
+      <label>CNPJ<DocumentInput kind="CNPJ" value={cnpj} placeholder="00.000.000/0000-00" onValueChange={setCnpj} disabled={busy} /></label>
       <div className="form-actions"><Button type="submit" disabled={busy}>Salvar e continuar</Button></div>
     </form>}
 
@@ -144,7 +144,7 @@ export function OnboardingPage() {
       <Select label="Categoria" aria-label="Categoria do produto" value={product.category} onChange={(event) => setProduct({ ...product, category: event.target.value as ProductCategory })} disabled={busy}>{productCategories.map((value) => <option key={value} value={value}>{productCategoryLabels[value]}</option>)}</Select>
       <label>Saldo inicial<Input type="number" min="0" step="1" value={product.quantity} onChange={(event) => setProduct({ ...product, quantity: event.target.value })} disabled={busy} /></label>
       <label>Estoque mínimo<Input type="number" min="0" step="1" value={product.minimum} onChange={(event) => setProduct({ ...product, minimum: event.target.value })} disabled={busy} /></label>
-      <label>Preço padrão (R$)<Input type="number" min="0" step="0.01" value={product.price} onChange={(event) => setProduct({ ...product, price: event.target.value })} placeholder="Opcional" disabled={busy} /></label>
+      <label>Preço padrão (R$)<MoneyInput value={product.price} onChange={(event) => setProduct({ ...product, price: event.target.value })} placeholder="Opcional" disabled={busy} /></label>
       {productNames.length > 0 && <p className="success" role="status">{productNames.length} {productNames.length === 1 ? "produto cadastrado" : "produtos cadastrados"}: {productNames.join(", ")}</p>}
       <div className="form-actions"><Button type="submit" disabled={busy || !product.name.trim()}>Adicionar produto</Button><Button type="button" onClick={advance} disabled={busy}>Concluir produtos</Button><Button type="button" onClick={skipStep} disabled={busy}>Pular esta etapa</Button></div>
     </form>}

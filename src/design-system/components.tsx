@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import type { ButtonHTMLAttributes, HTMLAttributes, InputHTMLAttributes, KeyboardEvent, ReactNode, SelectHTMLAttributes } from "react";
 import { filterRows, pageCount, paginateRows, sortRows, toggleSort, type DataTableColumn, type SortState } from "./data-table";
+import { formatDocument } from "../domain/field-rules";
 
 export function Button({ children, className = "", ...props }: ButtonHTMLAttributes<HTMLButtonElement>) {
   return <button className={`button ${className}`.trim()} {...props}>{children}</button>;
@@ -12,6 +13,24 @@ export function Card({ children }: { children: ReactNode }) {
 
 export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
   return <input className="input" {...props} />;
+}
+
+export function MoneyInput({ className = "", ...props }: InputHTMLAttributes<HTMLInputElement>) {
+  return <Input type="number" min="0" step="0.01" inputMode="decimal" className={className} {...props} />;
+}
+
+export function DateInput(props: InputHTMLAttributes<HTMLInputElement>) {
+  return <Input type="date" {...props} />;
+}
+
+export interface DocumentInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "onChange"> {
+  value: string;
+  onValueChange: (next: string) => void;
+  kind?: "CPF" | "CNPJ";
+}
+
+export function DocumentInput({ value, onValueChange, kind, ...props }: DocumentInputProps) {
+  return <Input inputMode="numeric" value={value} onChange={(event) => onValueChange(formatDocument(event.target.value, kind))} {...props} />;
 }
 
 export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
