@@ -308,3 +308,19 @@ textarea { min-height: 6rem; }
 .progress-stage .help-text { display: block; font-size: .72rem; margin: 0; }
 .progress-stage.is-done { border-color: #2e7d32; }
 .progress-stage.is-current { border-color: var(--color-focus); border-width: 2px; background: color-mix(in srgb, var(--color-focus), transparent 92%); }
+
+/* Busca global — gatilho no topo e paleta de comandos (F7-10) */
+.palette-trigger { display: inline-flex; align-items: center; gap: var(--space-2); }
+.palette-trigger kbd { font: inherit; font-size: .625rem; font-weight: 700; border: 1px solid rgba(255, 255, 255, .55); border-radius: var(--radius-sm); padding: 0 .25rem; line-height: 1.5; }
+.palette-icon { display: none; font-size: 1.1rem; line-height: 1; }
+.palette-results { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-1); max-height: min(24rem, 60vh); overflow-y: auto; }
+.palette-item { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-2) var(--space-3); border: 1px solid transparent; border-radius: var(--radius-sm); cursor: pointer; }
+.palette-item[aria-selected="true"] { border-color: var(--color-focus); background: color-mix(in srgb, var(--color-focus), transparent 92%); }
+.palette-item strong, .palette-item small { display: block; }
+.palette-item small { color: var(--color-muted); font-size: .75rem; }
+.palette-kind { color: var(--color-muted); font-size: .6875rem; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
+.palette-empty { padding: var(--space-4) 0; }
+.palette-hint { margin: 0; }
+
+@media (max-width: 1100px) { .palette-trigger kbd { display: none; } }
+@media (max-width: 720px) { .palette-trigger .palette-label { display: none; } .palette-icon { display: inline; } }
