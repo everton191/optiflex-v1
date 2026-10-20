@@ -56,6 +56,16 @@ Estados de foco/erro/desabilitado documentados em `05_DESIGN_SYSTEM_MAP.md` → 
 - `ConfirmDialog`: confirmação curta (`title`/`message`/`confirmLabel`/`cancelLabel`); `destructive` usa botão `button-danger` (vermelho #a12525). Preferir `ConfirmDialog` para ações destrutivas sem formulário; para confirmações com campo (motivo), usar `Dialog` + `button-danger` no submit.
 - Impacto: qualquer mudança afeta todos os overlays; o focus trap usa seletor único de focáveis — se um overlay ganhar conteúdo com foco gerenciado por lib externa, revisar.
 
+## MoneyInput / DateInput / DocumentInput + regras de campo (F7-07/#122)
+
+- Local: componentes em `src/design-system/components.tsx`; regras puras em `src/domain/field-rules.ts` (testadas em `field-rules.test.ts`).
+- Usado por: Caixa (abertura/fechamento/movimento/total/desconto/preço unitário/tratamento/recebimento), Estoque (preço padrão, custo e serviço), Clientes novo/edição (CPF/CNPJ + data de nascimento), Onboarding (CNPJ + preço), Configurações (CNPJ).
+- Responsabilidade: uma única implementação por tipo de dado de formulário:
+  - **Moeda** — `MoneyInput` (`type=number`, `min=0`, `step=0.01`, `inputMode=decimal`, sobrescrevível por props) + `parseMoneyInput`/`moneyInputError` (formato pt-BR aceito, negativos rejeitados; mensagem única `MONEY_INPUT_ERROR`; sobrecarga `required` para valores obrigatórios). Complementa `money.ts` (regra de centavos F1-09), não substitui.
+  - **Documento** — `DocumentInput` (`kind?: "CPF" | "CNPJ"`, máscara progressiva via `formatDocument`, `onValueChange(next: string)`) + `documentError` ("CPF ou CNPJ inválido." — mesma string do serviço de recepção) e `isValidDocument`; `customer.ts` e `organization.ts` re-exportam/delegam (sem duplicação de algoritmo).
+  - **Data** — `DateInput` (`type=date`) + `parseDateInput` (validação de calendário), `dateInputError` (com `notFuture`) e `formatDateBR` (exibição sem bug de fuso — usar em vez de `new Date(iso).toLocaleDateString`).
+- Regra de uso: novos formulários com moeda/documento/data devem usar esses componentes e regras; para conversão em camada de domínio/centavos, continuar em `money.ts` (`toCents`/`formatCents`). O parser de import (`parseImportNumber`) delega a `parseBrazilianNumber` mantendo a semântica histórica (vazio→undefined, lixo→NaN, negativo→número).
+
 ## AppProviders / useAppContext
 
 - Local: `src/app/providers.tsx`.

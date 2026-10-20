@@ -6,6 +6,13 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `9191a6a` + docs — Formulários reutilizáveis (F7-07)
+
+- `src/domain/field-rules.ts`: regras puras de formulário por tipo de dado — moeda pt-BR (`parseBrazilianNumber`, `parseMoneyInput` com rejeição de negativos, `moneyInputError` com sobrecarga `required`), documento (`normalizeDocument`, `isValidCPF`, `isValidCNPJ`, `isValidDocument`, `formatDocument` com máscara progressiva CPF/CNPJ, `documentError`) e data (`parseDateInput` com validação de calendário, `dateInputError` com `notFuture`, `formatDateBR` sem o off-by-one de `toLocaleDateString` em UTC-3).
+- Sem duplicação de algoritmo: `customer.ts` re-exporta (recepção e testes intactos), `organization.ts` delega `isValidCnpj`/`formatCnpj`, `inventory-import.ts` delega `parseImportNumber` preservando a semântica de import (`""`→undefined, lixo→NaN, negativo→número).
+- Componentes `MoneyInput`, `DateInput` e `DocumentInput` (máscara ao digitar, `onValueChange`) em `components.tsx`; adoção no Caixa (abertura/fechamento/movimento/total/desconto/itens/tratamentos/recebimento com guards e mensagens unificadas), Estoque (preço/custo/serviço), Clientes novo/edição (CPF com máscara + erros live + guards no submit + exibição de nascimento via `formatDateBR`), Onboarding (CNPJ+preço) e Configurações (CNPJ).
+- +16 testes em `field-rules.test.ts` (vetores CPF/CNPJ, paridade com `organization`, datas com ano bissexto e futuro, formatadores); 455/455, build 0, tsc 0.
+
 ### `13ca34b` + docs — Tablets nas duas orientações (F7-06)
 
 - `.topbar` deixa de cortar o resumo do usuário: `min-height: 3.5rem` + `height: auto` (o `height` fixo de 56px cortava em 3px o bloco de 61px, no tablet e no desktop) e badge "Demonstração" compacto (`.user-summary .badge`), mantendo 56px no caso normal.
