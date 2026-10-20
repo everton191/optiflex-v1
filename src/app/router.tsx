@@ -1,6 +1,6 @@
 import { createBrowserRouter, Navigate, RouterProvider } from "react-router-dom";
 import { RequirePermission, RequireSession } from "./permissions";
-import { AttendanceDetailPage, AttendanceNewPage, AttendancePage, AuditPage, BlockedPage, CashDeskPage, ChangePasswordPage, ClinicalQueuePage, ClinicalWorkspacePage, CustomerEditPage, CustomerNewPage, CustomerProfilePage, CustomersPage, DashboardPage, ForbiddenPage, InventoryPage, LoginPage, OnboardingPage, ProfilesPage, PrescriptionDocumentPage, SaleDocumentPage, SettingsPage, StoresPage, UsersPage, WorkOrderDetailPage, WorkOrdersPage, AgendaPage } from "./pages";
+import { AttendanceDetailPage, AttendanceNewPage, AttendancePage, AuditPage, BlockedPage, CashDeskPage, ChangePasswordPage, ClinicalQueuePage, ClinicalWorkspacePage, CustomerEditPage, CustomerNewPage, CustomerProfilePage, CustomersPage, DashboardPage, ForbiddenPage, InventoryPage, LoginPage, OnboardingPage, ProductLabelPage, ProfilesPage, PrescriptionDocumentPage, SaleDocumentPage, SaleReceiptPage, SettingsPage, StoresPage, UsersPage, WorkOrderDetailPage, WorkOrdersPage, AgendaPage } from "./pages";
 import { routeGuards } from "./route-guards";
 import { RouteErrorBoundary } from "./RouteErrorBoundary";
 import { AppShell } from "../shell/AppShell";
@@ -18,8 +18,10 @@ const guardedPages: Record<string, React.ReactNode> = {
   "clinico/atendimento/:attendanceId": <ClinicalWorkspacePage />,
   "prescricoes/:prescriptionId": <PrescriptionDocumentPage />,
   "caixa": <CashDeskPage />,
+  "caixa/comprovante/:saleId": <SaleReceiptPage />,
   "vendas/:saleId": <SaleDocumentPage />,
   "estoque": <InventoryPage />,
+  "estoque/:itemId/etiqueta": <ProductLabelPage />,
   "ordens-servico": <WorkOrdersPage />,
   "ordens-servico/:orderId": <WorkOrderDetailPage />,
   "admin/lojas": <StoresPage />,

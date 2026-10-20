@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
+import { Link, useParams } from "react-router-dom";
 import { errorMessage } from "../domain/errors";
-import { Button, DataTable, Dialog, Drawer, ErrorState, Input, MoneyInput, Select, Skeleton } from "../design-system/components";
+import { Button, DataTable, Dialog, Drawer, ErrorState, Input, MoneyInput, PrintLayout, Select, Skeleton } from "../design-system/components";
 import { moneyInputError, parseMoneyInput } from "../domain/field-rules";
 import { hasPermission } from "../domain/access";
 import { InventoryService } from "../domain/inventory-service";
 import { AuditService } from "../domain/audit-service";
 import type { InventoryItem, InventoryMovement, InventoryMovementType, ProductCategory, ProductCategoryFilter, VariantField, FiscalUnit } from "../domain/inventory";
-import { availableQuantity, filterByCategory, filterByVariantField, fiscalSummary, fiscalUnitLabels, fiscalUnits, formatCest, formatNcm, hasVariantAttributes, marginCents, normalizeVariantAttributes, productCategories, productCategoryLabels, stockState, variantFieldLabels, variantFieldsByCategory, variantFieldOptions, variantSummary } from "../domain/inventory";
+import { availableQuantity, filterByCategory, filterByVariantField, fiscalSummary, fiscalUnitLabels, fiscalUnits, formatCest, formatNcm, hasVariantAttributes, marginCents, normalizeVariantAttributes, productCategories, productCategoryLabels, productLabelLines, stockState, variantFieldLabels, variantFieldsByCategory, variantFieldOptions, variantSummary } from "../domain/inventory";
 import { InvalidImportError, applyInventoryImport, previewInventoryImport, type ImportPreview } from "../domain/inventory-import";
 import type { Transfer, TransferItem } from "../domain/transfer";
 import { transferStatusLabels } from "../domain/transfer";
@@ -347,7 +348,7 @@ export function InventoryPage() {
         <td>{hasVariantAttributes(item.variantAttributes) ? <span className="badge">{variantSummary(item.variantAttributes)}</span> : "—"}</td>
         <td style={{ textAlign: "right" }}><span className={`badge ${stateClasses[state]}`}>{item.quantity} · {stateLabels[state]}</span></td>
         <td style={{ textAlign: "right" }}>{item.defaultPrice !== undefined ? `R$ ${item.defaultPrice.toFixed(2)}` : "—"}{canManage && item.cost !== undefined ? <div className="help-text">Custo R$ {item.cost.toFixed(2)}{margin !== undefined ? ` · Margem R$ ${(margin / 100).toFixed(2)}` : ""}</div> : null}</td>
-        <td><div className="table-actions">{canManage && <Button type="button" onClick={() => { resetProductForm(false); setEditing(undefined); setMoving(item); setMoveType("IN"); setMoveQuantity(""); setMoveReason(""); }}>Movimentar</Button>}{canManage && item.category && <Button type="button" onClick={() => openVariantForm(item)}>Variante</Button>}{canManage && <Button type="button" onClick={() => { resetMovement(); editProduct(item); }}>Editar</Button>}</div></td>
+        <td><div className="table-actions"><Link className="button" to={`/estoque/${item.id}/etiqueta`}>Etiqueta</Link>{canManage && <Button type="button" onClick={() => { resetProductForm(false); setEditing(undefined); setMoving(item); setMoveType("IN"); setMoveQuantity(""); setMoveReason(""); }}>Movimentar</Button>}{canManage && item.category && <Button type="button" onClick={() => openVariantForm(item)}>Variante</Button>}{canManage && <Button type="button" onClick={() => { resetMovement(); editProduct(item); }}>Editar</Button>}</div></td>
       </>;
     }} />}
 
@@ -415,4 +416,37 @@ export function InventoryPage() {
       <div><span className="badge">{movementSign(movement)}{movement.quantity}</span></div>
     </article>) : <p className="empty-state">Nenhuma movimentação registrada nesta loja.</p>}</div>
   </div>;
+}
+
+export function ProductLabelPage() {
+  const { itemId = "" } = useParams();
+  const { currentStoreId, stores } = useAppContext();
+  const [item, setItem] = useState<InventoryItem>();
+  const [error, setError] = useState("");
+  const [attempt, setAttempt] = useState(0);
+  const [copies, setCopies] = useState(1);
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      try {
+        const items = await service.list(currentStoreId);
+        const found = items.find((entry) => entry.id === itemId);
+        if (!found || found.storeId !== currentStoreId) throw new Error("Produto não encontrado nesta loja.");
+        if (active) { setItem(found); setError(""); }
+      } catch (failure) { if (active) setError(errorMessage(failure, "Não foi possível carregar a etiqueta.")); }
+    })();
+    return () => { active = false; };
+  }, [itemId, currentStoreId, attempt]);
+  if (error) return <div className="page"><h1>Etiqueta de produto</h1><p role="alert" className="notice error-text">{error}</p><div className="form-actions"><Button type="button" onClick={() => setAttempt((value) => value + 1)}>Tentar novamente</Button><Link className="button" to="/estoque">Voltar ao estoque</Link></div></div>;
+  if (!item) return <div className="page"><h1>Etiqueta de produto</h1><p role="status">Carregando a etiqueta…</p><Skeleton lines={3} label="Carregando a etiqueta…" /></div>;
+  const storeName = stores.find((store) => store.id === item.storeId)?.name ?? "";
+  const safeCopies = Math.min(20, Math.max(1, Math.round(copies) || 1));
+  const lines = productLabelLines(item);
+  return <PrintLayout title="Etiqueta de produto" meta={`${item.name} · ${item.code ?? "sem código"}${storeName ? ` · ${storeName}` : ""}`} actions={<><label className="print-copies">Cópias<Input type="number" min="1" max="20" step="1" value={copies} onChange={(event) => setCopies(Number(event.target.value))} /></label><Link className="button" to="/estoque">Voltar ao estoque</Link></>}>
+    <div className="label-sheet" aria-label={`Etiquetas de ${item.name}`}>
+      {Array.from({ length: safeCopies }, (_, index) => <div className="print-label" key={`${item.id}-${index}`}>
+        {lines.map((line, position) => <p key={`${line.label ?? ""}-${position}`} className={line.strong ? "label-strong" : undefined}>{line.label ? `${line.label}: ` : ""}{line.value}</p>)}
+      </div>)}
+    </div>
+  </PrintLayout>;
 }

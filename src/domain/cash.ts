@@ -85,3 +85,26 @@ export function receiptPlan(receivedAmount: number, pendingAmount: number): Rece
   const appliedCents = Math.min(received, pending);
   return { appliedCents, changeCents: Math.max(0, received - appliedCents) };
 }
+
+export type ReceiptStatus = "NONE" | "PARTIAL" | "PAID";
+
+export interface ReceiptLine { method: PaymentMethod; amount: number; at: string; author?: string }
+
+export interface ReceiptSummary {
+  totalCents: number;
+  receivedCents: number;
+  pendingCents: number;
+  status: ReceiptStatus;
+  lines: ReceiptLine[];
+}
+
+export function receiptSummary(totalAmount: number, entries: readonly CashEntry[], saleId: string): ReceiptSummary {
+  const lines = entries
+    .filter((entry) => entry.saleId === saleId && entry.type === "RECEIPT")
+    .map((entry) => ({ method: entry.paymentMethod ?? "CASH", amount: entry.amount, at: entry.createdAt, author: entry.author }));
+  const totalCents = toCents(totalAmount);
+  const receivedCents = paidCents(entries, saleId);
+  const pendingCents = Math.max(0, totalCents - receivedCents);
+  const status: ReceiptStatus = receivedCents <= 0 ? "NONE" : pendingCents === 0 ? "PAID" : "PARTIAL";
+  return { totalCents, receivedCents, pendingCents, status, lines };
+}

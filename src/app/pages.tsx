@@ -3,9 +3,9 @@ export { DashboardPage } from "./DashboardWorkspace";
 export { SettingsPage, UsersPage, StoresPage, ProfilesPage, AuditPage } from "./AdminWorkspace";
 export { AttendancePage, AgendaPage, AttendanceNewPage, AttendanceDetailPage, ClinicalQueuePage } from "./ReceptionWorkspace";
 export { CustomersPage, CustomerProfilePage, CustomerNewPage, CustomerEditPage } from "./CustomersWorkspace";
-export { InventoryPage } from "./InventoryWorkspace";
+export { InventoryPage, ProductLabelPage } from "./InventoryWorkspace";
 export { WorkOrdersPage, WorkOrderDetailPage } from "./WorkOrdersWorkspace";
-export { CashDeskPage, SaleDocumentPage } from "./CashWorkspace";
+export { CashDeskPage, SaleDocumentPage, SaleReceiptPage } from "./CashWorkspace";
 export { LoginPage, BlockedPage, ChangePasswordPage } from "./AuthWorkspace";
 export { OnboardingPage } from "./OnboardingWorkspace";
 

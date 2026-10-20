@@ -194,3 +194,18 @@ export function marginCents(defaultPrice: number, cost: number): number | undefi
   if (!Number.isFinite(defaultPrice) || !Number.isFinite(cost)) return undefined;
   return toCents(defaultPrice) - toCents(cost);
 }
+
+export interface ProductLabelLine { label?: string; value: string; strong?: boolean }
+
+export function productLabelLines(item: InventoryItem): ProductLabelLine[] {
+  const lines: ProductLabelLine[] = [{ value: item.name, strong: true }];
+  const sheet = [item.brand, item.material].filter((part): part is string => Boolean(part?.trim())).join(" · ");
+  if (sheet) lines.push({ value: sheet });
+  if (item.category) lines.push({ label: "Categoria", value: productCategoryLabels[item.category] });
+  const variant = variantSummary(item.variantAttributes);
+  if (variant) lines.push({ value: variant });
+  lines.push({ label: "Código", value: item.code?.trim() || "—", strong: true });
+  if (item.defaultPrice !== undefined) lines.push({ label: "Preço", value: `R$ ${item.defaultPrice.toFixed(2)}` });
+  lines.push({ label: "Saldo", value: String(item.quantity) });
+  return lines;
+}
