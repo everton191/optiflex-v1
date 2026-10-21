@@ -13,7 +13,7 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 - Filtro **"Prontos p/ retirada"** em `WorkOrdersWorkspace.tsx` (primeiro chip da barra, ao lado de "Todas"/"Atrasadas"): seção "Prontos para retirada" com cliente, **loja atual**, prazo e badge "Atrasada"; entrega (`deliver` → `DELIVERED`) tira a ordem do filtro automaticamente e a **dupla entrega já é bloqueada e testada** (`work-order-service.test.ts`, risco do card).
 - Pendência no dashboard **"N ordens prontas aguardando retirada"** → `/ordens-servico` (antes da de prazo vencido; visível com `sales.read`).
 - Decisão registrada (fora de escopo do card, `MODULE.md` → Avoid Modifying): **sem movimento extra de estoque nem bump Dexie** — a baixa atômica da venda confirmada (F4-07) já retira o item do saldo disponível e a lista de prontos é o registro físico de retirada com responsável/aviso; trocar o fluxo venda→estoque seria mudança de arquitetura.
-- Testes obrigatórios: build 0, tsc 0, suíte **483/483** (47 arquivos).
+- Testes obrigatórios: build 0, tsc 0, suíte **483/483** (47 arquivos); smoke Chrome headless `.git/pickup-check.mjs` **PICKUP OK** — pendência do dashboard "2 ordens prontas aguardando retirada" → filtro "Prontos p/ retirada" com cliente/loja/prazo/badge "Atrasada" → entrega pelo detalhe → lista cai para 1 (a entregue some) e pendência para "1 ordem pronta"; screenshots `pickup-dashboard.png`/`pickup-list.png`/`pickup-delivered.png`/`pickup-after-delivery.png` inspecionados.
 
 ### `8082ad2` + docs — Desempenho (F7-18)
 
