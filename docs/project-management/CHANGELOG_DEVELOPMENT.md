@@ -6,6 +6,15 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `0c770f0` + docs — Acessibilidade (F7-17)
+
+- **CA do card atendido:** fluxo principal completo só com teclado; foco sempre visível.
+- `src/shell/AppShell.tsx`: skip link `<a className="skip-link" href="#main-content">Pular para o conteúdo</a>` antes do `<aside>` (primeiro focável da página pós-login) + `<main id="main-content" tabIndex={-1} className="content">` para receber o foco programático.
+- `src/styles.css`: `.skip-link` (off-screen `top: -4rem`, aparece só em `:focus` com contorno `--color-focus`), `.content:focus` (outline offset -3px) e fallback global `:where(a, button, select, textarea, input, summary, [tabindex]):focus-visible { outline: 3px solid color-mix(in srgb, var(--color-focus), transparent 45%); outline-offset: 2px; }` — specificity zero, regras de componente continuam vencendo; cobre os gaps `.button` e `.status-filters button` que não tinham foco próprio e o `<select>` nativo.
+- Auditoria semântica: nenhum `onClick` em elementos não interativos; sem `outline: none`; contraste verificado (muted `#627078` ≈5.1:1, focus `#187990` ≈5.1:1, danger `#a12525`+branco ≈7.4:1 — todos ≥4.5:1); regressão de F7-08/F7-09/F7-11 inexistente.
+- Testes obrigatórios do card (manual por teclado + build): build 0, tsc 0 (suíte intacta 477/477) e smoke Chrome headless `.git/a11y-check.mjs` **A11Y OK** — login demo → Tab no skip link → Enter em `#main-content` → criar cliente → abrir caixa → criar orçamento "Venda teclado R$ 150" **100% por teclado**, outline 3 px medido via `getComputedStyle` em cada amostra; screenshots `a11y-skip.png`/`a11y-main-focus.png`/`a11y-quote-focus.png`/`a11y-quote-created.png` inspecionados.
+- Checklist e procedimento reexecutável documentados em `docs/ai/05_DESIGN_SYSTEM_MAP.md` (seção "Acessibilidade (F7-17)"). Fora de escopo (conforme card): certificação formal WCAG e leitor de tela em aparelho real.
+
 ### `9674594` + docs — Ajuda contextual (F7-16)
 
 - `HelpTip` em `design-system/components.tsx`: botão "?" (`aria-label`/`aria-expanded`/`aria-controls`) que abre bolha `role="note"` com dica curta; **não bloqueia a operação** — `pointer-events: none` na bolha, fecha em clique fora e Escape, sem modal/focus trap; CSS `.help-tip*` em `styles.css` com sentence case garantido e ocultação em `@media print`.

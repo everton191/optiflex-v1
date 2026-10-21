@@ -182,9 +182,39 @@ Não há tokens separados para sizes, z-index ou breakpoints.
 
 Validação de tablet (F7-06, `13ca34b`): o tablet escolhe a apresentação pela orientação — retrato usa a experiência móvel (menu inferior fixo, uma coluna) e paisagem mantém o menu lateral reduzido. Os dois tamanhos padrão foram verificados em Chrome headless nas 12 telas principais, sem transbordamento horizontal (`scrollWidth == clientWidth`), com o `.topbar` em `min-height: 3.5rem` + `height: auto` (o fixo de 3.5rem cortava o resumo do usuário, que passou a ter badge compacto). Prints de 768×1024 e 1024×768 ficam no relatório da sessão.
 
+## Acessibilidade (F7-17, `0c770f0`)
+
+### Correções aplicadas
+
+- **Skip link** em `src/shell/AppShell.tsx`: `<a className="skip-link" href="#main-content">Pular para o conteúdo</a>` inserido antes do `<aside>`; `main` ganhou `id="main-content" tabIndex={-1}` para receber o foco programático (primeiro focável da página após o login).
+- **CSS** (`src/styles.css`): `.skip-link` (posicionado fora da tela via `top: -4rem`, visível só em `:focus` com contorno `--color-focus`), `.content:focus` (contorno interno com `outline-offset: -3px`) e fallback global `:where(a, button, select, textarea, input, summary, [tabindex]):focus-visible { outline: 3px solid color-mix(in srgb, var(--color-focus), transparent 45%); outline-offset: 2px; }` — specificity zero, então regras específicas de componente (`.button:focus-visible`, `.tabs button:focus-visible` etc.) continuam vencendo.
+
+### Checklist verificado (auditoria + smoke `.git/a11y-check.mjs`)
+
+- [x] Fluxo principal completo só com teclado (CA do card): login demo → skip link → dashboard → Clientes → criar cliente → Caixa → abrir caixa → criar orçamento R$ 150 — tudo via Tab/Enter/ArrowDown, sem clique.
+- [x] Foco sempre visível: outline 3 px `--color-focus` medido via `getComputedStyle` em cada amostra (login, skip link, main, topbar select, nav, formulários, botões).
+- [x] Skip link: primeiro elemento focável, visível ao ganhar foco, Enter salta para `#main-content`.
+- [x] Nenhum `onClick` em elementos não interativos (div/span/li/td) — auditoria do código.
+- [x] Gaps corrigidos: `.button` e `.status-filters button` não tinham `:focus-visible` próprio (cobertos pelo fallback global); `<select>` nativo sem estilo de foco (coberto pelo fallback).
+- [x] Contraste: muted `#627078` ≈5.1:1, focus `#187990` ≈5.1:1, danger `#a12525`+texto branco ≈7.4:1, brand escuro ✓ (todos ≥4.5:1 para texto).
+- [x] Sem `outline: none` no CSS; landmarks `main`/`nav` com `aria-label` já existentes.
+- [x] F7-08 (DataTable), F7-09 (focus trap em Dialog/Drawer) e F7-11 (ErrorState/role=alert) permanecem válidos — nada regrediu.
+
+Fora de escopo do card: certificação formal (WCAG audit) e leitor de tela em aparelho real.
+
+### Procedimento de teste de teclado (reexecutável)
+
+1. `npm.cmd run preview -- --port 4173 --strictPort` e abrir `http://localhost:4173`.
+2. Tab até o botão "Entrar" do perfil "Proprietário" (`.demo-box .demo-row`) e pressionar Enter.
+3. Tab: o primeiro focável deve ser o skip link "Pular para o conteúdo" — Enter salta para o conteúdo (`document.activeElement.id === "main-content"`).
+4. Navegar por Tab/Shift+Tab pela topbar e sidebar confirmando outline visível (`getComputedStyle(el).outlineWidth !== "0px"`) a cada amostra.
+5. Completar um orçamento no caixa usando só teclado: setas no select de cliente, Enter nos campos, Enter no botão "Criar orçamento".
+6. Script automatizado equivalente: `.git/a11y-check.mjs` (saída esperada `A11Y OK`).
+
 ## Regra de mudança
 
 - Cor/espaço/raio/sombra global → `tokens.css`.
-- Componentes globais (Button, Input, Card, Select, Badge, Tabs, Table, Dialog, Drawer, Toast, Tooltip, Search, EmptyState, Skeleton, ErrorState, PageHeader, PrintLayout) → `components.tsx` e classe global em `styles.css`.
+- Componentes globais (Button, Input, Card, Select, Badge, Tabs, Table, Dialog, Drawer, Toast, Tooltip, Search, EmptyState, Skeleton, ErrorState, PageHeader, PrintLayout, HelpTip) → `components.tsx` e classe global em `styles.css`.
 - Menu/topbar/responsividade → `AppShell.tsx` + `styles.css`.
 - Estilo exclusivo de página → seção correspondente de `styles.css`.
+- Foco/skip link → regras globais de `styles.css` (não adicionar `outline: none` sem substituir visível).
