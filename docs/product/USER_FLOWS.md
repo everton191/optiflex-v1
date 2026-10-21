@@ -32,14 +32,16 @@ Fluxos de ponta a ponta usados pela equipe e por testes manuais. Cada fluxo refe
 5. Clica em **Imprimir** na página da receita: o diálogo de impressão do navegador abre com a barra lateral/topo ocultos (`@media print`).
 6. No caixa, ao criar um orçamento, o vendedor seleciona uma prescrição do cliente: o snapshot (versão, uso e graus) entra na venda sem redigitação.
 
-## Cadastro inicial assistido (F2-18, `b7f3e0a`)
+## Cadastro inicial assistido (F2-18 `b7f3e0a`; progresso retomável F7-15, `b7b7aeb`)
 
-1. Usuário com permissão `settings.manage` abre **Assistente inicial** no menu Administração (`/admin/assistente`); o progresso mostra as 5 etapas (Organização, Loja, Usuário, Produtos, Revisão) com "opcional" nas puláveis.
+1. Usuário com permissão `settings.manage` abre **Assistente inicial** no menu Administração (`/admin/assistente`); o progresso mostra as 5 etapas numeradas (Organização, Loja, Usuário, Produtos, Revisão) com "opcional" nas puláveis.
 2. **Organização**: nome da organização e cargo exibido na área clínica são obrigatórios; razão social e CNPJ são opcionais (formatado ao digitar). "Salvar e continuar" normaliza e grava os settings imediatamente.
 3. **Loja**: informa o nome da primeira loja — criada via serviço de administração e usada no passo de produtos; pode ser pulada (lojas existentes continuam disponíveis).
-4. **Usuário**: cria um OWNER (nome, e-mail e senha) ligado à loja criada ou a todas as ativas; pode ser pulado.
+4. **Usuário**: cria um OWNER (nome, e-mail e senha) ligado à loja criada ou a todas as ativas; pode ser pulado. A senha nunca entra no progresso salvo do assistente.
 5. **Produtos iniciais**: adiciona um ou mais itens (nome, código opcional, categoria, saldo inicial, estoque mínimo e preço opcional) direto no catálogo da loja; "Concluir produtos" ou "Pular esta etapa".
-6. **Revisão**: mostra organização, loja, usuário, produtos e etapas puladas; "Concluir e ir para o dashboard" leva à home. Cada etapa salva ao avançar — fechar o navegador no meio não perde o que já foi gravado; o assistente pode ser refeito a qualquer momento.
+6. **Revisão**: mostra organização, loja, usuário, produtos, etapas puladas e a situação de cada etapa (concluída/pulada/em andamento); "Concluir e ir para o dashboard" limpa o progresso salvo e leva à home.
+7. **Sair e continuar depois** (nas etapas Organização, Loja, Usuário e Produtos) grava o progresso atual e volta ao dashboard. Reabrir **Assistente inicial** exibe o aviso "Retomamos o assistente na etapa …", restaura os campos já preenchidos (inclusive rascunho não salvo, como o nome da loja em digitação) e retoma de onde parou.
+8. O stepper numerado permite revisitar etapas concluídas clicando nelas; **Recomeçar do zero** limpa apenas o progresso do assistente — os registros já gravados (settings, loja, usuário, produtos) permanecem, e o assistente pode ser refeito a qualquer momento.
 
 ## Importação de produtos por CSV (F2-16, `db1ade9`)
 

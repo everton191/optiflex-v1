@@ -6,6 +6,13 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `b7b7aeb` + docs — Assistente de configuração inicial retomável (F7-15)
+
+- Progresso do assistente em `localStorage` (`ONBOARDING_PROGRESS_KEY`) via `OnboardingProgress` + `sanitizeOnboardingProgress` + `isOnboardingStepId` em `onboarding.ts`: só campos conhecidos por etapa (organização, loja, usuário sem senha, `productNames`, skips); chaves estranhas (`password`, `senha`) são descartadas na leitura e step inválido cai para `organization`.
+- `OnboardingWorkspace.tsx`: hidratação no carregamento com aviso `role="status"` ("Retomamos o assistente na etapa …") e **Recomeçar do zero** (limpa só o progresso — registros já gravados permanecem); persistência automática em avançar/voltar/pular/sair/jump de stepper com try/catch; botão **"Sair e continuar depois"** nas etapas Organização/Loja/Usuário/Produtos; stepper numerado com etapas concluídas como botão (revisitar sem perder dados); revisão com situação por etapa; "Concluir" remove a chave.
+- CSS: `.step-number` e `.step-link` no stepper (`.onboarding-steps`).
+- +3 testes em `onboarding.test.ts` (reconhecimento de step, sanitização sem segredos com assert em string, defaults de step/skip inválidos) — 477/477, build 0, tsc 0; smoke do CA em Chrome headless (rascunho da loja no meio → sair → retomar com aviso + campos restaurados → jump pelo stepper → restart limpa a chave) com screenshots inspecionados.
+
 ### `2dad97e` + docs — Etiquetas e comprovantes (F7-14)
 
 - Dois templates de impressão no padrão F7-13 (`PrintLayout` + `window.print()` + `@media print`; impressora térmica fora de escopo conforme o card).
