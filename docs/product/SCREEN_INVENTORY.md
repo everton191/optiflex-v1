@@ -2,7 +2,7 @@
 
 **Não duplica:** a lista canônica de rotas está em `docs/ai/04_ROUTE_MAP.md`; a situação detalhada na auditoria (`docs/DEVELOPMENT_AUDIT_A_H.md`, seção "Inventário completo de rotas e guias"). Aqui: visão de produto com **status + card responsável**.
 
-Atualizado em: 08/10/2026 (verificação de `router.tsx`; impressões F7-13).
+Atualizado em: 08/10/2026 (verificação de `router.tsx`; impressões F7-13, etiquetas/comprovantes F7-14).
 
 ## Status atual por grupo de tela
 
@@ -29,7 +29,7 @@ Atualizado em: 08/10/2026 (verificação de `router.tsx`; impressões F7-13).
 | Avisos | `/notificacoes` | AUSENTE | F7-12 |
 | Busca global | (atalho Ctrl+K) | AUSENTE | F7-10 |
 | Erros | `/sem-acesso` existe; rota `*` (página desconhecida) | AUSENTE p/ `*` | F1-12 |
-| Impressão | PrintLayout + 4 documentos: receita (`/prescricoes/:id`), orçamento/venda (`/vendas/:saleId`) e OS (detalhe) | OK parcial — impressão/PDF local via `window.print()`; etiquetas/comprovantes pendentes | F7-13 (feito), F7-14 |
+| Impressão | PrintLayout + 6 documentos: receita (`/prescricoes/:id`), orçamento/venda (`/vendas/:saleId`), OS (detalhe), etiqueta de produto (`/estoque/:itemId/etiqueta`, cópias 1–20) e comprovante de recebimento (`/caixa/comprovante/:saleId`) | OK — impressão/PDF local via `window.print()`; impressora térmica de etiqueta ainda fora de escopo (decidir depois) | F7-13 (feito), F7-14 (feito) |
 
 ## Regras para novas telas
 

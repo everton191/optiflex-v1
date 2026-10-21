@@ -18,8 +18,10 @@ Todas as rotas usam `AppShell` (exceto `/login` e `/bloqueado`). A configuraçã
 | `/clinico` | `ClinicalQueuePage` | clinical | `clinical.workspace.access` | AppShell |
 | `/clinico/atendimento/:attendanceId` | `ClinicalWorkspacePage` | clinical | `clinical.workspace.access` | AppShell |
 | `/caixa` | `CashDeskPage` | cash/sales | `cash.read` | AppShell |
+| `/caixa/comprovante/:saleId` | `SaleReceiptPage` — comprovante de recebimento imprimível (`PrintLayout`) | cash/sales | `cash.read` | AppShell |
 | `/vendas/:saleId` | `SaleDocumentPage` — orçamento/venda imprimível (`PrintLayout`) | cash/sales | `sales.read` | AppShell |
 | `/estoque` | `InventoryPage` | inventory | `inventory.read` | AppShell |
+| `/estoque/:itemId/etiqueta` | `ProductLabelPage` — etiqueta de produto imprimível (`PrintLayout`, cópias 1–20) | inventory | `inventory.read` | AppShell |
 | `/ordens-servico` | `WorkOrdersPage` | work-orders | `sales.read` | AppShell |
 | `/ordens-servico/:orderId` | `WorkOrderDetailPage` | work-orders | `sales.read` | AppShell |
 | `/vendas` | redirect para `/caixa` | sales | guard aplicado no destino | AppShell |

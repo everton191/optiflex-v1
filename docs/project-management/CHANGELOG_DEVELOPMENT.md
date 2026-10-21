@@ -6,6 +6,13 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `2dad97e` + docs — Etiquetas e comprovantes (F7-14)
+
+- Dois templates de impressão no padrão F7-13 (`PrintLayout` + `window.print()` + `@media print`; impressora térmica fora de escopo conforme o card).
+- **Etiqueta de produto** em `/estoque/:itemId/etiqueta` (guard `inventory.read`): `productLabelLines` puro em `inventory.ts` (nome, marca/material, categoria, atributos de variante, código em destaque, preço, saldo), seletor de cópias 1–20 na toolbar `.no-print` e botão "Etiqueta" na linha do produto visível a qualquer perfil com leitura de estoque.
+- **Comprovante de recebimento** em `/caixa/comprovante/:saleId` (guard `cash.read`): `receiptSummary` puro em `cash.ts` (linhas de pagamento por forma/data/operador, recebido, pendente e situação NONE/PARTIAL/PAID em centavos) e link "Comprovante" no caixa para vendas CONFIRMED.
+- +6 testes em `print-documents.test.ts` (ordem das linhas da etiqueta, item esparso, sem recebimento, agregação multi-recebimento, precisão de centavos, clamp de excedente); 474/474, build 0, tsc 0; smoke ponta a ponta em Chrome headless (produto → etiqueta com 2 cópias; cliente → venda → recebimento R$ 150 → comprovante "Pago") com screenshots inspecionados.
+
 ### `e924212` + docs — Busca global (F7-10)
 
 - Paleta de comandos global `Ctrl+K`/`Cmd+K` (`src/app/CommandPalette.tsx`, reusando `Dialog` com focus trap/Escape) com gatilho "Buscar" no topbar; índice em memória em `src/domain/global-search.ts` com `navigationEntries` como fonte única dos menus do `AppShell` (alinhamento com `routeGuards` garantido por teste), `actionEntries` (Novo cliente/Novo atendimento) e builders de clientes/produtos/vendas/OS carregados na abertura por permissão.
