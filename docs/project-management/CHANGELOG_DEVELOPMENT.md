@@ -6,6 +6,12 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `9674594` + docs — Ajuda contextual (F7-16)
+
+- `HelpTip` em `design-system/components.tsx`: botão "?" (`aria-label`/`aria-expanded`/`aria-controls`) que abre bolha `role="note"` com dica curta; **não bloqueia a operação** — `pointer-events: none` na bolha, fecha em clique fora e Escape, sem modal/focus trap; CSS `.help-tip*` em `styles.css` com sentence case garantido e ocultação em `@media print`.
+- 6 dicas nas telas críticas do card: **caixa** (saldo esperado/fechamento na aba Sessão; recebimentos parciais na aba Recebimentos), **OS** (fluxo da ordem no cabeçalho; etapas/histórico no progresso de fabricação) e **fiscal** (NCM/CFOP/CEST no fieldset de dados fiscais do Estoque; regime tributário nas Configurações).
+- Testes obrigatórios do card: build 0, tsc 0 (suíte intacta 477/477); smoke Chrome headless `.git/help-check.mjs` HELP OK — dicas abrem nas 3 telas, texto correto, `pointer-events: none`, digitação no formulário com a dica aberta, fecha por clique externo/Escape; screenshots inspecionados. Fora de escopo (card): chat com IA.
+
 ### `b7b7aeb` + docs — Assistente de configuração inicial retomável (F7-15)
 
 - Progresso do assistente em `localStorage` (`ONBOARDING_PROGRESS_KEY`) via `OnboardingProgress` + `sanitizeOnboardingProgress` + `isOnboardingStepId` em `onboarding.ts`: só campos conhecidos por etapa (organização, loja, usuário sem senha, `productNames`, skips); chaves estranhas (`password`, `senha`) são descartadas na leitura e step inválido cai para `organization`.

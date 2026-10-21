@@ -43,6 +43,17 @@ Fluxos de ponta a ponta usados pela equipe e por testes manuais. Cada fluxo refe
 7. **Sair e continuar depois** (nas etapas Organização, Loja, Usuário e Produtos) grava o progresso atual e volta ao dashboard. Reabrir **Assistente inicial** exibe o aviso "Retomamos o assistente na etapa …", restaura os campos já preenchidos (inclusive rascunho não salvo, como o nome da loja em digitação) e retoma de onde parou.
 8. O stepper numerado permite revisitar etapas concluídas clicando nelas; **Recomeçar do zero** limpa apenas o progresso do assistente — os registros já gravados (settings, loja, usuário, produtos) permanecem, e o assistente pode ser refeito a qualquer momento.
 
+## Ajuda contextual (F7-16, `9674594`)
+
+1. Ao lado dos títulos e campos das telas críticas aparece um botão **"?"** (`HelpTip`): o clique abre uma bolha curta com a dica (`role="note"`) e o segundo clique fecha. A dica **nunca bloqueia a operação** — o botão é pequeno, a bolha tem `pointer-events: none` (cliques atravessam), clicar em qualquer outro lugar fecha e Escape também fecha; não há modal nem foco preso.
+2. **Caixa → aba Sessão**: dica "Saldo esperado" (suprimento entra, sangria e estorno saem; no fechamento o valor contado é comparado com o esperado e a diferença fica registrada).
+3. **Caixa → aba Recebimentos**: dica "Recebimentos parciais" (dá para receber parte do valor várias vezes até quitar; cada baixa vira movimento de caixa e o troco aparece no recebimento em dinheiro).
+4. **Ordens de serviço → cabeçalho**: dica "Fluxo da OS" (a ordem nasce da venda, passa por laboratório/produção e conferência, fica pronta, o cliente é avisado e é entregue; cancelar exige motivo).
+5. **Ordens de serviço → detalhe, Progresso da fabricação**: dica "Etapas e histórico" (cada etapa grava quem fez e quando; voltar de etapa preserva o histórico).
+6. **Estoque → formulário, Dados fiscais**: dica sobre NCM (8 dígitos), CFOP (ex.: 5102 = venda) e CEST (substituição tributária) — opcional hoje, entra na NF-e da Fase 6.
+7. **Configurações → Regime tributário**: dica sobre o regime da empresa (Simples Nacional, Lucro Presumido etc.); as regras fiscais da Fase 6 vão usá-lo.
+8. Em impressões (`@media print`) os botões "?" são ocultos; os textos ficam em sentence case mesmo dentro do legend em caixa alta. Os textos vivem no próprio componente de cada tela para mudarem junto com a funcionalidade (risco de texto desatualizado) e estão listados aqui como referência única de revisão.
+
 ## Importação de produtos por CSV (F2-16, `db1ade9`)
 
 1. Usuário com permissão de gerenciar estoque abre **Estoque** e clica em **Importar CSV** no cabeçalho da seção de produtos; escolhe um arquivo `.csv` (exemplo pronto: [`IMPORT_EXAMPLE.csv`](./IMPORT_EXAMPLE.csv)).
