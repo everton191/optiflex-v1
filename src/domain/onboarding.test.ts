@@ -1,5 +1,5 @@
 ﻿import { beforeEach, describe, expect, it, vi } from "vitest";
-import { OnboardingService, buildOnboardingSummary, nextOnboardingStep, onboardingSteps, previousOnboardingStep, type OnboardingStepId } from "./onboarding";
+import { OnboardingService, buildOnboardingSummary, isOnboardingStepId, nextOnboardingStep, onboardingSteps, previousOnboardingStep, sanitizeOnboardingProgress, type OnboardingStepId } from "./onboarding";
 import type { AdministrationService } from "./administration-service";
 import type { SettingsRepository } from "./repositories";
 import type { OrganizationSettings } from "./access";
@@ -69,5 +69,45 @@ describe("review summary", () => {
 
   it("falls back to placeholders when steps were skipped", () => {
     expect(buildOnboardingSummary({})).toEqual({ organizationName: "—", storeName: undefined, ownerName: undefined, productNames: [], skipped: [] });
+  });
+});
+
+describe("resumable progress", () => {
+  it("recognizes only known step ids", () => {
+    expect(isOnboardingStepId("store")).toBe(true);
+    expect(isOnboardingStepId("review")).toBe(true);
+    expect(isOnboardingStepId("password")).toBe(false);
+    expect(isOnboardingStepId(42)).toBe(false);
+  });
+
+  it("sanitizes stored progress and never keeps secrets", () => {
+    const progress = sanitizeOnboardingProgress({
+      step: "store",
+      skipped: ["user", "nope", 7],
+      organizationName: "Óptica Demo",
+      clinicalProfessionalLabel: "Optometrista",
+      storeName: "Loja Centro",
+      createdStoreId: "store-1",
+      ownerName: "Ana",
+      ownerEmail: "ana@opticore.local",
+      password: "segredo-nunca persisted",
+      senha: "outro-segredo",
+      productNames: ["Armação", 12, "Lente"]
+    });
+    expect(progress.step).toBe("store");
+    expect(progress.skipped).toEqual(["user"]);
+    expect(progress.organizationName).toBe("Óptica Demo");
+    expect(progress.productNames).toEqual(["Armação", "Lente"]);
+    expect(progress).not.toHaveProperty("password");
+    expect(progress).not.toHaveProperty("senha");
+    expect(JSON.stringify(progress)).not.toContain("segredo");
+  });
+
+  it("falls back to the first step when the stored step or skips are invalid", () => {
+    const progress = sanitizeOnboardingProgress({ step: "hack", skipped: "user", productNames: "tudo" });
+    expect(progress.step).toBe("organization");
+    expect(progress.skipped).toEqual([]);
+    expect(progress.productNames).toEqual([]);
+    expect(progress.storeName).toBeUndefined();
   });
 });

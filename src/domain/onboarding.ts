@@ -63,6 +63,44 @@ export function buildOnboardingSummary(input: { settings?: OrganizationSettings;
   };
 }
 
+export const ONBOARDING_PROGRESS_KEY = "opticore-onboarding-progress";
+
+export interface OnboardingProgress {
+  step: OnboardingStepId;
+  skipped: OnboardingStepId[];
+  organizationName?: string;
+  clinicalProfessionalLabel?: string;
+  legalName?: string;
+  cnpj?: string;
+  storeName?: string;
+  createdStoreId?: string;
+  ownerName?: string;
+  ownerEmail?: string;
+  productNames: string[];
+}
+
+export function isOnboardingStepId(value: unknown): value is OnboardingStepId {
+  return typeof value === "string" && onboardingSteps.some((step) => step.id === value);
+}
+
+// Stored progress is untrusted: unknown keys (including any secret) are dropped, ids are coerced.
+export function sanitizeOnboardingProgress(input: Record<string, unknown>): OnboardingProgress {
+  const text = (key: string) => { const value = input[key]; return typeof value === "string" ? value : undefined; };
+  return {
+    step: isOnboardingStepId(input.step) ? input.step : "organization",
+    skipped: Array.isArray(input.skipped) ? input.skipped.filter(isOnboardingStepId) : [],
+    organizationName: text("organizationName"),
+    clinicalProfessionalLabel: text("clinicalProfessionalLabel"),
+    legalName: text("legalName"),
+    cnpj: text("cnpj"),
+    storeName: text("storeName"),
+    createdStoreId: text("createdStoreId"),
+    ownerName: text("ownerName"),
+    ownerEmail: text("ownerEmail"),
+    productNames: Array.isArray(input.productNames) ? input.productNames.filter((name): name is string => typeof name === "string") : []
+  };
+}
+
 export interface OnboardingRepositories {
   settings: SettingsRepository;
   administration: AdministrationService;
