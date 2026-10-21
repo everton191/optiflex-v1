@@ -64,6 +64,24 @@ export function normalizeSearchText(value: string): string {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\w\s]/g, " ").replace(/\s+/g, " ").trim();
 }
 
+function foldCase(value: string): string {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR");
+}
+
+export function customerSearchTerms(customer: Pick<Customer, "name" | "cpf" | "phone">): string[] {
+  return [customer.name, customer.cpf, customer.phone].filter(Boolean).map((value) => foldCase(value!));
+}
+
+export function customerSearchTermsMatch(terms: readonly string[], needle: string): boolean {
+  const query = foldCase(needle.trim());
+  if (!query) return true;
+  return terms.some((term) => term.includes(query));
+}
+
+export function customerMatchesQuery(customer: Pick<Customer, "name" | "cpf" | "phone">, needle: string): boolean {
+  return customerSearchTermsMatch(customerSearchTerms(customer), needle);
+}
+
 function normalizePhoneDigits(value: string): string {
   return (value ?? "").replace(/\D/g, "");
 }

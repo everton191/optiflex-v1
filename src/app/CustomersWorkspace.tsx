@@ -1,12 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { errorMessage } from "../domain/errors";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAppContext, useSession } from "./providers";
-import { Button, DataTable, DateInput, DocumentInput, Input, PageHeader, Search, Skeleton } from "../design-system/components";
+import { Button, DataTable, DateInput, DocumentInput, Input, PageHeader, Skeleton } from "../design-system/components";
 import { dateInputError, documentError, formatDocument, formatDateBR } from "../domain/field-rules";
 import { hasPermission } from "../domain/access";
 import type { Customer } from "../domain/customer";
-import { findDuplicateCustomer } from "../domain/customer";
+import { customerSearchTerms, customerSearchTermsMatch, findDuplicateCustomer } from "../domain/customer";
 import { CustomerHistoryService } from "../domain/customer-history-service";
 import { customerHistoryKinds, customerHistoryKindLabels, historyKindsFor, type CustomerHistoryEvent, type CustomerHistoryKind } from "../domain/customer-history";
 import { canViewClinicalHistory, customerClinicalDocumentKinds, customerClinicalDocumentKindLabels, type CustomerClinicalDocument, type CustomerClinicalDocumentKind } from "../domain/customer-clinical-history";
@@ -18,17 +18,18 @@ const historyService = new CustomerHistoryService(new LocalAttendanceRepository(
 
 export function CustomersPage() {
   const session = useSession();
-  const [customers, setCustomers] = useState<Customer[]>([]); const [query, setQuery] = useState("");
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true); const [error, setError] = useState(""); const [attempt, setAttempt] = useState(0);
+  const searchTerms = useMemo(() => new Map(customers.map((customer) => [customer.id, customerSearchTerms(customer)])), [customers]);
   useEffect(() => {
     let active = true;
     setLoading(true); setError("");
-    void receptionService.listCustomers(query).then((items) => { if (active) setCustomers(items); })
+    void receptionService.listCustomers("").then((items) => { if (active) setCustomers(items); })
       .catch((reason) => { if (active) setError(errorMessage(reason, "Não foi possível carregar os clientes.")); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [query, attempt]);
-  return <div className="page"><PageHeader eyebrow="Recepção" title="Clientes" intro="Encontre ou cadastre clientes para iniciar um atendimento." actions={hasPermission(session.role, "customers.manage") && <Link className="button" to="/clientes/novo">Novo cliente</Link>} /><Search aria-label="Buscar cliente" placeholder="Buscar por nome, CPF ou telefone" value={query} onChange={(event) => setQuery(event.target.value)} />{error && <p role="alert">{error} <Button type="button" onClick={() => setAttempt((value) => value + 1)}>Tentar novamente</Button></p>}{loading ? <Skeleton label="Carregando clientes…" /> : !error && <DataTable label="Lista de clientes" rows={customers} columns={[{ key: "name", label: "Nome", value: (customer) => customer.name }, { key: "document", label: "Documento", value: (customer) => customer.cpf || customer.phone || "Sem documento ou telefone" }]} rowKey={(customer) => customer.id} pageSize={10} emptyMessage="Nenhum cliente encontrado." renderRow={(customer) => <><td><Link to={`/clientes/${customer.id}`}><strong>{customer.name}</strong></Link></td><td>{customer.cpf || customer.phone || "Sem documento ou telefone"}</td></>} />}</div>;
+  }, [attempt]);
+  return <div className="page"><PageHeader eyebrow="Recepção" title="Clientes" intro="Encontre ou cadastre clientes para iniciar um atendimento." actions={hasPermission(session.role, "customers.manage") && <Link className="button" to="/clientes/novo">Novo cliente</Link>} />{error && <p role="alert">{error} <Button type="button" onClick={() => setAttempt((value) => value + 1)}>Tentar novamente</Button></p>}{loading ? <Skeleton label="Carregando clientes…" /> : !error && <DataTable label="Lista de clientes" rows={customers} columns={[{ key: "name", label: "Nome", value: (customer) => customer.name }, { key: "document", label: "Documento", value: (customer) => customer.cpf || customer.phone || "Sem documento ou telefone" }]} rowKey={(customer) => customer.id} pageSize={10} searchLabel="Buscar cliente" searchPlaceholder="Buscar por nome, CPF ou telefone" match={(customer, needle) => customerSearchTermsMatch(searchTerms.get(customer.id) ?? [], needle)} emptyMessage="Nenhum cliente encontrado." renderRow={(customer) => <><td><Link to={`/clientes/${customer.id}`}><strong>{customer.name}</strong></Link></td><td>{customer.cpf || customer.phone || "Sem documento ou telefone"}</td></>} />}</div>;
 }
 
 export function CustomerProfilePage() {

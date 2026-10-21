@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { attendanceTransitions, findDuplicateCustomer, isActiveQueueStatus, isValidCPF, isValidCNPJ, isValidDocument, normalizeSearchText, waitingMinutes, type AttendanceStatus, type Customer } from "./customer";
+import { attendanceTransitions, customerMatchesQuery, customerSearchTerms, customerSearchTermsMatch, findDuplicateCustomer, isActiveQueueStatus, isValidCPF, isValidCNPJ, isValidDocument, normalizeSearchText, waitingMinutes, type AttendanceStatus, type Customer } from "./customer";
 
 const allStatuses: readonly AttendanceStatus[] = ["DRAFT", "WAITING", "IN_PROGRESS", "FINISHED", "CANCELLED", "NO_SHOW"];
 
@@ -96,5 +96,45 @@ describe("duplicate customer detection", () => {
 
   it("skips the customer being edited", () => {
     expect(findDuplicateCustomer(existing, { name: "José da Silva", phone: "(11) 99999-0000", cpf: "111.444.777-35" }, "c1")).toBeUndefined();
+  });
+});
+
+describe("customer list query match", () => {
+  const customer = { name: "José da Silva", cpf: "111.444.777-35", phone: "(11) 99999-0000" };
+
+  it("matches name substrings ignoring case and accents", () => {
+    expect(customerMatchesQuery(customer, "jose")).toBe(true);
+    expect(customerMatchesQuery(customer, "SILVA")).toBe(true);
+    expect(customerMatchesQuery(customer, "jose da")).toBe(true);
+    expect(customerMatchesQuery(customer, "joze")).toBe(false);
+  });
+
+  it("matches document and phone substrings including punctuation", () => {
+    expect(customerMatchesQuery(customer, "444.777")).toBe(true);
+    expect(customerMatchesQuery(customer, "99999")).toBe(true);
+    expect(customerMatchesQuery(customer, "98888")).toBe(false);
+  });
+
+  it("treats an empty needle as a match for every customer", () => {
+    expect(customerMatchesQuery(customer, "")).toBe(true);
+    expect(customerMatchesQuery(customer, "   ")).toBe(true);
+  });
+
+  it("ignores missing optional fields", () => {
+    expect(customerMatchesQuery({ name: "Maria Souza" }, "maria")).toBe(true);
+    expect(customerMatchesQuery({ name: "Maria Souza" }, "111")).toBe(false);
+    expect(customerMatchesQuery({ name: "", cpf: undefined, phone: undefined }, "x")).toBe(false);
+  });
+
+  it("keeps parity between direct match and precomputed terms", () => {
+    const terms = customerSearchTerms(customer);
+    expect(terms).toEqual(["jose da silva", "111.444.777-35", "(11) 99999-0000"]);
+    for (const needle of ["jose", "SILVA", "444.777", "99999", "joze", ""]) {
+      expect(customerSearchTermsMatch(terms, needle)).toBe(customerMatchesQuery(customer, needle));
+    }
+    expect(customerSearchTermsMatch(terms, "jose")).toBe(true);
+    expect(customerSearchTermsMatch(terms, "joze")).toBe(false);
+    expect(customerSearchTermsMatch([], "x")).toBe(false);
+    expect(customerSearchTermsMatch([], "")).toBe(true);
   });
 });
