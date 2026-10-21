@@ -1,0 +1,47 @@
+# Regras de negócio — Opticore
+
+Documento de regras operacionais relevantes para a ótica. Este arquivo nasceu com o ciclo de pagamentos (F4-11) e cresce por card.
+
+## Descontos com limite por perfil e aprovação (F3-12, 08/10/2026)
+
+- **Modelo:** `Sale.discount?` (`SaleDiscount`) com tipo `PERCENT` (percentual) ou `AMOUNT` (valor em reais), valor, motivo opcional, base bruta (`grossTotal`) e registro imutável de **quem aplicou** (`appliedBy` + `appliedByRole` + `appliedAt`) e de **quem aprovou** (`approvedBy`/`approvedAt`, quando exigido). `Sale.total` passa a ser o valor **líquido** (bruto − desconto); o bruto fica no registro do desconto.
+- **Limites por perfil (defaults v0.x — ajustáveis):** vendedor e caixa **5% ou R$ 50**; gerente da loja **15% ou R$ 300**; dono e administrador de rede **30% ou R$ 1000**. As duas barreiras valem juntas (percentual **e** valor). Tabela central em `discountAuthorityByRole` (`sales.ts`).
+- **Aprovação (CA):** desconto acima do limite de quem aplica é salvo no orçamento **sem** `approvedBy`; `SalesService.confirm` bloqueia a confirmação até a aprovação. `approveDiscount(sale, aprovador, perfil)` grava quem aprovou, **proíbe autoprovação** (quem aplicou ≠ quem aprova) e rejeita aprovação acima do limite do aprovador; a aprovação gera evento de auditoria (`UPDATE`/`sale`, resumo "Desconto aprovado em …").
+- **Teto absoluto:** desconto que zeraria o total é rejeitado na gravação ("O desconto não pode zerar o total da venda."). Acima do topo (30% ou R$ 1000) **ninguém** aprova — margem protegida por construção.
+- **UI:** formulário de orçamento no caixa com tipo/valor/motivo, prévia "bruto → desconto → final" com aviso de aprovação e limite do perfil; linha da venda mostra desconto com status ("Aguardando aprovação" / "Aprovado por …") e botão "Aprovar desconto" para perfis autorizados; documento imprimível (`/vendas/:id`) exibe bruto, desconto (com motivo e aprovador) e total líquido.
+- **Auditoria/histórico:** o registro do desconto vive na própria venda (quem, quando, quanto, sobre qual bruto, quem aprovou); cancelamento da venda continua auditado à parte (F1-10).
+- **Fora do escopo:** promoções automátáticas, tabelas de preço e desconto por produto/cliente (decisão de catálogo futuro).
+
+## Pagamentos por forma (F4-11, 08/10/2026)
+
+- **Dinheiro (CASH):** o operador informa o valor recebido; o sistema calcula o troco em centavos (`receiptPlan` em `src/domain/cash.ts`, sem drift de arredondamento) e grava no caixa **apenas o valor aplicado à venda** — o troco sai do caixa e não vira movimento. O troco aparece em tempo real ao digitar o valor e na mensagem de confirmação ("Recebimento registrado. Troco: R$ X.").
+- **PIX:** referência opcional digitada por venda (input só aparece com PIX selecionado); guardada em `CashEntry.reason` e exibida em "Movimentos registrados". Referência preenchida com outra forma é rejeitada ("Referência de pagamento é válida apenas para PIX.").
+- **Cartão (Débito/Crédito):** o valor deve cobrir exatamente o saldo pendente; sem troco e sem referência.
+- **Parcial:** qualquer forma pode receber parcial; o saldo pendente permanece até a soma dos RECEIPTs cobrir o total (`SalePaymentStatus` `PENDING`/`PARTIAL`/`PAID`).
+- **Fechamento:** a aba Sessão resume recebimentos por forma (`.method-totals`); todos os cálculos monetários usam precisão de centavos (`toCents`).
+- **Fora do escopo:** gateway/QR PIX automático, parcelamento, juros e carnê (F4-13 bloqueado por decisão P4).
+
+## Refração estruturada (F3-07, 08/10/2026)
+
+- **Documento próprio:** a prescrição estruturada (`Prescription`) é append-only e independe do campo texto do prontuário; versões emitidas nunca são reescritas e a vigente é resolvida por `activePrescription`.
+- **Campos por olho (OD/OE):** esférico (`sphere`), cilíndrico (`cylinder`), eixo (`axis`, graus) e adição (`add`), todos em dioptrias e opcionais — mas ao menos um grau ou uma observação é obrigatório.
+- **Validação de faixa:** eixo aceita apenas 0–180 ("O eixo deve estar entre 0° e 180°."); graus não finitos (NaN/Infinity) são rejeitados. O formulário da workspace mostra os limites (0–180) e grava via `issuePrescription` com autora = profissional da sessão.
+- **Persistência:** tabela `prescriptions` (Dexie v13) com guarda de loja pelo atendimento; backup `schema: 13` (schemas 10–12 importam com a tabela vazia).
+- **Fora do escopo:** cálculo automático de grau e decisões de tratamento. Regras clínicas devem ser homologadas com o responsável da operação.
+
+## Medidas de montagem: DP/DNP e altura (F3-08, 08/10/2026)
+
+- **Campos estruturados:** `Prescription.measures` opcional (`PrescriptionMeasures`) com DP total, DP longe, DP perto, altura OD e altura OE — todos em milímetros — e `origin` (`MEASURED` medido / `INFORMED` informado; rótulos em `measurementOriginLabels`). A origem é registrada e exibida para mitigar o risco de medida errada propagada.
+- **Validação:** `assertValidPrescriptionMeasures` — medidas precisam ser finitas e positivas ("Medida de montagem inválida (use milímetros positivos)."); origem desconhecida é rejeitada ("Origem das medidas inválida."). Medidas vazias são normalizadas para `undefined`; prescrições antigas sem medidas continuam válidas.
+- **Formulário clínico:** bloco DP total/DP longe/DP perto/Altura OD/Altura OE/Origem no formulário de refração; a retificação pré-preenche as medidas vigentes (mesmo fluxo dos graus) e emite nova versão append-only.
+- **Handoff até a OS (CA):** as medidas entram no snapshot `SalePrescription.measures` (`salePrescriptionSnapshot`) e o detalhe da OS exibe o cartão "Prescrição" com OD/OE e as medidas formatadas (`formatPrescriptionMeasures` → "DP total 63.00 mm · … · Medido") **sem redigitação**; sem medidas, a OS mostra "Medidas de montagem não registradas nesta prescrição."
+- **Documento imprimível:** a receita (`prescriptionDocument`) inclui a linha "Medidas de montagem:" quando presente.
+- **Fora do escopo:** captura por equipamento (autorefrator/pupillômetro) e cálculo automático.
+
+## Prescrição estruturada: uso, retificação e venda (F3-06, 08/10/2026)
+
+- **Tipo de uso:** `Prescription.usage` opcional (`DISTANCE` à distância / `NEAR` à perto / `CONTINUOUS` uso contínuo / `MULTIFOCAL` multifocal), validado por `assertValidPrescriptionUsage` ("Tipo de uso inválido."). Prescrições antigas sem uso continuam válidas.
+- **Retificação (CA1):** a workspace clínica tem botão "Retificar" na prescrição ativa; o formulário é pré-preenchido com os graus vigentes e exige motivo ("Informe o motivo da retificação."). `retifyPrescription` no `ClinicalService` autoriza pela loja do atendimento e grava uma nova versão com `retifies`/`retificationReason`; a versão original permanece no histórico com autor, data e motivo, e a lista mostra as duas.
+- **Handoff para a venda (CA2):** no caixa, o formulário de orçamento lista as prescrições do cliente (`listCustomerPrescriptions`) e grava um snapshot imutável em `Sale.prescription` (`salePrescriptionSnapshot`: id, customerId, versão, uso, OD/OE, observações) na criação do orçamento — a venda nunca pede os graus de novo. Editar o rascunho mantém o snapshot se o cliente não mudar e o limpa se o cliente trocar; trocar de prescrição substitui o snapshot. Snapshot de outro cliente ou com versão/uso/eixo inválidos é rejeitado.
+- **Backup:** `validateBackup` valida a estrutura de `sales.prescription` (versão, uso, graus com eixo 0–180) e a integridade referencial (a prescrição existe e customerId/storeId batem com a linha da venda).
+- **Fora do escopo:** impressão da prescrição no orçamento (F7-13) e cálculo automático de grau.

@@ -2,29 +2,32 @@
 
 ## Purpose
 
-Buscar, cadastrar e exibir clientes, seus dados básicos e histórico de atendimentos.
+Buscar, cadastrar, editar e exibir clientes, seus dados básicos e a linha do tempo unificada de atendimentos, vendas, ordens de serviço e pagamentos.
 
 ## Directory
 
-Páginas em `src/app/pages.tsx`; domínio em `customer.ts` e `reception-service.ts`; persistência em `local-repositories.ts`.
+Páginas em `src/app/CustomersWorkspace.tsx` (re-exportadas por `pages.tsx`); domínio em `customer.ts`, `customer-history.ts`, `customer-history-service.ts` e `reception-service.ts`; persistência em `local-repositories.ts`.
 
 ## Routes
 
 - `/clientes`
 - `/clientes/novo`
 - `/clientes/:customerId`
+- `/clientes/:customerId/editar`
 
 ## Main Pages
 
-`CustomersPage`, `CustomerNewPage`, `CustomerProfilePage`.
+`CustomersPage`, `CustomerNewPage`, `CustomerProfilePage`, `CustomerEditPage`.
 
 ## Components
 
-`Input`, `Button`, classes de lista e page header.
+`Input`, `Button`, classes de lista, page header e `.page-title-actions`/`.form-actions`.
 
 ## Services
 
-`ReceptionService`: list/get/create customer e operações de attendance.
+`ReceptionService`: list/get/create/update customer e operações de attendance; valida CPF/CNPJ (`isValidDocument`) antes de gravar.
+
+`CustomerHistoryService` (`customer-history-service.ts`, F2-09): `list(customerId, { storeId, role })` agrega atendimentos do cliente (global), vendas e OS da loja por `customerId` e recebimentos do caixa via `saleId`; devolve `CustomerHistoryEvent[]` prontos para a timeline. `listClinicalDocuments` (F3-04): prescrições da loja + prontuários/anexos dos atendimentos do cliente, com gate duplo — a UI só chama com `canViewClinicalHistory(role)` e o serviço devolve `[]` sem a permissão; devolve `CustomerClinicalDocument[]` (nunca com texto de anamnese).
 
 ## Repositories
 
@@ -36,11 +39,11 @@ Sem store ou hook dedicado; páginas usam `useState`/`useEffect`.
 
 ## Models
 
-`Customer`. Histórico usa `Attendance`.
+`Customer`; labels `attendanceTypeLabels`/`attendanceStatusLabels` agora vivem em `customer.ts` (o domínio não importa app). Timeline em `customer-history.ts`: `CustomerHistoryKind` (ATTENDANCE/SALE/WORK_ORDER/PAYMENT), `CustomerHistoryEvent` (id, kind, at, title, detail?, href?, storeId, otherStore), `historyKindsFor(role)` (attendance.read → atendimentos; sales.read → vendas+OS; cash.read → pagamentos) e `buildCustomerHistory` puro (ordena por data desc; consulta clínica como link só para `clinical.workspace.access` na própria loja; nunca expõe conteúdo clínico).
 
 ## Permissions
 
-`customers.read`, `customers.manage`.
+`customers.read`, `customers.manage`; a timeline respeita `attendance.read`, `sales.read`, `cash.read` e `clinical.workspace.access` (vendedor não vê atendimentos/anamnese). A seção "Guia clínica" do perfil só renderiza com `clinical.workspace.access` (F3-04).
 
 ## Dependencies
 
@@ -48,11 +51,13 @@ Attendance, Design System, React Router e IndexedDB local.
 
 ## Public API
 
-`ReceptionService.listCustomers`, `getCustomer`, `createCustomer`; contrato `CustomerRepository`.
+`isValidDocument` (e `isValidCPF`/`isValidCNPJ`/`normalizeDocument`) em `customer.ts` valida documento com ou sem máscara.
+
+`ReceptionService.listCustomers`, `getCustomer`, `createCustomer`, `updateCustomer`; contrato `CustomerRepository`.
 
 ## Files Normally Modified
 
-- Listagem/busca/form/perfil: símbolos correspondentes em `pages.tsx`.
+- Listagem/busca/form/perfil: símbolos correspondentes em `CustomersWorkspace.tsx`.
 - Regra/orquestração: `reception-service.ts`.
 - Busca/persistência: `LocalCustomerRepository`.
 - Modelo: `customer.ts`.
@@ -69,11 +74,15 @@ Não alterar attendance inteiro para correção restrita à busca. Não acessar 
 
 ### Alterar formulário
 
-→ `CustomerNewPage` + `Customer` + createCustomer.
+→ `CustomerNewPage` (criação: nome/telefone/CPF) e `CustomerEditPage` (edição: nome/telefone/CPF/e-mail/nascimento) + `Customer` + createCustomer/updateCustomer.
 
 ### Alterar busca
 
 → `CustomersPage` e `LocalCustomerRepository.list`.
+
+### Alterar validação de documento
+
+→ `isValidCPF`/`isValidCNPJ`/`isValidDocument` em `customer.ts` + `createCustomer`/`updateCustomer`.
 
 ### Alterar regra de negócio
 
@@ -82,6 +91,10 @@ Não alterar attendance inteiro para correção restrita à busca. Não acessar 
 ### Alterar persistência
 
 → contrato + `LocalCustomerRepository` + schema se necessário.
+
+### Alterar o histórico/timeline do perfil
+
+→ `customer-history.ts` (seletor puro + labels + permissões), `customer-history-service.ts` (agregação por loja), seção "Histórico" do `CustomerProfilePage` (filtros por tipo) e testes `customer-history.test.ts`. Novas fontes de evento entram no `CustomerHistoryInput` e no `buildCustomerHistory` — nunca com conteúdo clínico.
 
 ## Related Modules
 

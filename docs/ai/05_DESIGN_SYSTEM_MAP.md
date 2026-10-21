@@ -32,18 +32,123 @@
 - Usado por: dashboard e estado do caixa.
 - Alteração impacta: métricas e painéis que usam Card.
 
+### Select (F7-01)
+
+- Caminho: `src/design-system/components.tsx`; estilos `.select-field`/`.select` em `styles.css`.
+- Uso real: formulários de estoque (categoria do produto e tipo de movimentação) e função do usuário.
+- Aceita `label` obrigatório + atributos nativos de `select`.
+
+### Badge (F7-01)
+
+- Caminho: `src/design-system/components.tsx`; tons `.badge`, `.is-success`, `.is-low`, `.is-out`.
+- Uso real: lista de usuários (função) e lista de lojas (ativa/inativa).
+- Tons: `neutral` | `success` | `warning` | `danger`.
+
+### Tabs (F7-01)
+
+- Caminho: `src/design-system/components.tsx`; estilo base `.tabs` (mesma caixa das `.cash-tabs`).
+- Uso real: áreas do caixa (Vendas/Recebimentos/Sessão) via `className="cash-tabs"` para preservar o visual.
+- API: `items` (`id`+`label`), `value`, `onChange`, `label` (aria-label do tablist).
+
+### Table (F7-01)
+
+- Caminho: `src/design-system/components.tsx`; estilos `.table-wrap`/`.data-table` em `styles.css`.
+- Uso real: lista de usuários (cabeçalho com `th scope="col"`).
+- Wrapper semântico: o conteúdo monta `thead`/`tbody`/`tr`.
+
+### DataTable (F7-08)
+
+- Caminho: `src/design-system/components.tsx` (componente) + `src/design-system/data-table.ts` (helpers puros testados); estilos `.table-sort`/`.table-filter`/`.table-pagination` em `styles.css`.
+- Uso real: lista de clientes (`CustomersWorkspace`) e lista de produtos do Estoque (`InventoryWorkspace`).
+- Acessibilidade: headers `th scope="col" aria-sort` com botão ordenável (Tab+Enter nativo), filtro `Search` com `aria-label`, paginação com `aria-live="polite"` e botões desabilitados nas bordas, `emptyMessage` no tbody vazio.
+- API: `label`, `rows`, `columns` (`key/label/value/align?/sortable?`), `rowKey`, `renderRow?`, `pageSize?` (padrão 10), `searchPlaceholder?`/`searchLabel?`/`match?`, `emptyMessage?`.
+
+### Dialog (F7-01; aprimorado em F7-09)
+
+- Caminho: `src/design-system/components.tsx`; estilos `.dialog-overlay`/`.dialog`.
+- Uso real: confirmação de cancelamento de venda no caixa (com motivo) e cancelamento de transferência no estoque.
+- Comportamento: `role="dialog" aria-modal`, fecha no Escape, no clique fora e no botão ×; `autoFocus` no campo do formulário.
+- Foco (F7-09): foco inicial no primeiro elemento focável, trap de Tab dentro do overlay, retorno do foco ao gatilho no fechamento (`useOverlayFocus`).
+
+### ConfirmDialog (F7-09)
+
+- Caminho: `src/design-system/components.tsx`; usa `Dialog` + `Button className="button-danger"`.
+- Uso real: exclusão de anexo clínico (substitui `window.confirm`).
+- API: `open`, `title`, `message`, `confirmLabel?`, `cancelLabel?`, `destructive?`, `onConfirm`, `onCancel`.
+- Ação destrutiva: classe `.button-danger` (fundo #a12525) em `styles.css`.
+
+### Drawer (F7-01)
+
+- Caminho: `src/design-system/components.tsx`; estilos `.drawer-overlay`/`.drawer`.
+- Uso real: formulário de movimentação de produto no estoque (aberto pelo botão "Movimentar").
+- Mesmo contrato de foco/fechamento do Dialog, painel alinhado à direita.
+
+### Toast (F7-01)
+
+- Caminho: `src/design-system/components.tsx`; estilos `.toast`.
+- Uso real: confirmações de sucesso do caixa (substitui `.notice success` inline) com botão de dispensar.
+- `tone="success"` (`role="status"`) ou `tone="error"` (`role="alert"`).
+
+### Tooltip (F7-01)
+
+- Caminho: `src/design-system/components.tsx`; estilos `.tooltip`.
+- Uso real: explicação do "Saldo esperado" no fechamento do caixa.
+- Abre no hover e no foco de teclado (`tabIndex=0` + `aria-describedby` → `role="tooltip"`).
+
+### Search (F7-01)
+
+- Caminho: `src/design-system/components.tsx`; estilo `.search-field`.
+- Uso real: busca de clientes (`input type="search"`).
+- Aceita os mesmos atributos de `Input`.
+
+### EmptyState (F7-01)
+
+- Caminho: `src/design-system/components.tsx`; classe `.empty-state`.
+- Uso real: lista de clientes sem resultados, lista de estoque, agenda e fila da recepção, lista de ordens de serviço (aplicação incremental concluída em F7-11).
+
+### Skeleton (F7-01)
+
+- Caminho: `src/design-system/components.tsx`; estilos `.skeleton`/`.skeleton-line`.
+- Uso real: carregamento das listas de clientes, dashboard, estoque, agenda/fila da recepção, ordens e caixa (`role="status" aria-busy`); shimmer respeita `prefers-reduced-motion`.
+
+### ErrorState (F7-11)
+
+- Caminho: `src/design-system/components.tsx`; classe `.error-state` em `styles.css`.
+- Props: `message` (obrigatório), `onRetry?`, `retryLabel?` (padrão "Tentar novamente").
+- `role="alert"`, reutiliza `Button` para o retry; cor de erro `#b42318` no texto.
+- Uso real: falha de leitura do caixa (com `refresh`), fila de atendimento e demais páginas que capturam `errorMessage`.
+- Padrão-CA: falha de leitura mostra erro + retry; sem tela branca.
+
+### PageHeader (F7-01)
+
+- Caminho: `src/design-system/components.tsx`; classes `.eyebrow`/`.page-title`.
+- Uso real: cabeçalho das páginas de Clientes e Usuários (`eyebrow`, `title`, `intro`, `actions`).
+
+### PrintLayout (F7-13)
+
+- Caminho: `src/design-system/components.tsx`; classes `.print-layout`/`.print-toolbar`/`.print-sheet`/`.print-brand`/`.print-title`/`.print-meta`/`.print-table`/`.print-total` em `styles.css`.
+- Props: `title` (obrigatório), `meta?`, `brand?` (padrão `"Opticore"` — nome e paleta preto/branco ajustáveis depois), `actions?`, `children`.
+- Estrutura: toolbar `.no-print` com ações da página + botão "Imprimir" (`window.print()`), folha `.print-sheet` com cabeçalho da marca, título e meta em preto/branco.
+- Uso real: receita (`PrescriptionDocumentPage`), documento de orçamento/venda (`SaleDocumentPage` em `/vendas/:saleId`) e detalhe da OS (`WorkOrderDetailPage` — Ações/Insumos/Histórico com `.no-print`).
+- `@media print` esconde shell/toolbar, zera paddings e limpa bordas da folha; PDF local = "Salvar como PDF" do diálogo nativo do navegador.
+
 ## Elementos compartilhados via classes
 
-- Badge: classe `.badge` em `src/styles.css`; não há componente React.
-- Tabs: `.cash-tabs`, exclusiva da tela Caixa; não há primitive global.
-- Page header: `.page-title`, `.cash-heading`; não há componente global.
-- Select e Textarea: HTML nativo estilizado em `styles.css`.
+- Page header: `.cash-heading` continua exclusiva do caixa; `.page-title` é consumido pelo componente `PageHeader`.
+- Select e Textarea: `Select` é o componente; `<select>` nativo só em contexts onde o componente ainda não foi adotado (substituição gradual).
 - Lists: `.list-card`, `.list-row`, `.list-link`.
-- Feedback: `.success`, `.error-text`, `.notice`; sem Toast global.
+- Feedback: `.success`, `.error-text`, `.notice`; confirmações flutuantes usam `Toast`.
+
+## Estados documentados (foco, erro, desabilitado)
+
+- **Foco:** `.select:focus`, `.input:focus`, `.tooltip-trigger:focus-visible`, `.tabs button:focus-visible`, `.overlay-close:focus-visible` → contorno de 3 px em `--color-focus` (mesmo padrão do `Button`).
+- **Erro:** atributo `aria-invalid="true"` em `.input`/`.select` pinta a borda de `#a12525`; mensagens continuam em `role="alert"` (`.error-text`/`.notice.error-text`).
+- **Desabilitado:** `.select:disabled` (opacidade .6, `cursor: not-allowed`), `.button:disabled` (opacidade .55); `Select`/`Badge`/`Tabs`/`Search` repassam atributos nativos.
+- **Overlay:** Dialog/Drawer fecham por Escape, clique no fundo e botão ×; Toast é dispensável por botão.
 
 ## Componentes ausentes
 
-Não existem componentes globais de Select, Table, Modal/Dialog, Drawer, Tabs genérica, Badge React, Toast, Search, EmptyState, Skeleton, Tooltip ou PageHeader. Antes de criar um deles, confirme reutilização em mais de uma área.
+`CustomerHeader` continua sem componente global (cada página monta o próprio cabeçalho de cliente). Demais primitivas da auditoria A (Select, Table, Dialog, Drawer, Tabs, Badge, Toast, Search, EmptyState, Skeleton, Tooltip, PageHeader) foram entregues em F7-01/#116; `ErrorState` em F7-11/#126; ao criar um novo, confirme reutilização em mais de uma área.
 
 ## Shell e navegação
 
@@ -75,9 +180,41 @@ Não há tokens separados para sizes, z-index ou breakpoints.
 - 721–1100px em paisagem: desktop compacto/tablet;
 - acima disso: desktop.
 
+Validação de tablet (F7-06, `13ca34b`): o tablet escolhe a apresentação pela orientação — retrato usa a experiência móvel (menu inferior fixo, uma coluna) e paisagem mantém o menu lateral reduzido. Os dois tamanhos padrão foram verificados em Chrome headless nas 12 telas principais, sem transbordamento horizontal (`scrollWidth == clientWidth`), com o `.topbar` em `min-height: 3.5rem` + `height: auto` (o fixo de 3.5rem cortava o resumo do usuário, que passou a ter badge compacto). Prints de 768×1024 e 1024×768 ficam no relatório da sessão.
+
+## Acessibilidade (F7-17, `0c770f0`)
+
+### Correções aplicadas
+
+- **Skip link** em `src/shell/AppShell.tsx`: `<a className="skip-link" href="#main-content">Pular para o conteúdo</a>` inserido antes do `<aside>`; `main` ganhou `id="main-content" tabIndex={-1}` para receber o foco programático (primeiro focável da página após o login).
+- **CSS** (`src/styles.css`): `.skip-link` (posicionado fora da tela via `top: -4rem`, visível só em `:focus` com contorno `--color-focus`), `.content:focus` (contorno interno com `outline-offset: -3px`) e fallback global `:where(a, button, select, textarea, input, summary, [tabindex]):focus-visible { outline: 3px solid color-mix(in srgb, var(--color-focus), transparent 45%); outline-offset: 2px; }` — specificity zero, então regras específicas de componente (`.button:focus-visible`, `.tabs button:focus-visible` etc.) continuam vencendo.
+
+### Checklist verificado (auditoria + smoke `.git/a11y-check.mjs`)
+
+- [x] Fluxo principal completo só com teclado (CA do card): login demo → skip link → dashboard → Clientes → criar cliente → Caixa → abrir caixa → criar orçamento R$ 150 — tudo via Tab/Enter/ArrowDown, sem clique.
+- [x] Foco sempre visível: outline 3 px `--color-focus` medido via `getComputedStyle` em cada amostra (login, skip link, main, topbar select, nav, formulários, botões).
+- [x] Skip link: primeiro elemento focável, visível ao ganhar foco, Enter salta para `#main-content`.
+- [x] Nenhum `onClick` em elementos não interativos (div/span/li/td) — auditoria do código.
+- [x] Gaps corrigidos: `.button` e `.status-filters button` não tinham `:focus-visible` próprio (cobertos pelo fallback global); `<select>` nativo sem estilo de foco (coberto pelo fallback).
+- [x] Contraste: muted `#627078` ≈5.1:1, focus `#187990` ≈5.1:1, danger `#a12525`+texto branco ≈7.4:1, brand escuro ✓ (todos ≥4.5:1 para texto).
+- [x] Sem `outline: none` no CSS; landmarks `main`/`nav` com `aria-label` já existentes.
+- [x] F7-08 (DataTable), F7-09 (focus trap em Dialog/Drawer) e F7-11 (ErrorState/role=alert) permanecem válidos — nada regrediu.
+
+Fora de escopo do card: certificação formal (WCAG audit) e leitor de tela em aparelho real.
+
+### Procedimento de teste de teclado (reexecutável)
+
+1. `npm.cmd run preview -- --port 4173 --strictPort` e abrir `http://localhost:4173`.
+2. Tab até o botão "Entrar" do perfil "Proprietário" (`.demo-box .demo-row`) e pressionar Enter.
+3. Tab: o primeiro focável deve ser o skip link "Pular para o conteúdo" — Enter salta para o conteúdo (`document.activeElement.id === "main-content"`).
+4. Navegar por Tab/Shift+Tab pela topbar e sidebar confirmando outline visível (`getComputedStyle(el).outlineWidth !== "0px"`) a cada amostra.
+5. Completar um orçamento no caixa usando só teclado: setas no select de cliente, Enter nos campos, Enter no botão "Criar orçamento".
+6. Script automatizado equivalente: `.git/a11y-check.mjs` (saída esperada `A11Y OK`).
+
 ## Regra de mudança
 
 - Cor/espaço/raio/sombra global → `tokens.css`.
-- Botão/Input/Card → `components.tsx` e classe global em `styles.css`.
+- Componentes globais (Button, Input, Card, Select, Badge, Tabs, Table, Dialog, Drawer, Toast, Tooltip, Search, EmptyState, Skeleton, ErrorState, PageHeader, PrintLayout, HelpTip) → `components.tsx` e classe global em `styles.css`.
 - Menu/topbar/responsividade → `AppShell.tsx` + `styles.css`.
 - Estilo exclusivo de página → seção correspondente de `styles.css`.
+- Foco/skip link → regras globais de `styles.css` (não adicionar `outline: none` sem substituir visível).

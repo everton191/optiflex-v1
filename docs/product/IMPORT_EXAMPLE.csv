@@ -1,0 +1,5 @@
+nome,código,categoria,quantidade,estoque mínimo,preço,custo,marca,material,descrição
+Armação Rayban Classic,AR-1001,Armação,12,3,299.90,145.00,Rayban,Acetato,Moldura clássica acetato
+"Lente multifocal, 1.67",LT-2001,Lente,8,2,"1.234,56",780.00,Essilor,,"Revestida antirreflexo"
+Lente óculos de sol escura,LT-2002,Lente,5,1,189.90,90.00,MegaLens,,Graduação simples escura
+Estojo rígido preto,AC-3001,Acesso,30,10,45.00,18.00,Genérico,Plástico,Estojo com microfibra
