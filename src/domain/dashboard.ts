@@ -106,3 +106,15 @@ export function isOverdueOrder(order: WorkOrder, now: Date = new Date()): boolea
 export function overdueOrders(orders: readonly WorkOrder[], now: Date = new Date()): WorkOrder[] {
   return orders.filter((order) => isOverdueOrder(order, now));
 }
+
+const pickupDueTime = (order: WorkOrder): number => {
+  const due = order.dueAt ? Date.parse(order.dueAt) : Number.NaN;
+  return Number.isFinite(due) ? due : Number.MAX_SAFE_INTEGER;
+};
+
+export function readyForPickupOrders(orders: readonly WorkOrder[]): WorkOrder[] {
+  return orders
+    .filter((order) => order.status === "READY" || order.status === "AWAITING_PICKUP")
+    .slice()
+    .sort((a, b) => pickupDueTime(a) - pickupDueTime(b));
+}

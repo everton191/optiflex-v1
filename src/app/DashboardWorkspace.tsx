@@ -8,7 +8,7 @@ import type { CashEntry, CashSession } from "../domain/cash";
 import type { InventoryItem } from "../domain/inventory";
 import type { Sale } from "../domain/sales";
 import type { WorkOrder } from "../domain/work-order";
-import { chartHeights, dashboardMetricKeys, openOrders, overdueOrders, pendingQuotes, receiptsTodayCents, returnsToday, salesByDay, salesTodayCents, stockAlerts, waitingQueue } from "../domain/dashboard";
+import { chartHeights, dashboardMetricKeys, openOrders, overdueOrders, pendingQuotes, readyForPickupOrders, receiptsTodayCents, returnsToday, salesByDay, salesTodayCents, stockAlerts, waitingQueue } from "../domain/dashboard";
 import { InventoryService } from "../domain/inventory-service";
 import { ReceptionService } from "../domain/reception-service";
 import { SalesService } from "../domain/sales-service";
@@ -67,6 +67,7 @@ export function DashboardPage() {
   const alerts = stockAlerts(items);
   const open = openOrders(orders);
   const overdue = overdueOrders(orders);
+  const readyForPickup = readyForPickupOrders(orders);
   const buckets = salesByDay(sales);
   const heights = chartHeights(buckets);
   const weekCents = buckets.reduce((total, bucket) => total + bucket.cents, 0);
@@ -84,6 +85,7 @@ export function DashboardPage() {
   const pendencias = [
     { show: canQueue && waiting.length > 0, text: plural(waiting.length, "cliente aguardando", "clientes aguardando") + " na fila", to: "/atendimentos" },
     { show: canReadSales && quotes.length > 0, text: plural(quotes.length, "orçamento", "orçamentos") + " aguardando aprovação", to: "/caixa" },
+    { show: canReadSales && readyForPickup.length > 0, text: plural(readyForPickup.length, "ordem pronta", "ordens prontas") + " aguardando retirada", to: "/ordens-servico" },
     { show: canReadSales && overdue.length > 0, text: plural(overdue.length, "ordem", "ordens") + " com prazo vencido", to: "/ordens-servico" },
     { show: canReadInventory && alerts.length > 0, text: plural(alerts.length, "produto", "produtos") + " no mínimo ou esgotado", to: "/estoque" },
     { show: canManageCash && !cashSession, text: "Caixa ainda não aberto nesta loja", to: "/caixa" },

@@ -14,7 +14,7 @@ Domínio em `src/domain/work-order.ts` e `work-order-service.ts`; página em `sr
 
 ## Main Pages
 
-`WorkOrdersPage`: filtros por status, criação a partir de vendas confirmadas sem ordem, transições de status, prazo e observações.
+`WorkOrdersPage`: filtros por status (inclui "Prontos p/ retirada" = READY + AWAITING_PICKUP, ordenado por prazo, com cliente, loja e prazo de retirada), criação a partir de vendas confirmadas sem ordem, transições de status, prazo e observações.
 
 ## Components
 
@@ -51,6 +51,7 @@ Sales confirmadas, clientes, loja atual e sessão.
 ## Files Normally Modified
 
 - Página: `src/app/WorkOrdersWorkspace.tsx`.
+- Lista de prontos/pendências do painel: `src/domain/dashboard.ts` + `DashboardWorkspace.tsx`.
 - Fluxo/validações: `work-order-service.ts`.
 - Transições: `work-order.ts`.
 - Persistência: `LocalWorkOrderRepository`.
@@ -59,7 +60,7 @@ Sales confirmadas, clientes, loja atual e sessão.
 
 ## Avoid Modifying
 
-Não pular estados nem criar mais de uma ordem por venda. Não editar `createdAt`/`saleId`/`customerId`/`storeId` em atualização.
+Não pular estados nem criar mais de uma ordem por venda. Não editar `createdAt`/`saleId`/`customerId`/`storeId` em atualização. Não criar movimento de estoque ao marcar pronta: o item já saiu do saldo na confirmação da venda (baixa atômica F4-07) — a lista de prontos é o registro físico de retirada, e entrega já bloqueia segunda ocorrência.
 
 ## Common Tasks
 

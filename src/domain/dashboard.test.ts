@@ -3,7 +3,7 @@ import type { Attendance } from "./customer";
 import type { CashEntry } from "./cash";
 import type { Sale } from "./sales";
 import type { WorkOrder } from "./work-order";
-import { chartHeights, dashboardMetricKeys, dashboardProfile, isOverdueOrder, isToday, openOrders, overdueOrders, pendingQuotes, receiptsTodayCents, returnsToday, salesByDay, salesTodayCents, stockAlerts, waitingQueue } from "./dashboard";
+import { chartHeights, dashboardMetricKeys, dashboardProfile, isOverdueOrder, isToday, openOrders, overdueOrders, pendingQuotes, receiptsTodayCents, readyForPickupOrders, returnsToday, salesByDay, salesTodayCents, stockAlerts, waitingQueue } from "./dashboard";
 
 const local = (year: number, month: number, day: number, hour = 12) => new Date(year, month - 1, day, hour).toISOString();
 const now = new Date(2026, 2, 10, 15);
@@ -52,6 +52,20 @@ describe("queue and alerts", () => {
     ];
     expect(openOrders(orders).map((order) => order.id)).toEqual(["os-1", "os-2", "os-3"]);
     expect(overdueOrders(orders, now).map((order) => order.id)).toEqual(["os-2"]);
+  });
+
+  it("lists products ready for pickup with customer, due date order and no finished orders", () => {
+    const orders: WorkOrder[] = [
+      { id: "os-1", saleId: "s1", customerId: "c1", storeId: "s", status: "READY", createdAt: local(2026, 3, 1, 10), dueAt: local(2026, 3, 20, 12) },
+      { id: "os-2", saleId: "s2", customerId: "c2", storeId: "s", status: "AWAITING_PICKUP", createdAt: local(2026, 3, 2, 10), dueAt: local(2026, 3, 18, 12) },
+      { id: "os-3", saleId: "s3", customerId: "c3", storeId: "s", status: "READY", createdAt: local(2026, 3, 3, 10) },
+      { id: "os-4", saleId: "s4", customerId: "c4", storeId: "s", status: "IN_PRODUCTION", createdAt: local(2026, 3, 4, 10), dueAt: local(2026, 3, 19, 12) },
+      { id: "os-5", saleId: "s5", customerId: "c5", storeId: "s", status: "DELIVERED", createdAt: local(2026, 3, 5, 10), dueAt: local(2026, 3, 17, 12) },
+      { id: "os-6", saleId: "s6", customerId: "c6", storeId: "s", status: "CANCELLED", createdAt: local(2026, 3, 6, 10) },
+    ];
+    const ready = readyForPickupOrders(orders);
+    expect(ready.map((order) => order.id)).toEqual(["os-2", "os-1", "os-3"]);
+    expect(ready.every((order) => order.customerId)).toBe(true);
   });
 
   it("checks a single due date against now, ignoring invalid dates and finished orders", () => {
