@@ -6,6 +6,14 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `8082ad2` + docs — Desempenho (F7-18)
+
+- **CA do card atendido:** lista de 5k clientes navega sem travamento; métricas registradas (tabela baseline×depois em `07_DATA_FLOW.md`).
+- Medição com volume sintético em Chrome headless (`.git/perf-check.mjs`): login demo + semente de **5.000 clientes** via IndexedDB bruta; cenários carga inicial, abrir lista, busca digitada e em evento único, e troca de loja — todos **PERF OK** dentro dos thresholds; screenshots `perf-list-5k.png`/`perf-search-after-fill.png` inspecionados.
+- Otimização orientada por métrica na busca de clientes: `customerSearchTerms`/`customerSearchTermsMatch` puros em `customer.ts` (termos normalizados caixa/acentos por campo — nome/CPF/telefone preservados separados) + `CustomersPage` com **carga única** do repositório e `Map<id, terms>` memoizado (`useMemo`) repassado como `match` do `DataTable`; +5 testes de paridade em `customer.test.ts` — suíte **482/482**, build 0, tsc 0.
+- Resultado medido (5k clientes): busca em evento único **73→22 ms (3,3×)** e **9→0 leituras completas do IndexedDB por busca** (antes uma por tecla; agora uma no carregamento); lista abre em ~140 ms com paginação de 10 linhas (F7-08 intacta); troca de loja ~278 ms; carga inicial ~5,1 s.
+- Decisão registrada: **sem novo índice Dexie** (bump de schema via F1-08) — `customers.name` já indexado para o `orderBy` da carga única, busca `contains` não aproveita índices de IndexedDB e a métrica mostra filtro em memória pré-computado rápido o suficiente a 5k; bump sem necessidade seria otimização prematura (fora de escopo do card).
+
 ### `0c770f0` + docs — Acessibilidade (F7-17)
 
 - **CA do card atendido:** fluxo principal completo só com teclado; foco sempre visível.

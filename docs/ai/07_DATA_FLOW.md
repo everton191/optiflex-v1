@@ -39,7 +39,7 @@ CustomersPage / CustomerNewPage / CustomerProfilePage
 → database.customers
 ```
 
-A busca normaliza o texto e filtra nome/CPF/telefone em memória após carregar os clientes ordenados.
+A busca de clientes carrega a lista uma única vez e filtra em memória: `CustomersPage` usa `customerSearchTerms` (F7-18, `8082ad2`) para pré-computar termos normalizados (caixa/acentos) por cliente no carregamento e repassa `match` ao `DataTable`, que aplica `includes` barato a cada tecla — **nenhuma releitura do IndexedDB durante a digitação** (antes: uma leitura completa por tecla).
 
 ## Atendimento
 
@@ -138,3 +138,36 @@ catch (reason)
 - Autosave: inexistente.
 - Sincronização cloud: inexistente.
 - API/backend: inexistente.
+
+## Desempenho (F7-18, `8082ad2`)
+
+### Medição (volume sintético de 5k clientes)
+
+Procedimento reexecutável: `.git/perf-check.mjs` (Chrome headless + `playwright-core` contra `npm run preview`). O script faz login demo, semeia **5.000 clientes** via IndexedDB bruta (bulk `put`, sem tocar a UI), mede e exige thresholds (PERF OK):
+
+| Métrica | Baseline (`0c770f0`) | Após (`8082ad2`) |
+|---|---|---|
+| Carga inicial (reload → dashboard pronto) | 5.096–5.116 ms | 5.106 ms |
+| Abrir lista de clientes (5k) | 131–147 ms | 137–144 ms |
+| Busca digitando "perf 4999" (9 teclas, 40 ms) | 604–628 ms | 601–631 ms |
+| **Busca em evento único (processamento puro)** | **73 ms** | **22 ms** |
+| **Leituras do IndexedDB durante a busca** | **9 (1 por tecla)** | **0 (1 no carregamento)** |
+| Troca de loja (em /caixa, relê tudo) | 269–286 ms | 270–278 ms |
+
+- CA do card ("lista de 5k clientes navega sem travamento; métrica registrada") atendido nos dois lados: lista renderiza só 10 linhas/página (paginação do `DataTable`, F7-08), busca e troca de loja < 1 s, nenhum cenário estourou os limites.
+- A busca digitada medida depara com o delay de digitação (~40 ms/tecla) — a diferença real aparece na coluna "evento único" (3,3×) e no corte de 9→0 leituras por busca (escala: em 50k clientes a releitura por tecla cresce linearmente; o filtro em memória não).
+- Screenshots: `.git/shots/perf-list-5k.png` (5.000 registros, página 1 de 500) e `perf-search-after-fill.png` (busca "perf 4999" → 1 resultado).
+- O `PerformanceObserver` de `longtask` não emite entradas no Chrome headless usado; o proxy de travamento é o tempo total de cada cenário dentro dos limites.
+
+### Decisões orientadas por métrica
+
+- **Novo índice Dexie: não.** `customers` já tem índice `name` (usado pelo `orderBy("name")` da carga única); busca `contains` não aproveita índice de IndexedDB (só ranges de prefixo); com a métrica, leitura única + filtro em memória pré-computado é rápido a 5k (22 ms). Bump de schema (padrão F1-08) sem necessidade medida seria otimização prematura — explicitamente fora de escopo do card.
+- **Paginação: já existente e suficiente.** `DataTable` renderiza 10 linhas por página com `paginateRows`; confirmado com 5k registros (500 páginas) sem travamento de render.
+- **Busca de clientes: carga única + índice em memória.** `customerSearchTerms`/`customerSearchTermsMatch` puros e testados (`customer.test.ts`, inclui paridade termos×match); `CustomersPage` memoiza `Map<id, terms>` com `useMemo` no carregamento; `match` do `DataTable` consulta o mapa. Preserva semântica por campo (nome/CPF/telefone separados) e melhora com acentos/caixa.
+- **Troca de loja: sem mudança.** 278 ms medidos relendo tudo (inclui 5k clientes no caixa) — dentro do limite; caches por loja seriam otimização prematura sem reclamação/métrica de dor.
+
+### Repetir a medição
+
+1. `npm.cmd run build` e `npm.cmd run preview -- --port 4173 --strictPort`.
+2. `node .git/perf-check.mjs <label>` — imprime JSON com todas as métricas e `PERF OK` (ou falha com o motivo).
+3. Registrar números novos nesta seção ao mudar caminhos quentes (listas, busca, troca de loja).
