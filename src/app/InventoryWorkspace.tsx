@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { errorMessage } from "../domain/errors";
-import { Button, DataTable, Dialog, Drawer, ErrorState, Input, MoneyInput, PrintLayout, Select, Skeleton } from "../design-system/components";
+import { Button, DataTable, Dialog, Drawer, ErrorState, HelpTip, Input, MoneyInput, PrintLayout, Select, Skeleton } from "../design-system/components";
 import { moneyInputError, parseMoneyInput } from "../domain/field-rules";
 import { hasPermission } from "../domain/access";
 import { InventoryService } from "../domain/inventory-service";
@@ -289,7 +289,7 @@ export function InventoryPage() {
         <label>Tratamento<Input value={variantTreatment} onChange={(event) => setVariantTreatment(event.target.value)} placeholder="Opcional (ex.: antirreflexo)" /></label>
       </>}
       {category === "ACCESSORY" && <label>Cor<Input value={variantColor} onChange={(event) => setVariantColor(event.target.value)} placeholder="Opcional" /></label>}
-      <fieldset className="form-fieldset"><legend>Dados fiscais (opcional — preparação para NF-e)</legend>
+      <fieldset className="form-fieldset"><legend>Dados fiscais (opcional — preparação para NF-e)<HelpTip label="Dados fiscais">NCM (8 dígitos) classifica o produto, CFOP indica a operação (ex.: 5102 = venda) e CEST se aplica à substituição tributária. Opcional hoje — entra na NF-e da Fase 6.</HelpTip></legend>
         <label>NCM<Input inputMode="numeric" value={fiscalNcm ? formatNcm(fiscalNcm) : ""} onChange={(event) => setFiscalNcm(event.target.value.replace(/\D/g, "").slice(0, 8))} placeholder="0000.00.00" /></label>
         <label>CFOP<Input inputMode="numeric" value={fiscalCfop} onChange={(event) => setFiscalCfop(event.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="Ex.: 5102" /></label>
         <label>CEST<Input inputMode="numeric" value={fiscalCest ? formatCest(fiscalCest) : ""} onChange={(event) => setFiscalCest(event.target.value.replace(/\D/g, "").slice(0, 7))} placeholder="00.000.00" /></label>

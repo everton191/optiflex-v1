@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { errorMessage } from "../domain/errors";
 import { Link, useParams } from "react-router-dom";
-import { Button, EmptyState, Input, PrintLayout, Skeleton } from "../design-system/components";
+import { Button, EmptyState, HelpTip, Input, PrintLayout, Skeleton } from "../design-system/components";
 import { hasPermission } from "../domain/access";
 import type { Customer } from "../domain/customer";
 import type { InventoryItem } from "../domain/inventory";
@@ -114,7 +114,7 @@ export function WorkOrdersPage() {
 
   return <div className="page work-orders-page">
     <div className="page-title">
-      <div><p className="eyebrow">Operação</p><h1>Ordens de serviço</h1><p className="page-intro">Acompanhe a produção, o prazo e a entrega das ordens desta loja.</p></div>
+      <div><p className="eyebrow">Operação</p><h1>Ordens de serviço</h1><p className="page-intro">Acompanhe a produção, o prazo e a entrega das ordens desta loja.<HelpTip label="Fluxo da OS">A ordem nasce da venda, passa por laboratório/produção e conferência, fica pronta, o cliente é avisado e então é entregue. Cancelar exige motivo.</HelpTip></p></div>
     </div>
     {message && <p className="notice success" role="status">{message}</p>}
     {error && <p className="notice error-text" role="alert">{error} <Button type="button" onClick={retry}>Tentar novamente</Button></p>}
@@ -276,7 +276,7 @@ export function WorkOrderDetailPage() {
     </section>
 
     <section className="card">
-      <h2>Progresso da fabricação</h2>
+      <h2>Progresso da fabricação<HelpTip label="Etapas e histórico">Cada etapa grava quem fez e quando. Voltar de uma etapa (ex.: Retornada → Produção) preserva o histórico anterior; nada é apagado.</HelpTip></h2>
       <ol className="work-order-progress">
         {productionPipeline.map((status) => {
           const event = stageEvent(order, status);

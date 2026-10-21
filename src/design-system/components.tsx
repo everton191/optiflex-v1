@@ -195,6 +195,24 @@ export function Tooltip({ text, children }: { text: string; children: ReactNode 
   return <span className="tooltip"><span className="tooltip-trigger" tabIndex={0} aria-describedby={id}>{children}</span><span className="tooltip-bubble" role="tooltip" id={id}>{text}</span></span>;
 }
 
+export function HelpTip({ label = "Ajuda", children }: { label?: string; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const id = useId();
+  const wrapRef = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (event: globalThis.KeyboardEvent) => { if (event.key === "Escape") setOpen(false); };
+    const onPointerDown = (event: MouseEvent) => { if (wrapRef.current && !wrapRef.current.contains(event.target as Node)) setOpen(false); };
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("mousedown", onPointerDown);
+    return () => { document.removeEventListener("keydown", onKeyDown); document.removeEventListener("mousedown", onPointerDown); };
+  }, [open]);
+  return <span className="help-tip" ref={wrapRef}>
+    <button type="button" className="help-tip-button" aria-label={`Ajuda: ${label}`} aria-expanded={open} aria-controls={id} title={label} onClick={() => setOpen((value) => !value)}>?</button>
+    {open && <span className="help-tip-bubble" id={id} role="note">{children}</span>}
+  </span>;
+}
+
 export function Search(props: InputHTMLAttributes<HTMLInputElement>) {
   return <div className="search-field"><input type="search" className="input" {...props} /></div>;
 }

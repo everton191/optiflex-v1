@@ -268,6 +268,11 @@ textarea { min-height: 6rem; }
 .tooltip-trigger:focus-visible { outline: 3px solid color-mix(in srgb, var(--color-focus), transparent 75%); border-radius: var(--radius-sm); }
 .tooltip-bubble { position: absolute; bottom: calc(100% + 6px); left: 0; z-index: 30; display: none; width: max-content; max-width: 16rem; background: var(--color-brand-strong); color: white; font-size: .75rem; line-height: 1.4; padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm); }
 .tooltip:hover .tooltip-bubble, .tooltip-trigger:focus-visible + .tooltip-bubble { display: block; }
+.help-tip { position: relative; display: inline-flex; vertical-align: middle; margin-inline-start: .3rem; }
+.help-tip-button { display: inline-flex; align-items: center; justify-content: center; width: 1.15rem; height: 1.15rem; padding: 0; border: 1px solid var(--color-border); border-radius: 50%; background: var(--color-surface); color: var(--color-muted); font-size: .7rem; font-weight: 700; line-height: 1; cursor: help; }
+.help-tip-button:hover { color: var(--color-brand); border-color: var(--color-brand); }
+.help-tip-button:focus-visible { outline: 3px solid color-mix(in srgb, var(--color-focus), transparent 75%); outline-offset: 1px; }
+.help-tip-bubble { position: absolute; top: calc(100% + 6px); left: -2px; z-index: 40; width: max-content; max-width: 17rem; background: var(--color-brand-strong); color: white; font-size: .76rem; font-weight: 400; line-height: 1.45; padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm); box-shadow: var(--shadow-card); pointer-events: none; text-transform: none; letter-spacing: normal; }
 .search-field { margin-top: var(--space-2); max-width: 28rem; }
 .search-field .input { width: 100%; }
 .skeleton { display: grid; gap: var(--space-3); padding: var(--space-6); }
@@ -290,7 +295,7 @@ textarea { min-height: 6rem; }
 .area-links .nav-section-label { padding: var(--space-3) var(--space-3) 0; color: var(--color-muted); }
 @media (max-width: 720px), (min-width: 721px) and (max-width: 1024px) and (orientation: portrait) { .mobile-nav { justify-content: space-around; } }
 
-@media print { .shell { display: block; } .sidebar, .topbar, .mobile-nav, .no-print { display: none !important; } .page { padding: 0; max-width: none; } .print-layout { gap: 0; max-width: none; } .print-sheet { border: 0; padding: 0; } .print-sheet .card { border: 0; padding: 0; box-shadow: none; } .print-sheet a { color: #111; } }
+@media print { .shell { display: block; } .sidebar, .topbar, .mobile-nav, .no-print, .help-tip { display: none !important; } .page { padding: 0; max-width: none; } .print-layout { gap: 0; max-width: none; } .print-sheet { border: 0; padding: 0; } .print-sheet .card { border: 0; padding: 0; box-shadow: none; } .print-sheet a { color: #111; } }
 
 .print-layout { display: grid; gap: var(--space-4); max-width: 52rem; }
 .print-toolbar { display: flex; gap: var(--space-3); flex-wrap: wrap; align-items: center; }
