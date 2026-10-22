@@ -52,7 +52,7 @@ describe("encrypted backup and transactional restore", () => {
   });
   it("keeps legacy backups readable and rejects corrupted attachment content", async () => {
     const snapshot = await repository.snapshot();
-    expect(snapshot.schema).toBe(17);
+    expect(snapshot.schema).toBe(18);
     const legacyTen = structuredClone(snapshot);
     legacyTen.schema = 10;
     const legacyTenTables = legacyTen as unknown as { tables: Record<string, unknown> };
@@ -433,8 +433,47 @@ describe("service catalog in backups", () => {
     expect(() => validateBackup(badDescription)).toThrow("inválido");
     const legacySixteen = structuredClone(snapshot);
     delete (legacySixteen.tables as unknown as Record<string, unknown>).services;
+    delete (legacySixteen.tables as unknown as Record<string, unknown>).suppliers;
     legacySixteen.schema = 16;
     expect(() => validateBackup(legacySixteen)).not.toThrow();
     expect(validateBackup(legacySixteen).tables.services).toEqual([]);
+  });
+});
+
+describe("suppliers in backups", () => {
+  const supplierRow = { id: "supplier-1", kind: "LABORATORY" as const, name: "Laboratório Vista Clara", document: "11.222.333/0001-81", contactName: "Ana Souza", active: true, createdAt: "2026-10-08T10:00:00.000Z" };
+  it("roundtrips supplier rows through export, validation and restore", async () => {
+    await database.suppliers.add({ ...supplierRow });
+    const snapshot = await repository.snapshot();
+    expect(snapshot.schema).toBe(18);
+    expect(snapshot.tables.suppliers).toHaveLength(1);
+    await database.suppliers.clear();
+    await service.restore(snapshot, "RESTAURAR", "OWNER");
+    expect((await database.suppliers.get("supplier-1"))).toMatchObject({ name: "Laboratório Vista Clara", kind: "LABORATORY", active: true });
+  });
+  it("pads suppliers missing from schema 17 files", async () => {
+    const snapshot = await repository.snapshot();
+    const legacy = structuredClone(snapshot);
+    legacy.schema = 17;
+    delete (legacy.tables as unknown as Record<string, unknown>).suppliers;
+    expect(() => validateBackup(legacy)).not.toThrow();
+    expect(validateBackup(legacy).tables.suppliers).toEqual([]);
+  });
+  it("rejects unknown kinds, broken documents, missing names and non-string contacts", async () => {
+    const snapshot = await repository.snapshot();
+    snapshot.tables.suppliers.push({ ...supplierRow });
+    expect(() => validateBackup(snapshot)).not.toThrow();
+    const badKind = structuredClone(snapshot); badKind.tables.suppliers[0].kind = "DESPACHANTE";
+    expect(() => validateBackup(badKind)).toThrow("inválido");
+    const badDocument = structuredClone(snapshot); badDocument.tables.suppliers[0].document = "123";
+    expect(() => validateBackup(badDocument)).toThrow("inválido");
+    const blankDocument = structuredClone(snapshot); blankDocument.tables.suppliers[0].document = "   ";
+    expect(() => validateBackup(blankDocument)).toThrow("inválido");
+    const missingName = structuredClone(snapshot); delete missingName.tables.suppliers[0].name;
+    expect(() => validateBackup(missingName)).toThrow("inválido");
+    const badContact = structuredClone(snapshot); (badContact.tables.suppliers[0] as { contactName: unknown }).contactName = 7;
+    expect(() => validateBackup(badContact)).toThrow("inválido");
+    const badActive = structuredClone(snapshot); (badActive.tables.suppliers[0] as { active: unknown }).active = "yes";
+    expect(() => validateBackup(badActive)).toThrow("inválido");
   });
 });

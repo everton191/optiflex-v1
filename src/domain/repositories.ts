@@ -8,6 +8,7 @@ import type { WorkOrder, WorkOrderStatus } from "./work-order";
 import type { InventoryItem, InventoryMovement } from "./inventory";
 import type { CashEntry, CashSession } from "./cash";
 import type { ServiceCatalogItem } from "./service-catalog";
+import type { Supplier } from "./supplier";
 
 export interface SettingsRepository {
   get(): Promise<OrganizationSettings>;
@@ -106,6 +107,12 @@ export interface ServiceCatalogRepository {
   create(item: ServiceCatalogItem): Promise<ServiceCatalogItem>;
   update(item: ServiceCatalogItem): Promise<ServiceCatalogItem>;
   remove(id: string): Promise<void>;
+}
+
+export interface SupplierRepository {
+  list(): Promise<Supplier[]>;
+  create(supplier: Supplier): Promise<Supplier>;
+  update(supplier: Supplier): Promise<Supplier>;
 }
 
 export interface CashCloseInput {

@@ -32,5 +32,6 @@ export const routeGuards: readonly RouteGuard[] = [
   { path: "admin/perfis", permission: "roles.read" },
   { path: "admin/auditoria", permission: "settings.manage" },
   { path: "admin/configuracoes", permission: "settings.manage" },
+  { path: "admin/fornecedores", permission: "settings.manage" },
   { path: "admin/assistente", permission: "settings.manage" }
 ];

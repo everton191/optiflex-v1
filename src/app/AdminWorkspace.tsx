@@ -8,9 +8,13 @@ import { AuditService } from "../domain/audit-service";
 import { auditActions, auditActionLabels, auditEntities, auditEntityLabels, type AuditAction, type AuditEntity, type AuditEntry } from "../domain/audit";
 import { useAppContext, useSession } from "./providers";
 import { BackupPanel } from "./BackupPanel";
-import { LocalAuditRepository } from "../infrastructure/storage/local-repositories";
+import { LocalAuditRepository, LocalSupplierRepository } from "../infrastructure/storage/local-repositories";
+import { SupplierService } from "../domain/supplier-service";
+import { formatDocument } from "../domain/field-rules";
+import { supplierKindLabels, supplierKinds, supplierListFilter, type Supplier, type SupplierKind } from "../domain/supplier";
 
 const auditService = new AuditService(new LocalAuditRepository());
+const supplierService = new SupplierService(new LocalSupplierRepository());
 
 const scopeLabels = { SELF: "Próprio usuário", STORE: "Loja", ORGANIZATION: "Empresa", NETWORK: "Todas as lojas" } as const;
 const roleDescriptions = { OWNER: "Acesso completo a todas as lojas.", NETWORK_ADMINISTRATOR: "Administra lojas, usuários e configurações.", STORE_MANAGER: "Acompanha a operação da própria loja.", RECEPTIONIST: "Atende clientes e organiza a fila.", CLINICAL_PROFESSIONAL: "Preenche prontuários, exames e prescrições.", SELLER: "Cria orçamentos e registra vendas.", CASHIER: "Registra recebimentos e movimentações do caixa.", STOCK_MANAGER: "Controla produtos e quantidades.", FINANCE: "Acompanha cobranças e resultados financeiros.", AUDITOR: "Consulta informações e relatórios sem alterar dados." } as const;
@@ -238,5 +242,96 @@ export function AuditPage() {
         <td><div className="cell-stack">{entry.reason && <span>{entry.reason}</span>}{entry.summary && <span className="help-text">{entry.summary}</span>}</div></td>
       </tr>)}</tbody>
     </Table>}
+  </div>;
+}
+
+export function SuppliersPage() {
+  const session = useSession();
+  const canManage = hasPermission(session.role, "settings.manage");
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [formOpen, setFormOpen] = useState(false);
+  const [editing, setEditing] = useState<Supplier>();
+  const [kind, setKind] = useState<SupplierKind>("SUPPLIER");
+  const [name, setName] = useState("");
+  const [documentValue, setDocumentValue] = useState("");
+  const [contactName, setContactName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [notes, setNotes] = useState("");
+  const [query, setQuery] = useState("");
+  const [kindFilter, setKindFilter] = useState("");
+  const pending = useRef(false);
+
+  async function refresh() {
+    try { setSuppliers(await supplierService.list()); setError(""); }
+    catch (reason) { setError(errorMessage(reason, "Não foi possível carregar os cadastros.")); }
+    finally { setLoading(false); }
+  }
+  useEffect(() => { void refresh(); }, []);
+
+  function resetForm(open: boolean) { setFormOpen(open); setEditing(undefined); setKind("SUPPLIER"); setName(""); setDocumentValue(""); setContactName(""); setPhone(""); setEmail(""); setNotes(""); }
+  function editSupplier(supplier: Supplier) {
+    setFormOpen(true); setEditing(supplier); setKind(supplier.kind); setName(supplier.name); setDocumentValue(supplier.document ?? "");
+    setContactName(supplier.contactName ?? ""); setPhone(supplier.phone ?? ""); setEmail(supplier.email ?? ""); setNotes(supplier.notes ?? "");
+  }
+
+  async function run(action: () => Promise<string>, fallback: string) {
+    if (pending.current || !canManage) return;
+    pending.current = true; setMessage(""); setError("");
+    try { setMessage(await action()); } catch (reason) { setError(errorMessage(reason, fallback)); } finally { pending.current = false; }
+  }
+
+  async function saveSupplier(event: React.FormEvent) {
+    event.preventDefault();
+    const input = { kind, name, document: documentValue, contactName, phone, email, notes };
+    await run(async () => {
+      if (editing) { await supplierService.update(editing, input); await refresh(); resetForm(false); return "Cadastro atualizado."; }
+      await supplierService.create(input); await refresh(); resetForm(false); return "Cadastro criado.";
+    }, "Não foi possível salvar o cadastro.");
+  }
+
+  async function toggleActive(supplier: Supplier) {
+    await run(async () => { await supplierService.setActive(supplier, !supplier.active); await refresh(); return supplier.active ? "Cadastro inativado." : "Cadastro reativado."; }, "Não foi possível alterar o status do cadastro.");
+  }
+
+  const visible = supplierListFilter(suppliers, query, kindFilter);
+
+  return <div className="page">
+    <PageHeader eyebrow="Administração" title="Fornecedores e laboratórios" intro="Cadastre fornecimento e laboratórios em um lugar só: documento, contato e status valem para toda a organização, sem repetir por loja." actions={canManage && <Button type="button" onClick={() => resetForm(!formOpen || Boolean(editing))}>{formOpen && !editing ? "Fechar" : "Novo cadastro"}</Button>} />
+    {message && <p className="notice success" role="status">{message}</p>}
+    {error && <p className="notice error-text" role="alert">{error}</p>}
+
+    {canManage && formOpen && <form className="settings-form" onSubmit={saveSupplier}>
+      <Select label="Tipo" value={kind} onChange={(event) => setKind(event.target.value as SupplierKind)}>{supplierKinds.map((key) => <option key={key} value={key}>{supplierKindLabels[key]}</option>)}</Select>
+      <label>Nome<Input value={name} onChange={(event) => setName(event.target.value)} required /></label>
+      <label>Documento (CPF ou CNPJ)<DocumentInput value={documentValue} placeholder="Opcional" onValueChange={setDocumentValue} /></label>
+      <label>Pessoa de contato<Input value={contactName} placeholder="Opcional" onChange={(event) => setContactName(event.target.value)} /></label>
+      <label>Telefone<Input value={phone} placeholder="Opcional" onChange={(event) => setPhone(event.target.value)} /></label>
+      <label>E-mail<Input type="email" value={email} placeholder="Opcional" onChange={(event) => setEmail(event.target.value)} /></label>
+      <label>Observações<Input value={notes} placeholder="Opcional" onChange={(event) => setNotes(event.target.value)} /></label>
+      <div className="form-actions">
+        <Button type="submit">{editing ? "Salvar alterações" : "Criar cadastro"}</Button>
+        <Button type="button" onClick={() => resetForm(false)}>Cancelar</Button>
+      </div>
+      <p className="help-text">Documento e nome precisam ser únicos entre cadastros ativos e inativos; CPF/CNPJ é validado quando preenchido. Sem código de identificação fiscais (IE/IM) — entra se a Fase 6 exigir.</p>
+    </form>}
+
+    <form className="orders-form" onSubmit={(event) => event.preventDefault()}>
+      <label>Buscar<Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Nome, documento, contato ou telefone" /></label>
+      <label>Tipo<select value={kindFilter} onChange={(event) => setKindFilter(event.target.value)}><option value="">Todos</option>{supplierKinds.map((key) => <option key={key} value={key}>{supplierKindLabels[key]}</option>)}</select></label>
+    </form>
+
+    {loading ? <Skeleton lines={4} label="Carregando cadastros…" /> : visible.length === 0 ? <EmptyState>{suppliers.length === 0 ? "Nenhum fornecedor ou laboratório cadastrado ainda." : "Nenhum cadastro corresponde aos filtros atuais."}</EmptyState> : <div className="list-card">{visible.map((supplier) => <article className="list-row" key={supplier.id}>
+      <div><strong>{supplier.name}</strong><span>{[supplier.contactName, supplier.phone].filter(Boolean).join(" · ") || supplier.email || "Sem contato informado"}</span>
+        <small className="help-text">{supplier.document ? formatDocument(supplier.document) : "Sem documento"}{supplier.notes ? ` · ${supplier.notes}` : ""}</small></div>
+      <div><Badge>{supplierKindLabels[supplier.kind]}</Badge><Badge tone={supplier.active ? "neutral" : "danger"}>{supplier.active ? "Ativo" : "Inativo"}</Badge>
+        {canManage && <><Button type="button" onClick={() => editSupplier(supplier)}>Editar</Button>
+        <Button type="button" onClick={() => void toggleActive(supplier)}>{supplier.active ? "Inativar" : "Reativar"}</Button></>}
+      </div>
+    </article>)}</div>}
+    <p className="help-text">Cadastros são da organização (valem em todas as lojas) e ficam disponíveis para a compra e para a seleção de laboratório nas ordens de serviço quando essa etapa chegar.</p>
   </div>;
 }

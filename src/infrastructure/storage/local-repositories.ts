@@ -6,11 +6,12 @@ import type { ClinicalRecord, Prescription } from "../../domain/clinical";
 import type { Sale } from "../../domain/sales";
 import type { Transfer } from "../../domain/transfer";
 import type { ServiceCatalogItem } from "../../domain/service-catalog";
+import type { Supplier } from "../../domain/supplier";
 import type { WorkOrder, WorkOrderStatus } from "../../domain/work-order";
 import { availableQuantity, type InventoryItem, type InventoryMovement } from "../../domain/inventory";
 import type { CashEntry, CashSession } from "../../domain/cash";
 import { cashTotals } from "../../domain/cash";
-import type { AdministrationRepository, AgendaRepository, AttendanceRepository, CashCloseInput, CashRepository, ClinicalRepository, CustomerRepository, InventoryRepository, PrescriptionRepository, SaleRepository, ServiceCatalogRepository, SessionRepository, SettingsRepository, TransferRepository, WorkOrderRepository } from "../../domain/repositories";
+import type { AdministrationRepository, AgendaRepository, AttendanceRepository, CashCloseInput, CashRepository, ClinicalRepository, CustomerRepository, InventoryRepository, PrescriptionRepository, SaleRepository, ServiceCatalogRepository, SessionRepository, SettingsRepository, SupplierRepository, TransferRepository, WorkOrderRepository } from "../../domain/repositories";
 import type { AuditEntry, AuditListFilter, AuditRepository } from "../../domain/audit";
 import { database } from "./database";
 
@@ -479,6 +480,25 @@ export class LocalServiceCatalogRepository implements ServiceCatalogRepository {
       if (!current) throw new Error("Serviço não encontrado.");
       assertStoreAccess(current.storeId);
       await database.services.delete(id);
+    });
+  }
+}
+
+export class LocalSupplierRepository implements SupplierRepository {
+  async list(): Promise<Supplier[]> {
+    return database.suppliers.orderBy("name").toArray();
+  }
+  async create(supplier: Supplier): Promise<Supplier> {
+    await database.suppliers.add(supplier);
+    return supplier;
+  }
+  async update(supplier: Supplier): Promise<Supplier> {
+    return database.transaction("rw", database.suppliers, async () => {
+      const current = await database.suppliers.get(supplier.id);
+      if (!current) throw new Error("Cadastro de fornecedor não encontrado.");
+      const next = { ...supplier, id: current.id, createdAt: current.createdAt };
+      await database.suppliers.put(next);
+      return next;
     });
   }
 }

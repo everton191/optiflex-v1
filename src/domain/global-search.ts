@@ -44,6 +44,7 @@ export const navigationEntries: readonly NavigationEntry[] = [
   { id: "nav.orders", kind: "page", label: "Ordens de serviço", shortLabel: "OS", to: "/ordens-servico", permission: "sales.read", section: "main" },
   { id: "nav.inventory", kind: "page", label: "Estoque", shortLabel: "Estoque", to: "/estoque", permission: "inventory.read", section: "main" },
   { id: "nav.stores", kind: "page", label: "Lojas", shortLabel: "Lojas", to: "/admin/lojas", permission: "stores.manage", section: "admin" },
+  { id: "nav.suppliers", kind: "page", label: "Fornecedores", shortLabel: "Fornecedores", to: "/admin/fornecedores", permission: "settings.manage", section: "admin" },
   { id: "nav.users", kind: "page", label: "Usuários", shortLabel: "Usuários", to: "/admin/usuarios", permission: "users.read", section: "admin" },
   { id: "nav.profiles", kind: "page", label: "Perfis de acesso", shortLabel: "Perfis", to: "/admin/perfis", permission: "roles.read", section: "admin" },
   { id: "nav.audit", kind: "page", label: "Auditoria", shortLabel: "Auditoria", to: "/admin/auditoria", permission: "settings.manage", section: "admin" },
