@@ -33,13 +33,13 @@ Os módulos abaixo são responsabilidades reais encontradas. Como ainda não há
 
 ## Administration
 
-- Responsabilidade: configurações da organização, lojas, loja atual e usuários.
-- Rotas: `/admin/usuarios`, `/admin/perfis`, `/admin/configuracoes`.
-- Páginas: `UsersPage`, `ProfilesPage`, `SettingsPage`.
-- Service: `AdministrationService`.
-- Repository: `AdministrationRepository`, implementações de settings/session/administração.
+- Responsabilidade: configurações da organização, lojas, loja atual, usuários, fornecedores e laboratórios.
+- Rotas: `/admin/usuarios`, `/admin/perfis`, `/admin/configuracoes`, `/admin/fornecedores`.
+- Páginas: `UsersPage`, `ProfilesPage`, `SettingsPage`, `SuppliersPage` (em `AdminWorkspace.tsx`).
+- Service: `AdministrationService`; cadastro de fornecedores/laboratórios: `SupplierService` (`src/domain/supplier-service.ts`).
+- Repository: `AdministrationRepository` (settings/session/administração); fornecedores: `SupplierRepository` / `LocalSupplierRepository` (org-wide, sem storeId).
 - Estado: `AppProviders`.
-- Models: `Store`, `User`, `OrganizationSettings`, `CurrentStoreContext`, `LocalSession`.
+- Models: `Store`, `User`, `OrganizationSettings`, `CurrentStoreContext`, `LocalSession`; `Supplier` (`kind` `SUPPLIER`/`LABORATORY`, documento CPF/CNPJ opcional validado).
 - Dependências: access, IndexedDB e shell.
 - Risco: sessão OWNER padrão ainda é demo local, sem autenticação; falha de boot agora bloqueia a operação com nova tentativa.
 - Tarefas: seletor de loja → provider/service/shell; configuração → SettingsPage + repository.
