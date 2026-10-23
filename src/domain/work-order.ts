@@ -26,6 +26,7 @@ export interface WorkOrder {
   dueAt?: string;
   notes?: string;
   laboratory?: string;
+  laboratoryId?: string;
   cancelReason?: string;
   receivedBy?: string;
   deliveredNote?: string;

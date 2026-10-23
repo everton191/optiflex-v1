@@ -148,7 +148,7 @@ describe("encrypted backup and transactional restore", () => {
     snapshot.tables.sales.push({ id: "sale-os", customerId: "customer-os", storeId: "store-centro", status: "CONFIRMED", description: "Armação", total: 300, createdAt: "2026-01-01T11:00:00.000Z" });
     snapshot.tables.workOrders.push({ id: "os-x", saleId: "sale-os", storeId: "store-centro", customerId: "customer-os", status: "IN_INSPECTION", createdAt: "2026-01-01T12:00:00.000Z", dueAt: "2026-02-01T12:00:00.000Z", notes: "Prazo combinado", updatedBy: "Operador", updatedAt: "2026-01-01T12:30:00.000Z" });
     snapshot.tables.workOrders.push({ id: "os-cancelled", saleId: "sale-os", storeId: "store-centro", customerId: "customer-os", status: "CANCELLED", createdAt: "2026-01-01T12:00:00.000Z", cancelReason: "Cliente desistiu", events: [{ id: "os-event-1", type: "CANCELLED", from: "OPEN", to: "CANCELLED", note: "Cliente desistiu", author: "Operador", at: "2026-01-01T12:30:00.000Z" }] });
-    snapshot.tables.workOrders.push({ id: "os-delivered", saleId: "sale-os", storeId: "store-centro", customerId: "customer-os", status: "DELIVERED", createdAt: "2026-01-01T12:00:00.000Z", receivedBy: "Maria Souza", deliveredNote: "Conferido na loja", updatedAt: "2026-01-01T16:00:00.000Z", updatedBy: "Operador", events: [{ id: "os-event-2", type: "DELIVERY", from: "READY", to: "DELIVERED", note: "Recebido por Maria Souza", author: "Operador", at: "2026-01-01T16:00:00.000Z" }] });
+    snapshot.tables.workOrders.push({ id: "os-delivered", saleId: "sale-os", storeId: "store-centro", customerId: "customer-os", status: "DELIVERED", createdAt: "2026-01-01T12:00:00.000Z", receivedBy: "Maria Souza", deliveredNote: "Conferido na loja", laboratory: "Lab Central", laboratoryId: "supplier-lab-1", updatedAt: "2026-01-01T16:00:00.000Z", updatedBy: "Operador", events: [{ id: "os-event-2", type: "DELIVERY", from: "READY", to: "DELIVERED", note: "Recebido por Maria Souza", author: "Operador", at: "2026-01-01T16:00:00.000Z" }] });
     expect(() => validateBackup(snapshot)).not.toThrow();
     const badPrazo = structuredClone(snapshot); badPrazo.tables.workOrders[0].dueAt = 123;
     expect(() => validateBackup(badPrazo)).toThrow("inválido");
@@ -166,6 +166,10 @@ describe("encrypted backup and transactional restore", () => {
     expect(() => validateBackup(badReceivedBy)).toThrow("inválido");
     const badDeliveredNote = structuredClone(snapshot); badDeliveredNote.tables.workOrders[2].deliveredNote = 42;
     expect(() => validateBackup(badDeliveredNote)).toThrow("inválido");
+    const badLaboratoryId = structuredClone(snapshot); (badLaboratoryId.tables.workOrders[2] as { laboratoryId: unknown }).laboratoryId = 42;
+    expect(() => validateBackup(badLaboratoryId)).toThrow("inválido");
+    const badLaboratory = structuredClone(snapshot); (badLaboratory.tables.workOrders[2] as { laboratory: unknown }).laboratory = 42;
+    expect(() => validateBackup(badLaboratory)).toThrow("inválido");
   });
   it("accepts product price, cost, catalog sheet and payment method, rejecting invalid values", async () => {
     const snapshot = await repository.snapshot();

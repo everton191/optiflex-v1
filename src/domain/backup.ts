@@ -159,7 +159,7 @@ export function validateBackup(value: unknown): BackupSnapshot {
         if (typeof row.kind !== "string" || !Object.hasOwn(supplierKindLabels, row.kind)) throw invalid();
         if (row.document !== undefined && (typeof row.document !== "string" || !isValidDocument(row.document))) throw invalid();
       }
-      for (const field of ["cpf", "phone", "birthDate", "email", "receptionNotes", "closedAt", "closedBy", "closingNote", "code", "author", "updatedAt", "updatedBy", "dueAt", "notes", "cancelledBy", "professionalId", "attendanceId", "brand", "material", "description", "retifies", "retificationReason", "contactName"]) if (row[field] !== undefined && typeof row[field] !== "string") throw invalid();
+      for (const field of ["cpf", "phone", "birthDate", "email", "receptionNotes", "closedAt", "closedBy", "closingNote", "code", "author", "updatedAt", "updatedBy", "dueAt", "notes", "cancelledBy", "professionalId", "attendanceId", "brand", "material", "description", "retifies", "retificationReason", "contactName", "laboratory", "laboratoryId"]) if (row[field] !== undefined && typeof row[field] !== "string") throw invalid();
       if (name === "clinicalRecords" || name === "clinicalVersions") {
         if (!Array.isArray(row.attachments) || row.attachments.some((item) => !object(item) || typeof item.id !== "string" || typeof item.name !== "string" || typeof item.mimeType !== "string" || typeof item.size !== "number" || typeof item.createdAt !== "string")) throw invalid();
         for (const field of ["revision", "version"]) if (row[field] !== undefined && (!Number.isSafeInteger(row[field]) || (row[field] as number) < (field === "version" ? 1 : 0))) throw invalid();

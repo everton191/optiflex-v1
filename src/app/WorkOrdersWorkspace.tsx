@@ -16,13 +16,16 @@ import { ReceptionService } from "../domain/reception-service";
 import { SalesService } from "../domain/sales-service";
 import { InventoryService } from "../domain/inventory-service";
 import { WorkOrderService } from "../domain/work-order-service";
-import { LocalAttendanceRepository, LocalCashRepository, LocalCustomerRepository, LocalInventoryRepository, LocalSaleRepository, LocalWorkOrderRepository } from "../infrastructure/storage/local-repositories";
+import { SupplierService } from "../domain/supplier-service";
+import type { Supplier } from "../domain/supplier";
+import { LocalAttendanceRepository, LocalCashRepository, LocalCustomerRepository, LocalInventoryRepository, LocalSaleRepository, LocalSupplierRepository, LocalWorkOrderRepository } from "../infrastructure/storage/local-repositories";
 import { useAppContext, useSession } from "./providers";
 
 const service = new WorkOrderService(new LocalWorkOrderRepository());
 const salesService = new SalesService(new LocalSaleRepository());
 const receptionService = new ReceptionService(new LocalCustomerRepository(), new LocalAttendanceRepository());
 const inventoryService = new InventoryService(new LocalInventoryRepository());
+const supplierService = new SupplierService(new LocalSupplierRepository());
 const cashRepository = new LocalCashRepository();
 const transitionLabels: Record<WorkOrderStatus, string> = {
   OPEN: "",
@@ -144,6 +147,7 @@ export function WorkOrdersPage() {
             {order.updatedAt && <span>Última alteração: {workOrderStatusLabels[order.status].toLowerCase()} em {new Date(order.updatedAt).toLocaleString("pt-BR")}{order.updatedBy ? ` por ${order.updatedBy}` : ""}</span>}
             <span className={isOverdueOrder(order) ? "error-text" : "help-text"}>{order.dueAt ? `Prazo: ${new Date(order.dueAt).toLocaleDateString("pt-BR")}${isOverdueOrder(order) ? " · atrasada" : ""}` : "Sem prazo definido"}</span>
             {order.notes && <span className="help-text work-order-notes">{order.notes}</span>}
+            {order.laboratory && <span className="help-text">Laboratório: {order.laboratory}</span>}
             {order.cancelReason && <span className="error-text">Cancelada: {order.cancelReason}</span>}
           </div>
           <div className="work-order-actions">
@@ -195,10 +199,14 @@ export function WorkOrderDetailPage() {
   const [receivedBy, setReceivedBy] = useState("");
   const [deliveryNote, setDeliveryNote] = useState("");
   const [ackPending, setAckPending] = useState(false);
+  const [labs, setLabs] = useState<Supplier[]>([]);
+  const [editingLab, setEditingLab] = useState(false);
+  const [labId, setLabId] = useState("");
 
   async function refresh() {
     try {
-      const [orders, sales, inventoryItems, entries] = await Promise.all([service.list(currentStoreId), salesService.list(currentStoreId), inventoryService.list(currentStoreId), cashRepository.listEntries(currentStoreId)]);
+      const [orders, sales, inventoryItems, entries, suppliers] = await Promise.all([service.list(currentStoreId), salesService.list(currentStoreId), inventoryService.list(currentStoreId), cashRepository.listEntries(currentStoreId), supplierService.list()]);
+      setLabs(suppliers.filter((supplier) => supplier.kind === "LABORATORY" && supplier.active));
       const found = orders.find((item) => item.id === orderId);
       if (!found) { setOrder(undefined); setError("Ordem não encontrada nesta loja."); return; }
       const foundSale = sales.find((item) => item.id === found.saleId);
@@ -246,6 +254,16 @@ export function WorkOrderDetailPage() {
       return "Ordem cancelada com motivo registrado no histórico.";
     }, "Não foi possível cancelar a ordem.");
   }
+  async function saveLaboratory(event: React.FormEvent) {
+    event.preventDefault();
+    const lab = labs.find((entry) => entry.id === labId);
+    if (!lab) return;
+    await run(async () => {
+      await service.setLaboratory(order!, { id: lab.id, name: lab.name }, session.userName);
+      setEditingLab(false); setLabId("");
+      return `Laboratório ${lab.name} registrado na ordem.`;
+    }, "Não foi possível registrar o laboratório.");
+  }
   async function recordInput(event: React.FormEvent) {
     event.preventDefault();
     const item = items.find((entry) => entry.id === inputItem);
@@ -260,6 +278,8 @@ export function WorkOrderDetailPage() {
   if (loading && !order) return <div className="page"><p className="eyebrow">Operação</p><h1>Abrindo ordem</h1><p role="status">Carregando os dados…</p></div>;
   if (!order) return <div className="page"><p className="eyebrow">Operação</p><h1>Ordem não encontrada</h1>{error && <p role="alert" className="notice error-text">{error}</p>}<Link className="button" to="/ordens-servico">Voltar às ordens</Link></div>;
   const events = [...(order.events ?? [])].reverse();
+  const sentAt = stageEvent(order, "SENT_TO_LAB")?.at;
+  const returnedAt = stageEvent(order, "RETURNED")?.at;
   const acceptsInputs = order.status !== "DELIVERED" && order.status !== "CANCELLED";
   return <PrintLayout title={`Ordem ${orderCode(order)}`} meta={`${customer?.name ?? "Cliente"} · ${sale?.description ?? "Venda"} · ${workOrderStatusLabels[order.status]}`} actions={<Link className="button" to="/ordens-servico">Voltar à lista</Link>}>
     {message && <p className="notice success no-print" role="status">{message}</p>}
@@ -271,6 +291,9 @@ export function WorkOrderDetailPage() {
       {order.updatedAt && <p className="help-text">Última alteração: {workOrderStatusLabels[order.status].toLowerCase()} em {new Date(order.updatedAt).toLocaleString("pt-BR")}{order.updatedBy ? ` por ${order.updatedBy}` : ""}</p>}
       <p className={isOverdueOrder(order) ? "error-text" : "help-text"}>{order.dueAt ? `Prazo: ${new Date(order.dueAt).toLocaleDateString("pt-BR")}${isOverdueOrder(order) ? " · atrasada" : ""}` : "Sem prazo definido"}</p>
       {order.notes && <p className="help-text">{order.notes}</p>}
+      {order.laboratory && <p className="help-text">Laboratório: {order.laboratory}</p>}
+      {sentAt && <p className="help-text">Enviada ao laboratório em {new Date(sentAt).toLocaleString("pt-BR")}</p>}
+      {returnedAt && <p className="help-text">Retornada do laboratório em {new Date(returnedAt).toLocaleString("pt-BR")}</p>}
       {order.cancelReason && <p className="error-text">Motivo do cancelamento: {order.cancelReason}</p>}
 {order.receivedBy && <p className="help-text">Recebido por {order.receivedBy}{order.deliveredNote ? ` · ${order.deliveredNote}` : ""} · {new Date(order.updatedAt ?? order.createdAt).toLocaleString("pt-BR")}</p>}
       <p className="help-text">Criada em {new Date(order.createdAt).toLocaleString("pt-BR")}{sale ? ` · Venda R$ ${sale.total.toFixed(2)}` : ""}</p>
@@ -317,6 +340,7 @@ export function WorkOrderDetailPage() {
         {canTransition(order.status, "DELIVERED") && !delivering && <Button type="button" onClick={() => setDelivering(true)}>Registrar entrega</Button>}
         {canTransition(order.status, "CANCELLED") && !cancelling && <Button type="button" onClick={() => { setCancelling(true); setCancelReason(""); }}>Cancelar ordem</Button>}
         {acceptsInputs && <Button type="button" onClick={() => setEditing(!editing)}>{editing ? "Fechar prazo" : "Prazo/notas"}</Button>}
+        {acceptsInputs && <Button type="button" onClick={() => setEditingLab(!editingLab)}>{editingLab ? "Fechar laboratório" : "Laboratório"}</Button>}
         </div>
         {delivering && <form className="orders-form" onSubmit={deliverOrder}>
         <label>Recebido por<Input value={receivedBy} onChange={(event) => setReceivedBy(event.target.value)} placeholder="Nome de quem recebeu (obrigatório)" /></label>
@@ -333,6 +357,11 @@ export function WorkOrderDetailPage() {
         <label>Prazo<Input type="date" value={dueAt} onChange={(event) => setDueAt(event.target.value)} /></label>
         <label>Observações<Input value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Opcional" /></label>
         <div className="form-actions"><Button type="submit">Salvar prazo</Button><Button type="button" onClick={() => setEditing(false)}>Cancelar</Button></div>
+      </form>}
+      {editingLab && <form className="orders-form" onSubmit={saveLaboratory}>
+        <label>Laboratório<select value={labId} onChange={(event) => setLabId(event.target.value)}><option value="">Selecione quem produz as lentes</option>{labs.map((lab) => <option key={lab.id} value={lab.id}>{lab.name}{lab.document ? ` · ${lab.document}` : ""}</option>)}</select></label>
+        <div className="form-actions"><Button type="submit" disabled={!labId}>Salvar laboratório</Button><Button type="button" onClick={() => { setEditingLab(false); setLabId(""); }}>Voltar</Button></div>
+        {!labs.length && <p className="help-text">Nenhum laboratório ativo cadastrado — cadastre em Administração → Fornecedores com o tipo Laboratório.</p>}
       </form>}
     </section>}
 

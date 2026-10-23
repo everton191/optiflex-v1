@@ -16,6 +16,12 @@ export interface WorkOrderInput {
   quantity: number;
 }
 
+// Reference to a registered laboratory (Supplier with kind LABORATORY): the id links the entity and the name is the audited snapshot.
+export interface WorkOrderLaboratoryRef {
+  id: string;
+  name: string;
+}
+
 export interface WorkOrderDeliveryInput {
   receivedBy: string;
   note?: string;
@@ -86,14 +92,15 @@ export class WorkOrderService {
     return this.repository.update(updated, order.status);
   }
 
-  async setLaboratory(order: WorkOrder, laboratory: string, author: string): Promise<WorkOrder> {
+  async setLaboratory(order: WorkOrder, laboratory: WorkOrderLaboratoryRef, author: string): Promise<WorkOrder> {
     if (!author.trim()) throw new Error("Informe o responsável pela alteração.");
     if (order.status === "DELIVERED" || order.status === "CANCELLED") throw new Error("Laboratório só pode ser informado antes da entrega.");
-    const trimmed = laboratory.trim();
-    if (!trimmed) throw new Error("Informe o laboratório responsável pela montagem.");
-    if (order.laboratory === trimmed) throw new Error("Este laboratório já está registrado na ordem.");
+    const id = laboratory.id.trim();
+    const name = laboratory.name.trim();
+    if (!id || !name) throw new Error("Informe o laboratório responsável pela montagem.");
+    if (order.laboratoryId === id || (!order.laboratoryId && order.laboratory === name)) throw new Error("Este laboratório já está registrado na ordem.");
     const at = new Date().toISOString();
-    const updated: WorkOrder = { ...order, laboratory: trimmed, updatedAt: at, updatedBy: author.trim(), events: [...(order.events ?? []), { id: `os-event-${crypto.randomUUID()}`, type: "LABORATORY", note: `Laboratório: ${trimmed}`, author: author.trim(), at }] };
+    const updated: WorkOrder = { ...order, laboratory: name, laboratoryId: id, updatedAt: at, updatedBy: author.trim(), events: [...(order.events ?? []), { id: `os-event-${crypto.randomUUID()}`, type: "LABORATORY", note: `Laboratório: ${name}`, author: author.trim(), at }] };
     return this.repository.update(updated, order.status);
   }
 

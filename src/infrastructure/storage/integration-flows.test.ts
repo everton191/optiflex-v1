@@ -41,10 +41,10 @@ describe("integration flows across sale, cash, inventory and work orders", () =>
 
     const order = await workOrders.createFromConfirmedSale(confirmed, "Ana");
     const inProduction = await workOrders.transition(order, "IN_PRODUCTION", "Ana");
-    const laboratory = await workOrders.setLaboratory(inProduction, "Lab Central", "Ana");
+    const laboratory = await workOrders.setLaboratory(inProduction, { id: "supplier-lab-central", name: "Lab Central" }, "Ana");
     const ready = await workOrders.transition(laboratory, "READY", "Ana");
     const delivered = await workOrders.transition(ready, "DELIVERED", "Ana");
-    expect(delivered).toMatchObject({ status: "DELIVERED", updatedBy: "Ana", laboratory: "Lab Central" });
+    expect(delivered).toMatchObject({ status: "DELIVERED", updatedBy: "Ana", laboratory: "Lab Central", laboratoryId: "supplier-lab-central" });
 
     const totals = cashTotals(100, await cashRepository.listEntries("store-centro"));
     expect(totals).toMatchObject({ receipts: 120, refunds: 0, expected: 220 });
@@ -55,7 +55,7 @@ describe("integration flows across sale, cash, inventory and work orders", () =>
     await database.open();
     expect((await sales.list("store-centro"))[0]).toMatchObject({ status: "CONFIRMED", paymentStatus: "PAID" });
     expect((await inventory.list("store-centro"))[0].quantity).toBe(4);
-    expect(await workOrders.getBySale(confirmed.id)).toMatchObject({ status: "DELIVERED", laboratory: "Lab Central" });
+    expect(await workOrders.getBySale(confirmed.id)).toMatchObject({ status: "DELIVERED", laboratory: "Lab Central", laboratoryId: "supplier-lab-central" });
     expect((await workOrders.list("store-centro"))[0].events?.map((event) => event.type)).toEqual(["CREATED", "STATUS", "LABORATORY", "STATUS", "STATUS"]);
     const sessions = await cashRepository.listSessions("store-centro");
     expect(sessions).toHaveLength(1);
