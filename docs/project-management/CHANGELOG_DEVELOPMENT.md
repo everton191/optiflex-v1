@@ -6,6 +6,15 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `406cbdc` + docs — Laboratórios parceiros (F3-15)
+
+- **CA do card atendido:** a OS mostra o laboratório e as datas de envio/retorno. Fora de escopo mantido: integração/API com laboratório (flag Fase 3/F5).
+- Vínculo com a entidade: `WorkOrder.laboratoryId?` (campo opcional, sem bump Dexie) ao lado de `laboratory` (nome auditado) — referência `WorkOrderLaboratoryRef { id, name }` no `WorkOrderService.setLaboratory` (id/nome obrigatórios; reseleção bloqueada por id, ou por nome quando o dado legado é texto livre sem vínculo; evento `LABORATORY` inalterado e guarda antes da entrega preservada).
+- Backup: `laboratory`/`laboratoryId` entram na lista de opcionais-string validados por linha (valores não-string rejeitados; roundtrip de `workOrders` intacto).
+- UI (`WorkOrdersWorkspace.tsx`): seletor "Laboratório" nas Ações do detalhe carregado de `SupplierService.list()` filtrando `kind === "LABORATORY" && active` (inativos fora; sem cadastro → dica para Administração → Fornecedores); a Situação passa a exibir "Laboratório: …", "Enviada ao laboratório em …" e "Retornada do laboratório em …" (datas do histórico via `stageEvent(SENT_TO_LAB|RETURNED)`, F3-16); a linha da lista mostra o laboratório.
+- **Risco do card:** estados extras quebrando transições existentes — nenhum: `workOrderTransitions`/`productionPipeline` intocados (SENT_TO_LAB → IN_PRODUCTION → RETURNED já existiam desde F3-16).
+- Testes obrigatórios: build 0, tsc 0, suíte **496/496** (+1 em `work-order-service.test.ts` — vínculo/evento, duplicidade por id e por nome legado, id/nome vazio; `backup.test.ts` +2 rejeições de `laboratory`/`laboratoryId`; `integration-flows.test.ts` com `laboratoryId` persistido após reabertura); smoke Chrome headless `.git/lab-check.mjs` **LAB OK** — cria lab ativo e inativo pela UI (inativo fora do seletor), atribui à OS, envia → produz → retorna com as duas datas na Situação e laboratório visível na lista; screenshots `lab-select`/`lab-assigned`/`lab-sent`/`lab-returned`/`lab-list` inspecionados.
+
 ### `a71a5e3` + docs — Fornecedores e laboratórios (F2-10)
 
 - **CA do card atendido:** cadastro de fornecedores e laboratórios com modelo/contrato/service/UI básica + testes + backup; risco de duplicidade coberto (documento OU nome normalizado bloqueia ativo e inativo). Decisão registrada na evidência: a seleção do laboratório em OS fica para F3-15 (quando existir) e a integração externa com laboratório permanece fora de escopo (Fase 3/F5).

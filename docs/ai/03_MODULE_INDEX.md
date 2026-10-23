@@ -102,14 +102,14 @@ Os módulos abaixo são responsabilidades reais encontradas. Como ainda não há
 
 ## Work Orders
 
-- Responsabilidade: criar, produzir e entregar ordens com prazo e observações.
+- Responsabilidade: criar, produzir e entregar ordens com prazo, observações e laboratório responsável.
 - Rota/página: `/ordens-servico` (`src/app/WorkOrdersWorkspace.tsx`); criação rápida também na aba Vendas de `/caixa`.
-- Service: `WorkOrderService` (`list`, `getBySale`, `createFromConfirmedSale`, `transition`, `schedule`).
+- Service: `WorkOrderService` (`list`, `getBySale`, `createFromConfirmedSale`, `transition`, `schedule`, `setLaboratory`).
 - Repository: `WorkOrderRepository` / `LocalWorkOrderRepository` (criação atômica por `saleId` e atualização transacional com guarda de status obsoleto).
-- Model: `WorkOrder` (`dueAt?`, `notes?`, `updatedAt?`, `updatedBy?`), `WorkOrderStatus`, `workOrderTransitions`.
-- Dependências: sales, customers, store context, sessão (autor).
+- Model: `WorkOrder` (`dueAt?`, `notes?`, `laboratory?` (nome), `laboratoryId?` (vínculo com o cadastro de laboratório), `updatedAt?`, `updatedBy?`), `WorkOrderStatus`, `workOrderTransitions`.
+- Dependências: sales, customers, store context, sessão (autor), suppliers (laboratórios ativos para o seletor da OS).
 - Usado por: `WorkOrdersPage` e `CashDeskPage`.
-- Risco: sem histórico completo de eventos e sem vínculo com itens de estoque/laboratório.
+- Risco: integração externa/API com laboratório permanece fora de escopo (decisão registrada em F3-15); vínculo de estoque limitado aos insumos.
 - Docs: `modules/work-orders/MODULE.md` e `AI_CONTEXT.md`.
 
 ## Inventory
