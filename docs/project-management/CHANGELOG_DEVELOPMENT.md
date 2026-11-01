@@ -6,6 +6,14 @@ Registro de entregas relevantes. Formato: data · commit · escopo · evidência
 
 ## 08/10/2026
 
+### `c7b072b` — Guia do usuário por função (F8-14)
+
+- **CA do card atendido:** cobertura dos 5 fluxos (recepção, clínico, vendedor, caixa e gestão) com passo a passo e telas reais; nova pasta `docs/user/` (docs-only, branch `docs/master-kanban`), sem documentar recurso inexistente.
+- `README.md`: como entrar (e-mail/senha e modo demonstração), loja atual, **Ctrl K**, dicas **"?"**, fluxo principal, glossário, onde ficam os dados/backup e ajuda.
+- 5 guias: `01-recepcao.md` (agenda, virar atendimento, fila, novo atendimento, clientes/ficha), `02-clinico.md` (prontuário, refração, prescrição/retificação, anexos, finalização, receita), `03-vendedor.md` (orçamento, itens/tratamentos, desconto/aprovação, envio/aceite/confirmação, impressão, OS), `04-caixa.md` (recebimentos parciais, comprovante, sessão, suprimento/sangria, fechamento) e `05-gestao.md` (visão geral, OS/laboratório, fornecedores, usuários/perfis, auditoria, configurações/backup, estoque).
+- **21 screenshots reais** em `docs/user/images/` (1440×900, modo demonstração, um login por perfil: Ana Ribeiro/Recepção, Dra. Helena Prado/Clínico, Bruno Costa/Vendas, Carla Mendes/Caixa e Administrador local/Gestão), geradas por `.git/user-docs-shots.mjs` (seed idempotente via IndexedDB + Chrome headless) e inspecionadas contra os rótulos reais do app na branch `feat/operational-flow-v2` (`406cbdc`).
+- **Pendência registrada (teste obrigatório do card):** revisão dos 5 guias com usuário real ainda não executada; entrega marcada com a flag na evidência da issue #148. Nenhum código alterado; nenhum `npm test` executado na branch docs.
+
 ### `406cbdc` + docs — Laboratórios parceiros (F3-15)
 
 - **CA do card atendido:** a OS mostra o laboratório e as datas de envio/retorno. Fora de escopo mantido: integração/API com laboratório (flag Fase 3/F5).
